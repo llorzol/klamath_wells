@@ -13,8 +13,20 @@
 
       <p>
        <div class="Button">Questions on this web-map/graphing contact:</div>
+       <div class="MenuItem2">Stephen Gingerich</div>
+       <div class="MenuItem2">U.S. Geological Survey Oregon Water Science Center</div>
+       <div class="MenuItem2">601 SW 2nd Ave. Suite 1950</div>
+       <div class="MenuItem2">Portland, OR 97204</div>
+       <div class="MenuItem2">703-261-5828</div>
+     
+       <div class="MenuItem2"><a href="mailto:sbginger@usgs.gov">sbginger@usgs.gov</a></div>
+      </p>
+
+
+      <p>
+       <div class="Button">Questions on this web-map/graphing contact:</div>
        <div class="MenuItem2">Danial Polette</div>
-       <div class="MenuItem2">USGS</div>
+       <div class="MenuItem2">U.S. Geological Survey Oregon Water Science Center</div>
        <div class="MenuItem2">601 SW 2nd Ave. Suite 1950</div>
        <div class="MenuItem2">Portland, OR 97204</div>
        <div class="MenuItem2">503-251-3298</div>
