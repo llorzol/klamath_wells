@@ -1,0 +1,280 @@
+ 
+<!DOCTYPE html> 
+
+<html lang="en"> 
+ <head> 
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <title>U.S. Geological Survey Upper Klamath Basin Well Mapper</title>
+  <meta charset="utf-8"> 
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+
+  <!-- css -->
+
+  <!--#include virtual="DrupalVisID/includes/meta-css.html" -->
+  <!--#include virtual="includes/css_inc.html" -->
+  <!-- end css -->
+        
+ </head>  
+   
+ <body id="offwhite">
+
+  <!--#include virtual="DrupalVisID/includes/header_WRET.html"-->
+
+  <!-- Container (About Section) -->         
+  <div id="about" class="container">
+
+   <!-- Page Heading/Breadcrumbs -->             
+   <div class="row"> 
+    <div class="col-sm-12"> 
+     <h2 class="clear" style="margin-bottom:0.0em;">U.S. Geological Survey</h2>
+     <h2 class="clear" style="margin-top:0.0em;">Upper Klamath Basin Well Mapper</h2>
+    </div>                 
+   </div> 
+   <!-- End Page Heading/Breadcrumbs -->             
+         
+   <div class="row spacemetop"> 
+    <div class="col-sm-12">
+    <p class="national-level">
+     This mapper identifies wells that are monitored in the Upper
+     Klamath Basin Oregon and California by U.S. Geological Survey (USGS), Oregon Water Resources Department (OWRD),
+     and California Department of Water Resources (CDWR). This web page provides access to current and historic
+     groundwater-level data collected by monitoring partners, as well as water-level graphs and maps showing net
+     water-level changes between any two time periods. Data for individual wells showing net water-level changes are
+     filtered to remove measurements taken during active pumping because they do not accurately represent
+     conditions in the aquifer. 
+    </p>
+    </div>
+   </div>
+
+   <div class="row spacemetop"> 
+    <div class="col-sm-12" id="links">
+    <!--map-->
+    <div class="body-wrap">
+     <div class="container">
+      <div class="row">
+
+       <div class="col-sm-3 left_panel">
+                            
+         <div class="wellHeader monitoringAgency">Monitoring Agency</div>
+         <div class="well monitoringAgency">   
+          <select id="monitoringAgency" class="btn btn-default btn-block select-btn">
+           <option id="all"  value="ALL" selected="selected">All agencies</option>
+           <option id="cdwr" value="USGS">USGS</option>
+           <option id="cdwr" value="OWRD">OWRD</option>
+           <option id="cdwr" value="CDWR">CDWR</option>
+          </select>
+         </div>
+                            
+        <div class="wellHeader monitoringStatus">Monitoring Status</div>
+        <div class="well monitoringStatus">   
+         <select id="monitoringStatus" class="btn btn-default btn-block select-btn">
+          <option id="allWells" value="All wells" selected="selected">All wells</option>
+          <option id="allActive" value="All active wells">All active wells</option>
+          <option id="allInactive" value="All inactive wells">All inactive wells</option>
+          <option id="periodicAll" value="Periodic wells">Periodic wells</option>
+          <option id="periodicActive" value="Active periodic wells">Active periodic wells</option>
+          <option id="periodicInactive" value="Inactive periodic wells">Inactive periodic wells</option>
+          <option id="recordersAll" value="Recorders wells">Recorders wells</option>
+          <option id="recordersActive" value="Active recorders wells">Active recorders wells</option>
+          <option id="recordersInactive" value="Inactive recorders wells">Inactive recorders wells</option>
+          </select>
+         </div>
+        
+        <div class="wellHeader monitoringGwChange">Groundwater Level Change</div>
+        <div id="monitoringGwChange" class="well monitoringGwChange">   
+         <div id="collapse-filterGw">
+          <div class="card-block">
+           <span id="filterGroundwaterContent"></span>
+          </div>
+         </div>
+        </div>
+        
+        <div class="row spacemetop">
+         <div class="col-sm-1"></div>
+         <div class="col-sm-11">
+          <span class="gwLevelContent"></span>
+          <div class="gwChangeLegend"></div>
+         </div>
+        </div>
+                            
+        <div class="wellHeader siteFinder">Site Finder</div>
+        <div class="well siteFinder">   
+         <select id="finderLinks" class="btn btn-default btn-block select-btn">
+          <option id="allWells" value="All wells" selected="selected">All wells</option>
+          <option id="bySiteNumber" value="bySiteNumber wells">USGS Site Number</option>
+          <option id="byStationName" value="byStationName wells">Station Name</option>
+          <option id="byWellLogId" value="byWellLogId wells">OWRD Well Log ID</option>
+          <option id="byStateObs" value="byStateObs wells">CDWR State Obs Name</option>
+         </select>
+         <label for="searchSites" class="sr-only">Search</label>
+         <input type="text" id="searchSites" placeholder="Enter search text"/>
+        </div>
+        
+        <div class="wellHeader sitesList">Sites<span id="siteCount"></span></div>
+        <div class="well sitesList">   
+         <div class="site siteList">
+          <ul id="siteLinks" class="list-group scrolling"></ul>
+         </div>
+        </div>
+
+        <div id="legend">
+        </div>
+
+       </div>
+        
+       <div class="col-sm-9">
+
+         <div class="row">
+           <a href="mapFeatures.html" target="_blank" style="float: right; position: relative; font-size: 90%;">Basic Map Features Tutorial</a>
+         </div>
+         <div class="row">
+        <!-- Start Leaflet Map object -->
+        <div id="maps">
+         <div id="map" class="mapUSA" style="cursor"></div>
+        </div>
+        <!-- End Leaflet Map object -->
+         </div>
+
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!--end map--> 
+        
+
+  <!-- Summary of Sites -->
+  <div class="row">
+
+  <div class="col-xs-1"></div>
+  <div class="col-xs-10">
+
+    <div class="row spacemetop"> 
+     <table id="countsTable">
+
+      <caption>
+       <span>Summary of Monitoring Agencies and Status --&nbsp;</span><span id="TotalStations"></span> 
+      selected sites are within mapped area.
+      </caption>
+      <thead>
+       <tr>
+        <th class="symbols leftJustified">
+         <span class="NumberUSGS">0</span>&nbsp;USGS&nbsp;monitored sites</th>
+        <th class="symbols leftJustified">
+         <span class="NumberOWRD">0</span>&nbsp;OWRD&nbsp;monitored sites</th>
+        <th class="symbols leftJustified">
+         <span class="NumberCDWR">0</span>&nbsp;CDWR&nbsp;monitored sites</th>
+        <th class="symbols leftJustified">
+         <span class="NumberALL">0</span>&nbsp;Monitored by two or more agencies</th>
+       </tr>
+      </thead>
+
+      <tbody>
+       <tr>
+        <td class="leftJustified">&nbsp;--- Site has been monitored by USGS only</td>
+        <td class="leftJustified">&nbsp;--- Site has been monitored by OWRD only</td>
+        <td class="leftJustified">&nbsp;--- Site has been monitored by CDWR only</td>
+        <td class="leftJustified">&nbsp;--- Site has been monitored by USGS or OWRD or CDWR collectively</td>
+       </tr>
+
+       <tr>
+        <td class="BoldText centerJustified">Active/Inactive</td>
+        <td class="BoldText centerJustified">Active/Inactive</td>
+        <td class="BoldText centerJustified">Active/Inactive</td>
+        <td class="BoldText centerJustified">Active/Inactive</td>
+       </tr>
+
+       <tr>
+        <td class="centerJustified">
+         <span class="NumberUSGSactive">0</span>
+         /
+         <span class="NumberUSGSinactive">0</span>
+        </td>
+        <td class="centerJustified">
+         <span class="NumberOWRDactive">0</span>
+         /
+         <span class="NumberOWRDinactive">0</span>
+        </td>
+        <td class="centerJustified">
+         <span class="NumberCDWRactive">0</span>
+         /
+         <span class="NumberCDWRinactive">0</span>
+        </td>
+        <td class="centerJustified">
+         <span class="NumberALLactive">0</span>
+         /
+         <span class="NumberALLinactive">0</span>
+        </td>
+       </tr>
+       
+      <tbody>
+
+     </table>
+    </div>
+        
+   </div>
+   <div class="col-xs-1"></div>
+  </div>
+
+  <!-- Explanation Text removed -->
+
+  <!-- Summary of Sites -->
+  <div class="row">
+   <div class="col-xs-1"></div>
+   <div class="col-xs-10">
+    <div id="siteTable" class="spacemetop"></div>
+   </div>
+   <div class="col-xs-1"></div>
+  </div>
+  
+ </div>
+
+ </div> <!-- <div class="container-fluid"> -->
+
+ <!--#include virtual="DrupalVisID/includes/footer_WRET.html"-->
+
+ <!-- Supporting scripts  -->
+ <!--
+ <script src="javascripts/required/jquery.min.js"></script>
+ -->
+ <script src="javascripts/new_required/jquery-3.7.0.js"></script>
+ <script src="javascripts/required/popper.min.js"></script>
+ <script src="javascripts/required/tether.min.js"></script>
+ <script src="javascripts/new_required/bootstrap.min.js"></script>
+ <script src="javascripts/required/jquery.url.js"></script>
+ <script src="javascripts/required/leaflet.js"></script>
+ <script src="javascripts/required/L.Control.Locate.js"></script>
+ <script src="javascripts/required/Control.MiniMap.min.js"></script>
+
+ <link rel="stylesheet" href="css/required/leaflet.zoomhome.css"/>
+ <script src="javascripts/required/leaflet.zoomhome.min.js"></script>
+
+ <!-- Supporting scripts  -->
+ <!--
+ <script src="datatables/jquery.dataTables.min.js"></script>
+ -->
+ <script src="javascripts/new_required/jquery.dataTables.min.js"></script>
+ <script src="javascripts/new_required/dataTables.bootstrap5.min.js"></script>
+
+ <!--
+ <script src="datatables/dataTables.buttons.min.js"></script>
+ <script src="datatables/jszip.min.js"></script>
+ <script src="datatables/buttons.html5.min.js"></script>
+ <script src="datatables/buttons.print.min.js"></script>
+ <script src="datatables/dataTables.fixedHeader.min.js"></script>
+ <script src="datatables/dataTables.responsive.min.js"></script>
+ -->
+ 
+ <!-- Local scripts -->
+ <script src="javascripts/usgs/webRequest.js"></script>
+ <script src="javascripts/usgs/dialog.js"></script>
+
+ <script src="javascripts/usgs/popup.js"></script>
+ <script src="javascripts/usgs/tableSupport.js"></script>
+ <script src="javascripts/usgs/gwFilter.js"></script>
+ <script src="javascripts/usgs/leftPanel.js"></script>
+ <script src="javascripts/usgs/map.js"></script>
+ <script src="javascripts/usgs/main.js"></script>
+
+ </body>
+</html>
