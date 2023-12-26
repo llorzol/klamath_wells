@@ -1,0 +1,383 @@
+
+                 Klamath Wells Website
+=============================================================================
+December 11, 2023
+=============================================================================
+
+=============================================================================
+
+                 Check/Build collection file
+-----------------------------------------------------------------------------
+==============================================================================
+
+Steps
+-------------------------------------
+USGS
+====
+The script retrieves the sites and does a two step process to obtain the information
+
+USGS site service for periodic sites
+-------------------------------------
+site information (well/hole depth)
+----------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&countyCd=41035&siteOutput=expanded&siteStatus=all&siteType=GW&hasDataTypeCd=gw
+
+period of record
+----------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&countyCd=41035&siteStatus=all&siteType=GW&hasDataTypeCd=gw&outputDataTypeCd=gw
+
+USGS site service for recorders
+-------------------------------------
+site information (well/hole depth)
+----------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&countyCd=41035&siteOutput=expanded&siteStatus=all&siteType=GW&hasDataTypeCd=iv,dv
+
+period of record
+----------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&countyCd=41035&siteStatus=all&siteType=GW&hasDataTypeCd=iv,dv&outputDataTypeCd=iv,dv
+
+
+OWRD
+====
+Retrieve OWRD files (see below for instructions)
+
+   Download site file
+   ------------------
+   1) Open page in browser
+      https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+   2) In "Well Log" dropdown select KLAM
+   3) Click text button in Downloadable Data section
+   4) Click "Site Information"
+   5) Copy file "gw_site.txt" in the klam working directory in owrd data folder
+
+   example request for a single site
+   ------------------------------------
+   https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0050228/gw_site_summary/?public_viewable=
+   
+   Download other ID file
+   ------------------
+   1) Open page in browser
+     https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+   2) In "Well Log" dropdown select KLAM
+   3) Click text button in Downloadable Data section
+   4) Click "Other Identifiers for sites"
+   5) Copy file "gw_other_identity.txt" in the klam working directory
+     
+   example request for a single site
+   ------------------------------------
+   https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0050228/gw_site_summary/?public_viewable=
+
+
+CDWR
+====
+The script retrieves the sites
+
+--------------------------
+CDWR periodic site table
+--------------------------
+https://data.cnra.ca.gov/dataset/periodic-groundwater-level-measurements/resource/af157380-fb42-4abf-b72a-6f9f98868077
+
+retrieve All records in browser
+-------------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=af157380-fb42-4abf-b72a-6f9f98868077
+
+All sites in Klamath (Oregon) and Modoc and Siskiyou counties
+----------------------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "af157380-fb42-4abf-b72a-6f9f98868077" WHERE "county_name" IN ('Modoc','Siskiyou','Klamath, OR')
+
+All sites in Tulelake basin
+---------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "af157380-fb42-4abf-b72a-6f9f98868077" WHERE "BASIN_NAME" IN ('Tulelake')
+
+List of sites
+---------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "af157380-fb42-4abf-b72a-6f9f98868077" WHERE "site_code" IN ('419980N1215455W001', '419978N1214546W001')
+
+Single site
+---------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=af157380-fb42-4abf-b72a-6f9f98868077&q={"site_code":"419980N1215455W001"}
+
+--------------------------
+CDWR continuous site table
+--------------------------
+view in browser
+---------------
+https://data.cnra.ca.gov/dataset/618c73fe-b28c-4399-a824-43d0278fe974/resource/03967113-1556-4100-af2c-b16a4d41b9d0
+
+retrieve in browser
+---------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=03967113-1556-4100-af2c-b16a4d41b9d0
+
+All sites in Modoc and Siskiyou counties
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "03967113-1556-4100-af2c-b16a4d41b9d0" WHERE "COUNTY_NAME" IN ('Modoc','Siskiyou')
+
+All sites in Tulelake basin
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "03967113-1556-4100-af2c-b16a4d41b9d0" WHERE "BASIN_NAME" IN ('Tulelake')
+
+
+
+
+
+-------------------------------------
+Build collection periodic sites
+-------------------------------------
+Using the current collection.txt as a seed
+
+Run
+----
+./buildCollectionFile.py -sites data/collection.txt -output allsites.txt --owrd data/OWRD/gw_site.txt --other data/OWRD/gw_other_identity.txt --counties 41035 06093 06049 --count 10
+
+WinMerge
+----
+compare and review changes in the current data/collection.txt with collection.txt
+
+Non-public staging-or.water
+----------------------
+Use AFS
+Copy collection/recorder files to cgi-bin/klamath_wells/data directory
+Review results with web browser
+
+public or.water
+----------------------
+Use AFS
+Copy collection/recorder files to cgi-bin/klamath_wells/data directory
+Review results with web browser
+
+
+
+
+Build collection recorder sites (NO LONGER NEEDED)
+-------------------------------------
+Using the current recorder.txt as a seed
+
+Run
+----
+./buildCollectionFile.py -sites data/recorders.txt -output recorders.txt --recorder --owrd data/OWRD/gw_site.txt --other data/OWRD/gw_other_identity.txt --counties 41035 06093 06049
+    41035 - Klamath County Oregon
+    06093 - Siskiyou County California
+    06049 - Modoc County California
+
+WinMerge
+----
+compare and review changes in the current data/recorder.txt with recorder.txt
+
+
+
+
+
+
+
+
+
+
+            Some requests to USGS, OWRD, and CDWR web services
+==========================================================================================
+------------------------------------------------------------------------------------------
+
+Census key for Fips Codes
+-------------------------------------
+https://www2.census.gov/geo/docs/reference/codes/files/national_county.txt
+
+Thank you for your interest in the Census Data API. Your API key is 2b9ded633989975402c9be034053eed3473b7f2c
+
+
+
+
+
+
+
+                Build waterlevel and site summary file
+-----------------------------------------------------------------------------
+==============================================================================
+
+Steps
+-------------------------------------
+USGS
+====
+The script retrieves the sites and waterlevel measurements with a two step process to obtain the information
+
+OWRD
+====
+Retrieve OWRD files (see below for instructions)
+
+   Download periodic waterlevel file
+   ------------------
+   1) Open page in browser
+      https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+   2) In "Well Log" dropdown select KLAM
+   3) Click text button in Downloadable Data section
+   4) Click "Measured Water Levels"
+   5) Copy file "gw_measured_water_level.txt" in the klam working directory in owrd data folder
+   
+   Download recorder waterlevel file
+   ------------------
+   1) Open page in browser
+     https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+   2) In "Well Log" dropdown select KLAM
+   3) Click text button in Downloadable Data section
+   4) Click "Recorder Water Level Daily - Mean"
+   5) Copy file "gw_recorder_water_level_mean.txt" in the klam working directory
+
+CDWR
+====
+The script retrieves the sites
+
+Run
+====
+
+./buildWaterlevelFile.py -sites data/collection.txt -output waterlevels.txt --owrd_gw data/OWRD/gw_measured_water_level.txt --owrd_rc data/OWRD/gw_recorder_water_level_mean.txt
+
+
+
+------------------------------------------------------------------------------           
+                         USGS web service
+------------------------------------------------------------------------------           
+==============================================================================
+site
+-------------------------------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&sites=445620117581501&siteOutput=expanded&siteStatus=all
+
+groundwater measurements
+-------------------------------------
+https://waterservices.usgs.gov/nwis/gwlevels/?format=rdb&sites=421319121472501&startDT=1900-01-01&siteStatus=all
+
+
+------------------------------------------------------------------------------           
+                         OWRD web service
+------------------------------------------------------------------------------           
+==============================================================================
+site
+-------------------------------------
+https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0000588/gw_site_summary/?public_viewable=
+
+groundwater measurements
+-------------------------------------
+https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0000588/gw_measured_water_level/?start_date=1/1/1905&end_date=1/1/2025&public_viewable=
+
+https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0010174/gw_measured_water_level/?start_date=1/1/1905&end_date=1/1/2025&public_viewable=
+
+hydrograph
+-------------------------------------
+https://apps.wrd.state.or.us/apps/gw/gw_info/gw_hydrograph/Hydrograph.aspx?gw_logid=KLAM0010252
+
+Search page
+-------------------
+https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+
+Developer page
+-------------------
+https://apps.wrd.state.or.us/apps/gw/gw_data_rws/Index.html#hide1
+
+
+
+------------------------------------------------------------------------------           
+                         CDWR web service
+------------------------------------------------------------------------------
+==============================================================================
+General site search
+------------------------
+https://wdl.water.ca.gov/WaterDataLibrary/GroundWaterLevel.aspx
+
+https://wdl.water.ca.gov/WaterDataLibrary/GroundWaterLevel.aspx?SiteCode=419978N1214931W001
+
+CDWR periodic hydrograph web page [DOESN'T WORK NEED stationId]
+--------------------------
+https://wdl.water.ca.gov/WaterDataLibrary/GroundwaterBrowseData.aspx?SelectedCounties=&SiteCode=419978N1214931W001&LocalWellNumber=&StationId=38538&SelectedGWBasins=&StateWellNumber=
+
+https://wdl.water.ca.gov/WaterDataLibrary/GroundwaterBrowseData.aspx?SiteCode=419978N1214931W001&StationId=38538
+
+
+CDWR periodic waterlevel web page
+--------------------------
+https://data.cnra.ca.gov/dataset/periodic-groundwater-level-measurements
+
+single well periodic records
+------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=bfa9f262-24a1-45bd-8dc8-138bc8107266&q={"site_code":"420171N1214111W001"}&sort="msmt_date"&limit=5000
+
+many wells periodic records
+------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "site_code" IN ('420171N1214111W001','417786N1220041W001') ORDER BY "msmt_date"
+
+--------------------------
+CDWR periodic site table
+--------------------------
+https://data.cnra.ca.gov/dataset/periodic-groundwater-level-measurements/resource/af157380-fb42-4abf-b72a-6f9f98868077
+download file of all sites
+https://data.cnra.ca.gov/dataset/dd9b15f5-6d08-4d8c-bace-37dc761a9c08/resource/af157380-fb42-4abf-b72a-6f9f98868077/download/stations.csv
+
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "site_code" IN ('420171N1214111W001','417786N1220041W001')&sort="msmt_date"&limit=5000
+
+download all periodic measurements
+-----------------------------
+https://data.cnra.ca.gov/dataset/dd9b15f5-6d08-4d8c-bace-37dc761a9c08/resource/bfa9f262-24a1-45bd-8dc8-138bc8107266/download/measurements.csv
+
+
+
+--------------------------
+CDWR continuous waterlevel web page
+--------------------------
+https://data.cnra.ca.gov/dataset/continuous-groundwater-level-measurements
+
+Continuous records using station for single site
+-------------
+https://wdl.water.ca.gov/WaterDataLibrary/StationDetails.aspx?dateFrom2=01%2f01%2f1900&StationTypeCode=&Station=12N04E03N003M&IncludeVarData=False&SelectedAll=False&dateTo2=01%2f01%2f1900&source=search
+
+one site
+-------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=03967113-1556-4100-af2c-b16a4d41b9d0&q={"SITE_CODE":"419980N1215455W001"}
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=03967113-1556-4100-af2c-b16a4d41b9d0&q={"STATION":"044N008W32F001M"}
+
+all sites
+-------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=03967113-1556-4100-af2c-b16a4d41b9d0
+https://data.cnra.ca.gov/dataset/618c73fe-b28c-4399-a824-43d0278fe974/resource/03967113-1556-4100-af2c-b16a4d41b9d0/download/gwl-stations.csv
+
+
+find continuous records using station
+-------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=84e02633-00ca-47e8-97ec-c0093313ddcd&q=48N04E18J001M&sort="MSMT_DATE"&limit=5000
+
+
+Multiple sites works
+-----------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "84e02633-00ca-47e8-97ec-c0093313ddcd" WHERE "STATION" IN ('46N05E21M001M','46N05E22D001M')&sort="msmt_date"&limit=5000
+
+
+download all continuous measurements
+-----------------------------
+https://data.cnra.ca.gov/dataset/continuous-groundwater-level-measurements
+https://data.cnra.ca.gov/dataset/continuous-groundwater-level-measurements/resource/84e02633-00ca-47e8-97ec-c0093313ddcd
+
+
+help
+-----------------------------
+https://docs.ckan.org/en/2.9/api/#ckan.logic.action.get.current_package_list_with_resources
+
+help for specific resource
+----------------------------
+https://data.cnra.ca.gov/api/1/util/snippet/api_info.html?resource_id=84e02633-00ca-47e8-97ec-c0093313ddcd
+
+
+
+
+
+=============================================================================
+                 Check waterlevel file for Klamath Wells Website
+-----------------------------------------------------------------------------
+
+./checkPorRecords.py -sites data/collection.txt -waterlevel waterlevel.txt -debug -log
+
+
+
+
+
+URL: https://data.cnra.ca.gov/dataset/dd9b15f5-6d08-4d8c-bace-37dc761a9c08/resource/bfa9f262-24a1-45bd-8dc8-138bc8107266/download/measurements.csv
+
+
+
+
+
+
+
+
