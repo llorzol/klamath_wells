@@ -1,0 +1,47 @@
+QUALITY_CODE,DESCRIPTION
+1,Good data
+2,Good quality edited data
+10,Good Measurement
+15,Provisional measurement
+20,"Dry, no flow"
+25,Value may be affected by interference.
+26,Data imported from historic records.
+30,Irregular Time Rate Data - weekly/monthly read.
+35,Estimated data imported from historic records.
+40,Fair Measurement
+50,Unknown Measurement Quality
+52,Mean gauge height for period of flow
+55,Extrapolated rating between highest measurement and 2x highest measurement; reliable extrapolation
+60,"Above Rating, extrapolated above 2x highest measurement; unreliable extrapolation"
+70,Estimated Data
+71,Manual reading
+72,"Estimated flow, greater than 1.4x highest measured flow"
+73,Minimum event from partial record
+74,Maximum event from partial record
+76,Reliable interpolation
+77,"Correlation with other station, same variable"
+79,Records partly estimated
+80,Accumulated
+81,Wet day within accumulated rainfall period
+82,Linear interpolation across gap in records.
+85,Flooded
+104,Records estimated
+110,Estimated flow calculation due to backwater influences
+120,Poor Measurement
+130,Estimate
+140,Data not yet checked
+150,Rating table extrapolated due to inadequate gauging information
+151,Data Missing
+152,Flow occured on this day.  Mean stage for period of flow not published.
+160,"Above Rating, no flow calculated"
+161,"Below Rating, no flow calculated"
+170,Unreliable Data
+172,Stage below the crest of weir.
+175,Water level below sensor
+179,Records partly estimated
+185,"Flooded, no flow calculated"
+190,"Stage-only station, no rating"
+195,Atypical station.  Mean daily value only; no standard rating table.
+199,Multivariate rating equation required.  Use MODSYN.
+201,Data not recorded
+254,Rating Table Exceeded
