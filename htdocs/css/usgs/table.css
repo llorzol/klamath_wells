@@ -1,0 +1,283 @@
+/**
+ * Namespace: table.css
+ *
+ * The file table.css is a css file to providing styling for employee table. 
+ *
+ * version 1.12
+ * February 5, 2021
+*/
+
+/*
+###############################################################################
+# Copyright (c) Office of Planning and Programming (OPP)
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+###############################################################################
+*/
+
+.top-bottom-border {
+  border-top: 2px solid black;
+  border-bottom: 2px solid black;
+}
+
+.stations_table > thead {
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+}
+
+table.fixedHeader-floating {
+    margin-top: -0.3rem;
+    margin-left: -0.10rem;
+}
+
+.no-border {
+  border: none;
+}
+
+#siteTable, #countsTable {
+   padding: 5px;
+}
+
+#siteTable caption,
+#countsTable caption,
+.fullReport_table caption {
+    caption-side: top;
+    color: black;
+    text-align: center;
+    font-weight: bold;
+    font-size: 15px;
+    border-bottom: 2px solid black;
+}
+
+.counts_table {
+   margin: auto;
+   width: 60%;
+}
+
+#countsTable thead {
+    padding: 5px;
+    color: black;
+    text-align: left;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+#countsTable tbody {
+    padding: 5px;
+    color: black;
+    text-align: left;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+#countsTable th, #countsTable td {
+    padding: 5px;
+}
+
+span.counts {
+    padding: 5px;
+}
+
+#siteTable thead {
+    padding: 5px;
+    color: black;
+    text-align: left;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+#siteTable th, #siteTable td {
+    padding: 5px;
+    font-size: 12px;
+}
+
+.stations_table,
+.fullReport_table {
+   margin: 15px 5px 5px 15px;
+   padding: 5px 2px 2px 5px;
+   table-layout: fixed;
+   width: 100%
+}
+
+.counts_table td,
+.counts_table th {
+    border: 1px solid black;
+}
+
+.customer td,
+.customer li,
+.stations_table th,
+.stations_table td,
+.fullReport_table th,
+.fullReport_table td {
+    padding: 5px;
+    font-size: 12px;
+    word-wrap: break-word;
+}
+
+.customerSave {
+    list-style: none;
+    font-size: 12px!important;
+}
+
+.customer {
+    font-size: 12px!important;
+}
+
+.customerHeader {
+    text-align: left;
+    font-weight: bold;
+    font-size: 13px!important;
+}
+
+.customer li {
+    padding: 0px!important;
+}
+
+.newCustomerSave {
+    list-style: none;
+    font-size: 12px!important;
+    border-top: 2px solid black;
+}
+
+.newCustomer {
+    font-size: 12px!important;
+    border-top: 2px solid black;
+}
+
+.newCustomer li {
+    padding: 0px!important;
+}
+
+td.customerIcons {
+    padding: 0px!important;
+}
+
+.customerIcon {
+    padding: 0px!important;
+    margin: 1px;
+    max-width: 100%;
+    list-style: none;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    .contain {object-fit: contain;}
+    font-size: 20px;
+}
+
+td.sorting {
+   font-size: 1.7rem;
+}
+
+td.division {
+   background-color: #4c4e52;
+   color: #ffffff;
+   font-weight: bold;
+   font-size: 15px;
+   padding: 5px;
+}
+
+td.section {
+   background-color: #32ab3e;
+   border-color: #32ab3e;
+   color: #ffffff;
+   font-weight: bold;
+   font-size: 15px;
+   padding: 5px;
+}
+
+.stations_table tr:nth-child(even) { 
+ background-color: #f2f2f2;
+}
+
+.stations_table tr:hover {background-color: #ddd;}
+
+#summary_table tr:hover {background-color: #ddd;}
+
+.stations_table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: left;
+  background-color: #ffffff;
+  color: black;
+}
+
+.stations_table tbody {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: left;
+  color: black;
+}
+
+.stations_table tr:hover {
+          background-color: #ffff99;
+}
+
+
+button.dt-button {
+          margin-right: 1em;
+        }
+
+button.dt-button:hover {
+          background-color: #c2c4c3;
+          color: #000;
+        }
+
+
+table.dataTable tbody tr .chosenRow {
+   border: 3px solid red!important;
+}
+
+.chosenRow {
+   color: red;
+   background-color: #e6e6e6;
+   font-weight: bold;
+}
+
+tr.warning, li.notAvailable {
+   color: red;
+}
+
+ 
+table.dataTable thead th.sorting:after,
+table.dataTable thead th.sorting_asc:after,
+table.dataTable thead th.sorting_desc:after {
+    position: absolute;
+    top: 12px;
+    right: 8px;
+    display: block;
+    font-family: FontAwesome;
+}
+
+table.dataTable thead th.sorting:after {
+    content: "\f0dc";
+    color: #ddd;
+    font-size: 0.8em;
+    padding-top: 0.12em;
+}
+table.dataTable thead th.sorting_asc:after {
+    content: "\f0de";
+}
+table.dataTable thead th.sorting_desc:after {
+    content: "\f0dd";
+}
