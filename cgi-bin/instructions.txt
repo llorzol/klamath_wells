@@ -278,7 +278,7 @@ General site search
 ------------------------
 https://wdl.water.ca.gov/WaterDataLibrary/GroundWaterLevel.aspx
 
-https://wdl.water.ca.gov/WaterDataLibrary/GroundWaterLevel.aspx?SiteCode=419978N1214931W001
+https://wdl.water.ca.gov/WaterDataLibrary/GroundWaterLevel.aspx?SiteCode=417944N1220350W001
 
 CDWR periodic hydrograph web page [DOESN'T WORK NEED stationId]
 --------------------------
