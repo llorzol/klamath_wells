@@ -1,0 +1,116 @@
+ 
+<!DOCTYPE html> 
+
+<html lang="en"> 
+ <head> 
+  <title>Basic Map Features</title>
+  <meta charset="utf-8"> 
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+
+  <!-- css -->
+
+  <!--#include virtual="DrupalVisID/includes/meta-css.html" -->
+    
+  <link rel="stylesheet" href="css/required/bootstrap.min.css"> 
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fjalla+One|Oswald|Roboto+Condensed">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato"> 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  
+  <link rel="stylesheet" type="text/css" href="css/custom.css" />
+  <link rel="stylesheet" type="text/css" href="css/doe.css">
+  <link rel="stylesheet" type="text/css" href="css/required/leaflet.css" />
+  <link rel="stylesheet" type="text/css" href="css/required/leaflet.zoomhome.css">
+  <link rel="stylesheet" type="text/css" href="css/popup.css" />
+  <link rel="stylesheet" type="text/css" href="css/maps.css" />
+  <link rel="stylesheet" type="text/css" href="css/legend.css" />
+  <link rel="stylesheet" type="text/css" href="css/dataTool.css" />
+
+  <link rel="stylesheet" type="text/css" href="css/leftPanel.css" />
+
+  <link rel="stylesheet" type="text/css" href="tablesorter/css/blue_style.css" />
+
+  <!-- end css -->
+        
+ </head>  
+   
+ <body id="offwhite">
+
+  <!--#include virtual="DrupalVisID/includes/header_WRET.html"-->
+
+  <!-- Container (About Section) -->         
+  <div id="about" class="container">
+
+   <!-- Page Heading/Breadcrumbs -->             
+   <div class="row"> 
+    <div class="col-sm-12"> 
+     <h2 class="clear" style="margin-bottom:0.0em;">U.S. Geological Survey Upper Klamath Basin Well Mapper</h2>
+     <h2 class="clear" style="margin-top:0.0em;">Basic Map Features</h2>
+    </div>                 
+   </div> 
+   <!-- End Page Heading/Breadcrumbs -->             
+         
+   <div class="row spacemetop"> 
+    <div class="col-sm-12">
+    <p class="national-level">
+		Using the basic features of the interactive map, you can customize the view and display of
+      well information.
+    </p>
+    </div>
+   </div>
+
+	<div class="tutorials">
+		<div class="featureText">
+			<div class="text" id="markers">
+				<div><p>Markers<br />
+					<ul>
+		            <li><img src="icons/gw_act_30.png">Active site</li>
+		            <li><img src="icons/gw_ina_30.png">Inactive site</li>
+						<li>Clicking on a marker will open a popup with basic well information.</li>
+						<li>Clicking the <b class="linkText">Hydrograph</b> link in the well popup will open a separate page displaying an interactive hydrograph of groundwater level data collected for this well.</li>
+						<li>Clicking the <b class="linkText">Recorder hydrograph</b> link in the well popup will open a separate page displaying an interactive hydrograph of groundwater level data collected for this well.</li>
+						<li>Clicking the <b class="linkText">Well Construction</b> link in the well popup will open a separate page displaying the construction of the well from the OWRD driller report.</li>
+						<li>Clicking the <b class="linkText">Well Lithology</b> link in the well popup will open a separate page displaying the lithology of the well from the OWRD driller report.</li>
+					</ul>
+				</div>
+			</div>
+		<hr>
+		<p><img src="icons/zoom.png"></p>
+			<div class="text" id="zoom">
+				<div><p>Zoom Controls<br />
+					<ul>
+						<li><b>Single-level Zooming:&nbsp;</b>To adjust zoom one level at a time, use the + and - buttons in the zoom control in the upper left corner of the map.</li>
+                  <li><b>Box Zooming:&nbsp;</b>To zoom in on a rectangular area, press and hold the Shift key while drawing a box with your mouse.  When you release the mouse button, the map will zoom in on the rectangular area drawn with the mouse.</li>
+						<li><b>Scrollwheel Zooming:&nbsp;</b>By default, scrollwheel zooming with the mouse is disabled.</li>
+					</ul>
+				</div>
+			</div>
+		<hr>
+		<p><img src="images/toggle.png"></p>
+			<div class="text" id="minimap">
+				<div><p>Index Map<br />
+					<ul>
+						<li>The index map, located in the bottom right corner of the main map, shows a view of the regional area outside of the main map view.</li>
+						<li>The index map has the same dragging and basemap options as the main map, although individual marker locations will not be shown.  Zoom options for the index map are limited to single-level, scrollwheel and box zooming.</li>
+						<li>The orange and blue rectangles show the main map view and the bounds of the study area, respectively.  If the two rectangles overlap in the index map, the study area will be viewable on the main map.</li>
+						<li>The index map can be minimized using the arrow icon <img src="images/toggle.png"> in its lower right corner.</li>
+					</ul>
+				</div>
+			</div>
+		<hr>
+		</div>
+	</div>
+</div>
+
+
+ <!--#include virtual="DrupalVisID/includes/footer_WRET.html"-->
+
+ <!-- Supporting scripts  -->
+ <script src="javascripts/required/jquery-2.0.0.min.js"></script>
+ <script src="javascripts/required/tether.min.js"></script>
+ <script src="javascripts/required/bootstrap.min.js"></script>
+
+ </body>
+</html>
+
