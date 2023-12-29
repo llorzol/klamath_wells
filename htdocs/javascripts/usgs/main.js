@@ -4,8 +4,8 @@
  * Main is a JavaScript library to provide a set of functions to manage
  *  the web requests.
  *
- * version 3.11
- * December 20, 2023
+ * version 3.12
+ * December 28, 2023
 */
 
 /*
@@ -61,7 +61,7 @@ var cdwrLink             = 'https://wdl.water.ca.gov/WaterDataLibrary/GroundWate
 
 // Global objects
 //
-var BasinBoundary    = "gis/test.json";
+var BasinBoundary    = "gis/klamath_wells_studyarea.json";
 
 var delimiter        = '\t';
 
