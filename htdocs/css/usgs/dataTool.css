@@ -156,7 +156,7 @@ select {
 .section,
 .list, .makeList, .refresh, #selectMessage, .dlist {
     font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-size: 1.15rem;
+    font-size: 0.9rem;
     font-weight: bold;
 }
 
