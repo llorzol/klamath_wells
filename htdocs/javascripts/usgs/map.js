@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.14
- * December 20, 2023
+ * version 3.16
+ * January 4, 2024
 */
 
 /*
@@ -211,6 +211,10 @@ function buildMap()
    var zoomHome = L.Control.zoomHome();
    zoomHome.addTo(map);
 
+   // Add custom print option
+   //
+   customPrint(map)
+
    // Show initial map zoom level
    //
    //jQuery( ".mapZoom" ).html( "<b>Zoom Level: </b>" + map.getZoom());
@@ -266,12 +270,6 @@ function buildMap()
   //
   var myTable = DataTables ("#stationsTable");
   $(".dt-buttons").css('width', '100%');
-
-//  var myTable = new DataTables ("#stationsTable", {
-//      paging: false,
-//      scrollCollapse: true,
-//      scrollY: '200px'
-//  });
 
    // Close
    //
@@ -361,6 +359,117 @@ function fullExtent()
   {
    //console.log("setMapExtent");
    map.fitBounds(allSites.getBounds());
+  }
+
+// Set custom print
+//
+function customPrint(mapRef)
+  {
+   console.log("Install customPrint");
+
+   if(mapRef._size)
+     {
+      const width  = mapRef._size.x;
+      const height = mapRef._size.y;
+   
+      const customSize = {
+          width,
+          height,
+          className: 'customPrintClass',
+          name: 'Custom print'
+      };
+   
+      printPlugin = L.easyPrint({
+          //hidden: true,
+          title: 'Export Map',
+          exportOnly: true,
+          hideControlContainer: false,
+          //filename: filename,
+          sizeModes: [customSize],
+          //hideClasses: ['leaflet-control-zoomhome', 'leaflet-control-easyPrint'],
+          //hideControlContainer: true,
+          tileWait: 5000,
+          spinnerBgColor: '#21610B',
+          customSpinnerClass: 'spinner-border'
+      }).addTo(mapRef);
+   
+      $('ul.easyPrintHolder').remove()
+   
+      $('.leaflet-control-easyPrint').on('click', function() {
+      message = "Exporting image of map";
+      openModal(message);
+      fadeModal(3000);
+             exportImage();
+             setTimeout(function(){
+                 cleanUpMap();
+             },10000);
+      fadeModal(3000);
+      });
+     }
+   else
+     {
+      message = "Unable to process image of map";
+      console.log(message);
+      closeModal();
+      openModal(message);
+      fadeModal(3000);
+      return;
+     }
+  }
+
+// Set custom print
+//
+function exportImage()
+  {
+      console.log("exportImage");
+          
+      const filename = `klamath_wells-${new Date().toISOString().substr(0, 19)}`;
+      message = "Exporting map to image file " + filename;
+      console.log(message);
+      
+      printPlugin.options.customWindowTitle = $('#stationsCaption').text();
+      message = ['<span id="imageTitle">', $('#stationsCaption').text(), '</span>'].join('');
+      //console.log(message);
+      $(message).insertBefore('.leaflet-control-zoomhome');
+      $('#imageTitle').show();
+      $('.leaflet-control-zoomhome').hide();
+      $('.leaflet-control-easyPrint').hide();
+      printPlugin.printMap('customPrintClass', filename)
+  }
+
+// Set custom print
+//
+function cleanUpMap()
+  {
+      message = "Exported map";
+      console.log(message);
+      $('#imageTitle').remove();
+      $('.leaflet-control-zoomhome').show();
+      $('.leaflet-control-easyPrint').show();
+  }
+
+// Set custom print
+//
+function customPrint2 () 
+  {
+
+   // Add custom print option
+   //
+   var a3Landscape = {
+       width: 100,
+       height: 100,
+       className: 'a3CssClass',
+       name: 'Custom print'
+   };
+
+   // Print option
+   //
+   var printPlugin = L.easyPrint({
+       title: 'Print map',
+       position: 'topleft',
+       filename: 'klamathWells',
+       sizeModes: ['Current', 'A4Portrait', 'A4Landscape', a3Landscape]
+   }).addTo(map); 
   }
 
 // Build site summary table
