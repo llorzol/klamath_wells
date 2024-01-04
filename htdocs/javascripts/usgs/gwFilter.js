@@ -4,8 +4,8 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.20
- * December 20, 2023
+ * version 3.21
+ * January 4, 2024
 */
 
 /*
@@ -536,7 +536,10 @@ function makeGwChangeMap(gwChanges)
          var site_id         = properties.site_id;
 
          //console.log("Site " + site_id);
-         myTable.cell('#gw_' + site_id).data(table_txt);       
+         if($('#gw_' + site_id).length > 0)
+           {
+            myTable.cell('#gw_' + site_id).data(table_txt);
+           }
 
          if(mapBounds.contains(site.getLatLng()))
            {
@@ -614,7 +617,10 @@ function makeGwChangeMap(gwChanges)
  
          // Add text to gw change column in table
          //
-         myTable.cell('#gw_' + site_id).data(table_txt);
+         if($('#gw_' + site_id).length > 0)
+           {
+            myTable.cell('#gw_' + site_id).data(table_txt);
+           }
         }
    });
 
