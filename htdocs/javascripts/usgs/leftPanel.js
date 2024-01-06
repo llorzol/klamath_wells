@@ -5,8 +5,8 @@
  *  a list of sites in a left panel that is linked to the sites on
  *  on the web map.
  *
- * version 3.12
- * December 20, 2023
+ * version 3.13
+ * January 6, 2024
 */
 
 /*
@@ -91,7 +91,7 @@ $("#monitoringStatus").on( "change", function( evt ) {
  
 // Enable selection by USGS, OWRD, or CDWR Id 
 //
-$("#finderLinks").on( "click", function( evt ) {
+$("#finderLinks").on( "change", function( evt ) {
  
    $("#searchSites").val('');
  
@@ -111,12 +111,12 @@ $("#finderLinks").on( "click", function( evt ) {
  
 });
 
-// Read parameter codes from NwisWeb
+// Set leftPanel
 //
 function leftPanel(mySiteList)
   {
    console.log("leftPanel");
-   //console.log(mySiteList);
+   console.log("mySiteList  --> " + mySiteList.length);
    //console.log(sortColuumn);
 
    var siteSelection  = [];
@@ -132,6 +132,11 @@ function leftPanel(mySiteList)
    //
    var myStatus = $("#monitoringStatus").prop('value');
    //console.log("myStatus " + myStatus);
+
+   // Check what the agency currently set to
+   //
+   var QueryOption = $("#finderLinks").prop('value');
+   //console.log("setFinderFilter --> " + QueryOption);
    
    // Close popup
    //
@@ -168,7 +173,7 @@ function leftPanel(mySiteList)
       var loc_web_ds      = mySiteInfo[site_id].loc_web_ds;
       var coordinates     = mySiteInfo[site_id].coordinates;
       var gw_status       = mySiteInfo[site_id].gw_status;
-      var myIcon          = setIcon(site_id, site_tp_cd, gw_status);
+      var myIcon          = mySiteInfo[site_id].icon;
 
       var myTitle         = [];
       if(site_no) { myTitle.push("USGS " + site_no); }
@@ -325,7 +330,7 @@ function buildSiteList()
 
    // Check what the agency currently set to
    //
-   var QueryOption = $("button#finder").prop('value');
+   var QueryOption = $("#finderLinks").prop('value');
    //console.log("setFinderFilter --> " + QueryOption);
 
    console.log("buildSiteList myAgency " + myAgency + " myStatus " + myStatus + " Search Column " + QueryOption);
@@ -380,7 +385,7 @@ function buildSiteList()
             //console.log("Site " + siteID);
             //console.log(gw_agency_cd);
 
-            var siteFlag        = false;
+            var siteFlag          = false;
 
             site.setOpacity(0.1);
 
@@ -528,7 +533,8 @@ function buildSiteList()
 
                // Add layer
                //                  
-               myIcon = setIcon(site_id, site_tp_cd, icon_status);
+               myIcon                   = setIcon(site_id, site_tp_cd, icon_status);
+               mySiteInfo[site_id].icon = myIcon;
 
                // Add layer
                //
@@ -547,10 +553,11 @@ function buildSiteList()
                          
                   mySiteList.push({
                       'site_id': site_id,
-                      'station_nm': station_nm,
                       'site_no': site_no,
                       'coop_site_no': coop_site_no,
                       'cdwr_id': cdwr_id,
+                      'state_well_nmbr': state_well_nmbr,
+                      'station_nm': station_nm,
                       'site_status': icon_status,
                       'site_icon': myIcon
                   });
@@ -596,7 +603,7 @@ function setFinderFilter()
 
    // Check what the agency currently set to
    //
-   var QueryOption = $("button#finder").prop('value');
+   var QueryOption = $("#finderLinks").prop('value');
    console.log("setFinderFilter --> " + QueryOption);
         
    // Set
@@ -613,13 +620,15 @@ function setFinderFilter()
    //
    for(var i = 0; i < mySiteList.length; i++)
      {
-      //console.log(mySiteList[i]);
+      console.log(mySiteList[i]);
       var site_id         = mySiteList[i].site_id;
-      var site_no         = mySiteInfo[site_id].site_no;
-      var coop_site_no    = mySiteInfo[site_id].coop_site_no;
-      var state_well_nmbr = mySiteInfo[site_id].state_well_nmbr;
-      var cdwr_id         = mySiteInfo[site_id].cdwr_id;
-      var station_nm      = mySiteInfo[site_id].station_nm;
+      var site_no         = mySiteList[i].site_no;
+      var coop_site_no    = mySiteList[i].coop_site_no;
+      var cdwr_id         = mySiteList[i].cdwr_id;
+      var state_well_nmbr = mySiteList[i].state_well_nmbr;
+      var station_nm      = mySiteList[i].station_nm;
+      var site_status     = mySiteList[i].site_status;
+      var site_icon       = mySiteList[i].site_icon;
 
       var siteFlag        = false;
 
@@ -629,13 +638,13 @@ function setFinderFilter()
          //else if(site_no.length > 0) { siteCount = 1; }
         }
 
-      else if(/^USGS/i.test(QueryOption))
+      else if(/^bySiteNumber/i.test(QueryOption))
         {
          if(site_no) { siteFlag = true; }
          sortColuumn = 'site_no';
         }
 
-      else if(/^Station/i.test(QueryOption))
+      else if(/^byStationName/i.test(QueryOption))
         {
          if(station_nm) { siteFlag = true; }
          sortColuumn = 'station_nm';
@@ -643,7 +652,7 @@ function setFinderFilter()
          //else if(station_nm.length > 0) { siteCount = 1; }
         }
 
-      else if(/^OWRD/i.test(QueryOption))
+      else if(/^byWellLogId/i.test(QueryOption))
         {
          if(coop_site_no) { siteFlag = true; }
          sortColuumn = 'coop_site_no';
@@ -651,7 +660,7 @@ function setFinderFilter()
          //else if(coop_site_no.length > 0) { siteCount = 1; }
         }
 
-      else
+      else if(/^byCdwrId/i.test(QueryOption))
         {
          if(cdwr_id) { siteFlag = true; }
          sortColuumn = 'cdwr_id';
@@ -659,9 +668,25 @@ function setFinderFilter()
          //else if(state_well_nmbr.length > 0) { siteCount = 1; }
         }
 
+      else
+        {
+         if(state_well_nmbr) { siteFlag = true; }
+         sortColuumn = 'state_well_nmbr';
+         sortType    = 'other';
+         //else if(state_well_nmbr.length > 0) { siteCount = 1; }
+        }
+
       if(siteFlag)
         {
-         newList.push({'site_id': site_id, 'station_nm': station_nm, 'site_no': site_no, 'coop_site_no': coop_site_no, 'cdwr_id': cdwr_id});
+         newList.push({'site_id': site_id,
+                       'site_no': site_no,
+                       'coop_site_no': coop_site_no,
+                       'cdwr_id': cdwr_id,
+                       'state_well_nmbr': state_well_nmbr,
+                       'station_nm': station_nm,
+                       'site_status': site_status,
+                       'site_icon': site_icon
+                      });
          //console.log("Site " + coop_site_no + " on map");
         }
     }

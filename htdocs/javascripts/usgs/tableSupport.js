@@ -4,8 +4,8 @@
  * datatablesSupport is a JavaScript library to provide a set of functions to build
  *  a table with buttons to export table content.
  *
- * version 3.01
- * December 19, 2023
+ * version 3.02
+ * January 5, 2024
 */
 
 /*
@@ -159,6 +159,111 @@ function DataTables (tableSelector)
      // TableSorter - New Version with Fixed Headers
      //-------------------------------------------------
      var table = jQuery(tableSelector).DataTable( {
+         rowGroup: {dataSrc: 1 },
+         "paging":    false,
+         scrollCollapse: true,
+         scrollY: '40vh',
+         "ordering":  true,
+         //"info":      false,
+         //"searching": false,
+         "autoWidth": true,
+         "stripeClasses": [],
+         "bAutoWidth": false,
+         "columnDefs": [
+            {
+                "targets": [ 6 ],
+                "visible": false,
+                "searchable": false
+            }],
+         "order": [[2, 'asc' ]],
+         dom: 'Bfrtip',
+         buttons: [
+            {
+                extend: 'excelHtml5',
+                text: 'Excel',
+                sheetName: "KlamathWells",
+                messageTop: myTitle,
+                title: '',
+                exportOptions: {
+                    columns: [0, 2, 3, 4, 5, 6, 7]
+                },
+                    customize: function ( xlsx ) {
+                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                        $('row:first c', sheet).attr( 's', '17' );
+                        
+                        // Get unique values from rowGroup.dataSrc column
+                        //
+                        var groupNames = [... new Set( table.column(0).data().toArray() )];
+                        //console.log('Groups:', groupNames);
+        
+                        // Loop over all cells in sheet
+                        //
+                        //$('row a', sheet).each( function () {
+                        var skippedHeader = false;
+                        $('row c', sheet).each( function () {
+                            //console.log(" Row " + $(this).text());
+                            
+                            if (skippedHeader) {
+                                
+                                // If active
+                                //
+                                if ( $('is t', this).text().indexOf("Active") > -1 ) {
+                                   $(this).attr('s', '37');
+                               }
+        
+                               else if ( $('is t', this).text().indexOf("Inactive") > -1 ) {
+                                   $(this).attr('s', '2');
+                               }
+                            }
+                            else {
+                                skippedHeader = true;
+                            }
+                        });
+                    }
+            },
+            {
+                extend: 'print',
+                messageTop: myTitle,
+                autoPrint: false,
+                exportOptions: {
+                    columns: [0, 2, 3, 4, 5, 6, 7]
+                },
+                customize: function (doc) {
+                    $(doc.document.body).find('h1').css('font-size', '16pt');
+                    $(doc.document.body).find('h1').css('text-align', 'center');
+                    $(doc.document.body).find('h1').css('font-weight:', 'bold');
+                    $(doc.document.body).find('div').css('font-size', '14pt');
+                    $(doc.document.body).find('div').css('text-align', 'center');
+                    $(doc.document.body).find('div').css('font-weight:', 'bold');
+                    $(doc.document.body).find('thead').css('font-size', '12pt');
+                    $(doc.document.body).find('tbody').css('font-size', '10pt');
+                }
+            },
+            {
+                extend: 'pdfHtml5',
+                messageTop: myTitle,
+                autoPrint: false,
+                exportOptions: {
+                    columns: [0, 2, 3, 4, 5, 6, 7]
+                },
+                customize: function (doc) {
+                    doc.defaultStyle.fontSize = 8;
+                    doc.styles.tableHeader.fontSize = 8;
+                }
+            }
+        ]
+     });
+  }
+
+function DataTablesSave1 (tableSelector) 
+  {
+     console.log("datatablesInit " + jQuery(tableSelector).length);
+     var myTitle = $('caption#stationsCaption').text();
+     console.log("myTitle " + myTitle);
+
+     // TableSorter - New Version with Fixed Headers
+     //-------------------------------------------------
+     var table = jQuery(tableSelector).DataTable( {
         "paging":    false,
          scrollCollapse: true,
          scrollY: '40vh',
@@ -192,7 +297,7 @@ function DataTables (tableSelector)
      });
   }
 
-function DataTablesSave (tableSelector) 
+function DataTablesSave2 (tableSelector) 
   {
      console.log("datatablesInit " + jQuery(tableSelector).length);
      var myTitle = $('caption#stationsCaption').text();

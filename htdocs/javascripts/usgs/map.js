@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.16
- * January 4, 2024
+ * version 3.17
+ * January 6, 2024
 */
 
 /*
@@ -524,8 +524,8 @@ function createTable (mySiteSet)
 
        summary_table.push('<table id="stationsTable" class="stations_table">');
        summary_table.push('<caption id="stationsCaption">' +  myCaption.join(" ") + '</caption>');
-       summary_table.push('<thead>');
-       summary_table.push('<tr>');
+       summary_table.push('<thead class="bottom-border">');
+       summary_table.push('<tr class="bottom-border">');
        summary_table.push(' <th>Status</th>');
        summary_table.push(' <th>Graph</th>');
        summary_table.push(' <th>USGS site number</th>');
@@ -545,6 +545,7 @@ function createTable (mySiteSet)
      {
       var siteID               = mySiteSet[i].site_id;
       var site_status          = mySiteSet[i].site_status;
+      var site_icon            = mySiteSet[i].site_icon;
           
       // Attributes
       //
@@ -603,7 +604,7 @@ function createTable (mySiteSet)
       //console.log("gw_agency_cd " + gw_agency_cd);
       //console.log("Site " + siteID + " rc_agency_cd " + rc_agency_cd);
 
-      var myIcon               = mySiteSet[i].site_icon;
+      var myIcon               = site_icon;
       var symbol_img_src       = myIcon.options.iconUrl;
          
       var gw_url               = gwLink + "site_id=" + site_id;
@@ -677,8 +678,8 @@ function createTable (mySiteSet)
         }
       summary_table.push(
                          ' <td class="symbols">',
-                         '<img alt="' + status + ' site" src="' + symbol_img_src + '">',
-                         status,
+                         '<img alt="' + site_status + ' site" src="' + symbol_img_src + '">',
+                         site_status,
                          ' </td>'
                         );
       
