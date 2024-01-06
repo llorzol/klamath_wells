@@ -105,7 +105,8 @@
           <option id="bySiteNumber" value="bySiteNumber wells">USGS Site Number</option>
           <option id="byStationName" value="byStationName wells">Station Name</option>
           <option id="byWellLogId" value="byWellLogId wells">OWRD Well Log ID</option>
-          <option id="byStateObs" value="byStateObs wells">CDWR State Obs Name</option>
+          <option id="byCdwrId" value="byStateObs wells">CDWR Site Code</option>
+          <option id="byStateObs" value="byStateObs wells">State Obs Name</option>
          </select>
          <label for="searchSites" class="sr-only">Search</label>
          <input type="text" id="searchSites" placeholder="Enter search text"/>
@@ -253,6 +254,13 @@
  <!-- Supporting scripts  -->
  <script src="javascripts/required/jquery.dataTables.min.js"></script>
  <script src="javascripts/required/dataTables.bootstrap5.min.js"></script>
+ <script src="javascripts/required/dataTables.buttons.min.js"></script>
+ <link rel="stylesheet" href="css/required/buttons.dataTables.min.css"/>
+ <script src="javascripts/required/jszip.min.js"></script>
+ <script src="javascripts/required/pdfmake.min.js"></script>
+ <script src="javascripts/required/vfs_fonts.js"></script>
+ <script src="javascripts/required/buttons.html5.min.js"></script>
+ <script src="javascripts/required/buttons.print.min.js"></script>
  
  <!-- Local scripts -->
  <script src="javascripts/usgs/webRequest.js"></script>
