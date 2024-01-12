@@ -4,8 +4,8 @@
  * datatablesSupport is a JavaScript library to provide a set of functions to build
  *  a table with buttons to export table content.
  *
- * version 3.02
- * January 5, 2024
+ * version 3.03
+ * January 11, 2024
 */
 
 /*
@@ -185,7 +185,8 @@ function DataTables (tableSelector)
                 messageTop: myTitle,
                 title: '',
                 exportOptions: {
-                    columns: [0, 2, 3, 4, 5, 6, 7]
+                    columns: [0, 2, 3, 4, 5, 6, 7],
+                    rows: ':visible'
                 },
                     customize: function ( xlsx ) {
                         var sheet = xlsx.xl.worksheets['sheet1.xml'];
@@ -226,7 +227,8 @@ function DataTables (tableSelector)
                 messageTop: myTitle,
                 autoPrint: false,
                 exportOptions: {
-                    columns: [0, 2, 3, 4, 5, 6, 7]
+                    columns: [0, 2, 3, 4, 5, 6, 7],
+                    rows: ':visible'
                 },
                 customize: function (doc) {
                     $(doc.document.body).find('h1').css('font-size', '16pt');
@@ -244,7 +246,8 @@ function DataTables (tableSelector)
                 messageTop: myTitle,
                 autoPrint: false,
                 exportOptions: {
-                    columns: [0, 2, 3, 4, 5, 6, 7]
+                    columns: [0, 2, 3, 4, 5, 6, 7],
+                    rows: ':visible'
                 },
                 customize: function (doc) {
                     doc.defaultStyle.fontSize = 8;
