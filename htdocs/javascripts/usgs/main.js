@@ -4,8 +4,8 @@
  * Main is a JavaScript library to provide a set of functions to manage
  *  the web requests.
  *
- * version 3.13
- * January 6, 2024
+ * version 3.14
+ * January 14, 2024
 */
 
 /*
@@ -124,8 +124,8 @@ $(document).ready(function()
 
    // Set basin boundary
    //	
-   console.log("BasinBoundary " + BasinBoundary);
-   //if(typeof BasinBoundary !== "undefined" || !BasinBoundary)
+   //console.log("BasinBoundary " + BasinBoundary);
+           
    if(BasinBoundary)
      {
       console.log("Adding BasinBoundary " + BasinBoundary);
@@ -152,8 +152,8 @@ $(document).ready(function()
    var j       = 0;
    $.when.apply($, webRequests).then(function() {
         console.log('Responses');
-        console.log("Responses length " + arguments.length);
-        console.log(arguments);
+        //console.log("Responses length " + arguments.length);
+        //console.log(arguments);
 
         // Retrieve site information
         //
@@ -161,8 +161,8 @@ $(document).ready(function()
         if(arguments.length > 0)
           {
            var myInfo  = arguments[i];
-           console.log("arguments " + i);
-           console.log(arguments[i]);
+           //console.log("arguments " + i);
+           //console.log(arguments[i]);
 
            if(myInfo[1] === "success")
              {
@@ -189,7 +189,7 @@ $(document).ready(function()
         //
         i++;
         console.log("Retrieve groundwater change information ");
-        console.log(arguments[i]);
+        //console.log(arguments[i]);
         if(arguments.length > i)
           {
            var myInfo = arguments[i];
@@ -219,7 +219,7 @@ $(document).ready(function()
         //
         i++;
         console.log("Retrieve basin boundary " + i);
-        console.log(arguments[i]);
+        //console.log(arguments[i]);
         if(arguments.length > i)
           {
            var myInfo = arguments[i];
@@ -245,7 +245,7 @@ $(document).ready(function()
              }
           }
 
-        console.log("done with main");
+        //console.log("done with main");
         fadeModal(2000);
 
         buildMap();

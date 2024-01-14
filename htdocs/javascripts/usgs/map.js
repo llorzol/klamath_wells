@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.17
- * January 6, 2024
+ * version 3.18
+ * January 14, 2024
 */
 
 /*
@@ -139,12 +139,6 @@ function buildMap()
            feature.properties.icon       = myIcon;
            mySiteInfo[site_id].icon      = myIcon;
            feature.properties.site_tp_cd = site_tp_cd;
-
-           if(site_id == "418174N1213955W001")
-           {
-               //console.log("Site " + site_id);
-               //console.log(mySiteInfo[site_id]);
-           }
                          
            // Build marker title
            //
@@ -192,10 +186,10 @@ function buildMap()
 
    // Add basin boundary
    //
-   console.log("BasinBoundary " + BasinBoundary);
    if(BasinBoundary)
      {
-      console.log("Adding BasinBoundary " + BasinBoundary);
+      console.log("Adding BasinBoundary ");
+         
       // Set basin boundary
       //	
       var  basinBoundary = L.geoJson(BasinBoundary, {
@@ -477,7 +471,7 @@ function customPrint2 ()
 function createTable (mySiteSet) 
   {
    console.log("createTable ");
-   console.log(mySiteSet);
+   //console.log(mySiteSet);
 
    // Set active date
    //
@@ -492,8 +486,8 @@ function createTable (mySiteSet)
    // Check what the network type currently set to
    //
    var myStatus = $("#monitoringStatus").prop('value');
-   //console.log("myStatus " + myStatus);
-   if(/^all/i.test(myStatus)) { myStatus = 'Active and Inactive'; }
+   console.log("myStatus " + myStatus);
+   if(/^all wells/i.test(myStatus)) { myStatus = 'Active and Inactive'; }
 
    // Create table caption
    //
@@ -601,8 +595,10 @@ function createTable (mySiteSet)
       var cdwr_rc_count        = mySiteInfo[siteID].cdwr_rc_count;
       var cdwr_rc_status       = mySiteInfo[siteID].cdwr_rc_status;
 
-      //console.log("gw_agency_cd " + gw_agency_cd);
-      //console.log("Site " + siteID + " rc_agency_cd " + rc_agency_cd);
+      //console.log(" Table");
+      //console.log("User myAgency " + myAgency + " myStatus " + myStatus);
+      //console.log("Site " + site_id + " Status ->" + site_status);
+      //console.log(" ");
 
       var myIcon               = site_icon;
       var symbol_img_src       = myIcon.options.iconUrl;
@@ -651,6 +647,7 @@ function createTable (mySiteSet)
                NumberOWRD++;
                if(/^active/i.test(site_status)) { NumberOWRDactive++; }
                else { NumberOWRDinactive++; }
+               //console.log(site_id);
               }
             if(site_agency_cd.includes("CDWR"))
               {

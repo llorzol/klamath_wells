@@ -5,8 +5,8 @@
  *  a list of sites in a left panel that is linked to the sites on
  *  on the web map.
  *
- * version 3.13
- * January 6, 2024
+ * version 3.14
+ * January 14, 2024
 */
 
 /*
@@ -356,8 +356,9 @@ function buildSiteList()
             var state_well_nmbr   = properties.state_well_nmbr;
             var site_tp_cd        = properties.site_tp_cd;
                
-            var gw_status         = properties.gw_status;
             var gw_agency_cd      = properties.gw_agency_cd;
+            var gw_status         = properties.gw_status;
+               
             var rc_agency_cd      = properties.rc_agency_cd;
             var rc_status         = properties.rc_status;
  
@@ -380,14 +381,13 @@ function buildSiteList()
             var longitude         = site.feature.geometry.coordinates[0];
             var myIcon            = properties.icon;
  
-            var icon_status       = gw_status;
- 
-            //console.log("Site " + siteID);
-            //console.log(gw_agency_cd);
-
+            var site_status       = 'Inactive';
             var siteFlag          = false;
 
             site.setOpacity(0.1);
+ 
+            //console.log("Site " + siteID);
+            //console.log(gw_agency_cd);
 
             // All monitoring agency and check status
             //
@@ -396,52 +396,56 @@ function buildSiteList()
                //console.log(" ");
                //console.log("Site " + site_id + " myAgency " + myAgency + " myStatus " + myStatus);
                //console.log("Periodic " + gw_status + " Recorder " + rc_status + " siteFlag " + siteFlag);
-               if(/all/i.test(myStatus))
+               if(/^all wells/i.test(myStatus))
                  {
-                     if(myStatus.toLowerCase().includes('inactive'))
-                     {
-                         if(gw_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; siteFlag = true; }
-                     }
-                     else if(myStatus.toLowerCase().includes('active'))
-                     {
-                         if(gw_status.toLowerCase() == 'active') { siteFlag = true; }
-                         if(rc_status.toLowerCase() == 'active') { siteFlag = true; }
-                     }
-                     else { siteFlag = true; }
+                     if(gw_status.toLowerCase() == 'active')   { site_status = 'Active'; }
+                     if(gw_status.toLowerCase() == 'inactive') { site_status = 'Inactive'; }
+                     siteFlag = true;
                  }
-               else if(/periodic/i.test(myStatus))
+               else if(/^all active/i.test(myStatus))
                  {
-                     if(myStatus.toLowerCase().includes('inactive'))
-                     {
-                         if(gw_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; siteFlag = true; }
-                     }
-                     else if(myStatus.toLowerCase().includes('active'))
-                     {
-                         if(gw_status.toLowerCase() == 'active') { siteFlag = true; }
-                     }
-                     else { siteFlag = true; }
+                     if(gw_status.toLowerCase() == 'active') { site_status = 'Active'; siteFlag = true; }
+                     if(rc_status.toLowerCase() == 'active') { site_status = 'Active'; siteFlag = true; }
                  }
-               else if(/recorders/i.test(myStatus))
+               else if(/^all inactive/i.test(myStatus))
                  {
-                     if(myStatus.toLowerCase().includes('inactive'))
+                     if(gw_status.toLowerCase() == 'inactive') { site_status = 'Inactive'; siteFlag = true; }
+                 }
+               else if(/^periodic wells/i.test(myStatus))
+                 {
+                     if(gw_status.toLowerCase() == 'active')   { site_status = 'Active'; }
+                     if(gw_status.toLowerCase() == 'inactive') { site_status = 'Inactive'; }
+                     siteFlag = true;
+                 }
+               else if(/^active periodic/i.test(myStatus))
+                 {
+                     if(gw_status.toLowerCase() == 'active') { site_status = 'Active'; siteFlag = true; }
+                 }
+               else if(/^inactive periodic/i.test(myStatus))
+                 {
+                     if(gw_status.toLowerCase() == 'inactive') { site_status = 'Inactive'; siteFlag = true; }
+                 }
+               else if(/^recorders wells/i.test(myStatus))
+                 {
+                     if(rc_agency_cd)
                      {
-                         if(rc_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; siteFlag = true; }
+                         if(rc_status.toLowerCase() == 'active') { site_status = 'Active'; }
+                         if(rc_status.toLowerCase() == 'inactive') { site_status = 'Inactive'; }
+                         siteFlag = true;
                      }
-                     else if(myStatus.toLowerCase().includes('active'))
+                 }
+               else if(/^active recorders/i.test(myStatus))
+                 {
+                     if(rc_agency_cd)
                      {
-                         if(rc_status.toLowerCase() == 'active') { siteFlag = true; }
+                         if(rc_status.toLowerCase() == 'active') { site_status = 'Active';  siteFlag = true; }
                      }
-                     else
+                 }
+               else if(/^inactive recorders/i.test(myStatus))
+                 {
+                     if(rc_agency_cd)
                      {
-                         if(rc_agency_cd)
-                         {
-                             if(rc_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; }
-                             else if(rc_status.toLowerCase() == 'active')
-                             {
-                                 icon_status = 'Active';
-                             }
-                             siteFlag = true;
-                         }
+                         if(rc_status.toLowerCase() == 'inactive') { site_status = 'Inactive';  siteFlag = true; }
                      }
                  }
                else
@@ -455,63 +459,69 @@ function buildSiteList()
             //
             else if(jQuery.inArray(myAgency,gw_agency_cd) > -1 || jQuery.inArray(myAgency,rc_agency_cd) > -1)
                {
-               var agency_gw_status = properties[myAgency.toLowerCase() + '_status']
-               var agency_rc_cd     = properties[myAgency.toLowerCase() + '_rc_agency_cd']
-               var agency_rc_status = properties[myAgency.toLowerCase() + '_rc_status']
-               //console.log(" ");
-               //console.log("Site " + site_id + " myAgency " + myAgency + " myStatus " + myStatus);
-               //console.log("Periodic " + gw_status + " Recorder " + rc_status);
-               //console.log("Agency gw agency |" + agency_gw_status + "|");
-               //console.log("Agency rc agency |" + agency_rc_status + "|");
+                   var gw_status = 'None';
+                   if(jQuery.inArray(myAgency,gw_agency_cd) > -1) {
+                       gw_status = properties[myAgency.toLowerCase() + '_status'];
+                   }
+                   var rc_status    = 'None';
+                   if(jQuery.inArray(myAgency,rc_agency_cd) > -1) {
+                       rc_agency_cd = true;
+                       rc_status    = properties[myAgency.toLowerCase() + '_rc_status'];
+                   }
+                   else {
+                       rc_agency_cd = null;
+                   }
                    
-               if(/all/i.test(myStatus))
+               if(/^all wells/i.test(myStatus))
                  {
-                     if(agency_gw_status.toLowerCase() == 'active') { siteFlag = true; }
-                     else if(agency_gw_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; siteFlag = true; }
-                     else { siteFlag = true; }
-
-                     if(agency_rc_status.toLowerCase() == 'active') { siteFlag = true; }
-                     else if(agency_rc_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; siteFlag = true; }
-                     else { siteFlag = true; }
+                     if(gw_status.toLowerCase() == 'inactive') { site_status = 'Inactive'; siteFlag = true; }
+                     if(gw_status.toLowerCase() == 'active')   { site_status = 'Active';   siteFlag = true; }
+                     if(rc_status.toLowerCase() == 'active')   { site_status = 'Active';   siteFlag = true; }
                  }
-               else if(myStatus.toLowerCase().includes('periodic'))
+               else if(/^all active/i.test(myStatus))
                  {
-                     if(jQuery.inArray(myAgency,gw_agency_cd) > -1)
+                     if(gw_status.toLowerCase() == 'active') { site_status = 'Active'; siteFlag = true; }
+                     if(rc_status.toLowerCase() == 'active') { site_status = 'Active'; siteFlag = true; }
+                 }
+               else if(/^all inactive/i.test(myStatus))
+                 {
+                     if(gw_status.toLowerCase() == 'inactive' && rc_status.toLowerCase() == 'inactive') { siteFlag = true; }
+                 }
+               else if(/^periodic wells/i.test(myStatus))
+                 {
+                     if(gw_status.toLowerCase() == 'active')   { site_status = 'Active'; }
+                     if(gw_status.toLowerCase() == 'inactive') { site_status = 'Inactive'; }
+                     siteFlag = true;
+                 }
+               else if(/^active periodic/i.test(myStatus))
+                 {
+                     if(gw_status.toLowerCase() == 'active') { site_status = 'Active'; siteFlag = true; }
+                 }
+               else if(/^inactive periodic/i.test(myStatus))
+                 {
+                     if(gw_status.toLowerCase() == 'inactive') { site_status = 'Inactive'; siteFlag = true; }
+                 }
+               else if(/^recorders wells/i.test(myStatus))
+                 {
+                     if(rc_agency_cd)
                      {
-                         if(myStatus.toLowerCase().includes('inactive'))
-                         {
-                             if(agency_gw_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; siteFlag = true; }
-                         }
-                         else if(myStatus.toLowerCase().includes('active'))
-                         {
-                             if(agency_gw_status.toLowerCase() == 'active') { siteFlag = true; }
-                         }
-                         else
-                         {
-                             if(agency_gw_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; }
-                             else if(agency_gw_status.toLowerCase() == 'active') { icon_status = 'Active'; }
-                             siteFlag = true;
-                         }
+                         if(rc_status.toLowerCase() == 'active')   { site_status = 'Active'; }
+                         if(rc_status.toLowerCase() == 'inactive') { site_status = 'Inactive'; }
+                         siteFlag = true;
                      }
                  }
-               else if(myStatus.toLowerCase().includes('recorders'))
+               else if(/^active recorders wells/i.test(myStatus))
                  {
-                     if(jQuery.inArray(myAgency,rc_agency_cd) > -1)
+                     if(rc_agency_cd)
                      {
-                         if(myStatus.toLowerCase().includes('inactive'))
-                         {
-                             if(agency_rc_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; siteFlag = true; }
-                         }
-                         else if(myStatus.toLowerCase().includes('active'))
-                         {
-                             if(agency_rc_status.toLowerCase() == 'active') { siteFlag = true; }
-                         }
-                         else
-                         {
-                             if(agency_rc_status.toLowerCase() == 'inactive') { icon_status = 'Inactive'; }
-                             else if(agency_rc_status.toLowerCase() == 'active') { icon_status = 'Active'; }
-                             siteFlag = true;
-                         }
+                         if(rc_status.toLowerCase() == 'active') { site_status = 'Active';  siteFlag = true; }
+                     }
+                 }
+               else if(/^inactive recorders wells/i.test(myStatus))
+                 {
+                     if(rc_agency_cd)
+                     {
+                         if(rc_status.toLowerCase() == 'inactive') { site_status = 'Inactive';  siteFlag = true; }
                      }
                  }
                else
@@ -533,7 +543,7 @@ function buildSiteList()
 
                // Add layer
                //                  
-               myIcon                   = setIcon(site_id, site_tp_cd, icon_status);
+               myIcon                   = setIcon(site_id, site_tp_cd, site_status);
                mySiteInfo[site_id].icon = myIcon;
 
                // Add layer
@@ -558,7 +568,7 @@ function buildSiteList()
                       'cdwr_id': cdwr_id,
                       'state_well_nmbr': state_well_nmbr,
                       'station_nm': station_nm,
-                      'site_status': icon_status,
+                      'site_status': site_status,
                       'site_icon': myIcon
                   });
                
@@ -620,7 +630,7 @@ function setFinderFilter()
    //
    for(var i = 0; i < mySiteList.length; i++)
      {
-      console.log(mySiteList[i]);
+      //console.log(mySiteList[i]);
       var site_id         = mySiteList[i].site_id;
       var site_no         = mySiteList[i].site_no;
       var coop_site_no    = mySiteList[i].coop_site_no;
