@@ -4,8 +4,8 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.21
- * January 4, 2024
+ * version 3.22
+ * January 29, 2024
 */
 
 /*
@@ -522,8 +522,13 @@ function makeGwChangeMap(gwChanges)
     // Toggle the visibility of column
     //
     var myTable = $('#stationsTable').DataTable();
-      
-    myTable.column([6]).visible( true );
+    myTable.columns().header().to$().each(function( index ) {
+        console.log( index + ": " + $( this ).text() );
+        if($( this ).text() === 'Groundwater Change') {
+            myTable.column([index]).visible( true );
+        }
+    });
+    //myTable.column([6]).visible( true );
 
    // Build site list
    //
@@ -689,8 +694,13 @@ function clearCustomLevels()
    // Toggle the visibility
    //
    var myTable = $('#stationsTable').DataTable();
- 
-   myTable.column([6]).visible( false );
+   myTable.columns().header().to$().each(function( index ) {
+       console.log( index + ": " + $( this ).text() );
+       if($( this ).text() === 'Groundwater Change') {
+           myTable.column([index]).visible( false );
+       }
+   });
+   //myTable.column([6]).visible( false );
 
    $('.monitoringAgency').show();
    $('.monitoringStatus').show();
