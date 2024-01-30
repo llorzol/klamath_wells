@@ -4,8 +4,8 @@
  * Main is a JavaScript library to provide a set of functions to manage
  *  the web requests.
  *
- * version 3.14
- * January 14, 2024
+ * version 3.15
+ * January 29, 2024
 */
 
 /*
@@ -80,7 +80,7 @@ $(document).ready(function()
    //
    $("#monitoringAgency").val('ALL');
    $("#monitoringStatus").val('All wells');
-   $("#finderLinks").val('All wells');
+   $("#finderLinks").val('byStationName wells');
 
    // Build ajax requests
    //
