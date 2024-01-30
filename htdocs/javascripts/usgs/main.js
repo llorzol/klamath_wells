@@ -44,19 +44,24 @@ var imageSrc             = "images/";
 //
 var projectName          = "project=klamath_wells";
 
-var gwLink               = "https://staging-or.water.usgs.gov/discrete_gw/discrete_gw.html?" + projectName + "&";
-var gwLink               = "https://or.water.usgs.gov/projs_dir/discrete_gw/discrete_gw.html?" + projectName + "&";
-var gwLink               = "http://127.0.0.1/discrete_gw/discrete_gw.html?" + projectName + "&";
+var gwLink               = "http://127.0.0.1/discrete_gw/index.html?" + projectName + "&";
+//var gwLink               = "https://or.water.usgs.gov/projs_dir/discrete_gw/index.html?" + projectName + "&";
+//var gwLink               = "https://staging-or.water.usgs.gov/discrete_gw/index.html?" + projectName + "&";
 
 var nwisLink             = "https://waterdata.usgs.gov/nwis/";
-var lithologyLink        = "https://staging-or.water.usgs.gov/lithology/lithology.html?";
-var lithologyLink        = "https://or.water.usgs.gov/projs_dir/lithology/lithology.html?";
-var wellconstructionLink = "https://staging-or.water.usgs.gov/well_construction/well_construction.html?";
-var wellconstructionLink = "https://or.water.usgs.gov/projs_dir/well_construction/well_construction.html?";
+
+var lithologyLink        = "http://127.0.0.1/lithology/index.html?";
+//var lithologyLink        = "https://staging-or.water.usgs.gov/lithology/index.html?";
+//var lithologyLink        = "https://or.water.usgs.gov/projs_dir/lithology/index.html?";
+
+var wellconstructionLink = "http://127.0.0.1/well_construction/index.html?";
+//var wellconstructionLink = "https://staging-or.water.usgs.gov/well_construction/index.html?";
+//var wellconstructionLink = "https://or.water.usgs.gov/projs_dir/well_construction/index.html?";
+
 var dvLink               = "https://waterdata.usgs.gov/nwis/dv?";
 
 var owrdLink             = 'https://apps.wrd.state.or.us/apps/gw/gw_info/gw_hydrograph/Hydrograph.aspx?gw_logid='
-//var cdwrLink             = 'https://wdl.water.ca.gov/WaterDataLibrary/GroundwaterBrowseData.aspx?SiteCode='
+
 var cdwrLink             = 'https://wdl.water.ca.gov/WaterDataLibrary/GroundWaterLevel.aspx?SiteCode='
 
 // Global objects
