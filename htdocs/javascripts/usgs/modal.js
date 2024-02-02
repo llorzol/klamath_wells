@@ -2,8 +2,8 @@
  *
  * Dialog is a JavaScript library to display modal windows.
  *
- * version 1.10
- * February 27, 2019
+ * version 2.02
+ * January 26, 2024
  */
 
 /*
@@ -31,15 +31,9 @@
 */
 var modalDialog = [];
 
-//modalDialog.push('<!-- Modal -->');
-modalDialog.push('<div class="modal fade" id="messageDialog" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">');
+modalDialog.push('<div class="modal fade" id="messageDialog">');
 modalDialog.push('  <div class="modal-dialog" role="document">');
 modalDialog.push('    <div class="modal-content">');
-//modalDialog.push('      <div class="modal-header">');
-//modalDialog.push('        <button type="button" class="close" data-dismiss="modal" aria-label="Close">');
-//modalDialog.push('          <span aria-hidden="true">&times;</span>');
-//modalDialog.push('        </button>');
-//modalDialog.push('      </div>');
 modalDialog.push('      <div class="modal-body">');
 modalDialog.push('       <div><img src="images/ajax-loader.gif"></div>');
 modalDialog.push('       <span id="message"</span>');
@@ -62,12 +56,14 @@ function openModal(message) {
 
 function closeModal() {
     jQuery("#messageDialog").modal('hide');
+    //jQuery("#messageDialog").remove();
 }
 
 function fadeModal(fadeTime) {
     // console.log("Fading message");
     setTimeout(function() {
         jQuery("#messageDialog").modal('hide');
+        //jQuery("#messageDialog").remove();
     }, fadeTime);
 }
 

@@ -64,11 +64,11 @@ var owrdLink             = 'https://apps.wrd.state.or.us/apps/gw/gw_info/gw_hydr
 
 var cdwrLink             = 'https://wdl.water.ca.gov/WaterDataLibrary/GroundWaterLevel.aspx?SiteCode='
 
-// Global objects
-//
-var BasinBoundary    = "gis/klamath_wells_studyarea.json";
+var BasinBoundary        = "gis/klamath_wells_studyarea.json";
 
-var delimiter        = '\t';
+var delimiter            = '\t';
+
+var aboutTitle           = 'Upper Klamath Basin Well Mapper';
 
 
 // Prepare when the DOM is ready 
