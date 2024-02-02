@@ -1,0 +1,138 @@
+<hr></hr> 
+ <p>
+  The data tools control allows the user to filter,
+  display, and plot both groundwater measured
+  data. 
+ </p>
+<hr></hr>
+ <b>Monitoring Agency</b>
+ <div>
+  To view a subset of sites on the map that have been measurement by all the agencies or one of agencies:
+  USGS, OWRD, CDWR. <b>This tool selects from only those sites visible 
+  on the map.</b>
+  <ul>
+   <li><b>USGS - United States Geological Survey</b></li>
+   <li><b>OWRD - Oregon Water Resources Department</b></li>
+   <li><b>CDWR - California Department of Water Resources</b></li>
+  </ul>
+ </div>
+ <div>
+  Markers that fit the filter criteria will be plotted on the map and displayed in the tables below the map.
+ </div>
+<hr></hr>
+ <b>Monitoring Status</b>
+ <div>
+  To view a subset of sites on the map that have been measured within the last year - active, or have NOT
+  been measured within the last year - inactive, or measured at least once - all by one or more of the
+  agencies: USGS, OWRD, CDWR. <b>This tool selects from only those sites visible 
+  on the map.</b>
+  <ul>
+   <li><b>All wells - Any well measured at least once</b></li>
+   <li><b>All active wells - Any well measured at least once within the last year</b></li>
+   <li><b>All inactive wells - Any well NOT measured at least once within the last year</b></li>
+   <li><b>All periodic wells - Any well with at least one field measurement</b></li>
+   <li><b>Active periodic wells - Any well with at least one field measurement within the last year</b></li>
+   <li><b>Inactive periodic wells - Any well with no field measurements within the last year</b></li>
+   <li><b>Recorder wells - Any well with on-site automated recording equipment</b></li>
+   <li><b>Active recorder wells - Any well with on-site automated recording equipment with measurements
+   recorded within the last year</b></li>
+   <li><b>Inactive recorder wells - Any well with on-site automated recording equipment with no measurements
+   recorded within the last year</b></li>
+  </ul>
+ </div>
+ <div>
+  Markers that fit the filter criteria will be plotted on the map and displayed in the tables below the map.
+ </div>
+<hr></hr>
+ <div><b>Groundwater Level Change</b></div>
+  <div>
+   The change map tool can be accessed by clicking the "Groundwater Level Change" tab in the data 
+   tools control. Using the change map tool you can view net groundwater-level changes over a range of time
+   periods. Data for individual wells are filtered to remove
+   measurements taken during active pumping because they do not
+   accurately represent conditions in the aquifer.  <b>This tool selects from only those sites visible 
+   on the map.</b>
+   <ul>
+    <li><b>How to View Groundwater-Level Changes</b>
+     <div>
+      <p>
+       Using the change map tool located to the left of the map, you can view net groundwater-level 
+       changes over a range of time periods.
+      </p>
+      <ul>
+       <li><b>Time Period</b>
+        <p>Use the dropdown menus to select the time period of interest (years and seasons).  
+           Clicking on a dropdown menu will toggle the menu open - scroll through options and 
+           click the desired option to select it.  Seasons are defined as follows:
+         <ul>
+          <li>January 1 - March 31</li>
+          <li>April 1 - June 31</li>
+          <li>July 1 - September 30</li>
+          <li>October 1 - December 31</li>
+         </ul>
+        </p>
+       </li>
+       <li><b>View Changes</b>
+        <p>To view groundwater-level changes, click the "Show Data" button.  If the 
+            time period selected is not chronological or does not return data, an alert 
+            message will appear on the screen.  If no data is returned, there were no well 
+            sites which had data recorded in both of the year/season pairs selected.  Select 
+            a different time period and continue.
+        </p>
+       </li>
+       <li><b>Limiting Results</b>
+        <p>By default, groundwater-level changes displayed are not limited.  If desired, 
+            you can choose to view results greater than a cutoff value. Use the last dropdown 
+            menu to select a cutoff value.  When a value is selected, only groundwater-level 
+            changes greater than or equal to the selected value will be displayed.
+        </p>
+       </li>
+       <li><b>Reset the Map</b>
+        <p>To reset the map to the original map state, click the "Reset Map" button.  
+            This will remove the current change map results from the map, displaying well 
+            information only.
+        </p>
+       </li>
+      </ul>
+     </div>
+    </li>
+   </ul>
+  </div>
+ <div>
+  Markers that fit the filter criteria will be plotted on the map and displayed in the tables below the map.
+ </div>
+<hr></hr>
+ <b>Site Finder</b>
+ <div>
+  The site filter may be accessed by clicking on the "Site Finder" tab 
+  in the data tools control.  To view a single site on the map that meet 
+  a certain criteria, two filtering options are available for both discretely
+  and continuously measured data. <b>This tool selects from only those sites visible 
+  on the map.</b>
+  <ul>
+   <li><b>Find Site by Site Number</b>
+    <div>USGS site numbers are 9-15 digit numbers that are unique to each site.</div>
+    <div>If you know your site number, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
+   </li>
+   <li><b>Find Site by Station Name</b>
+    <div>USGS station name are unique text assigned to each site.</div>
+    <div>If you know your station name, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
+   </li>
+   <li><b>Find Site by OWRD Well Log ID</b>
+    <div>OWRD name are unique text assigned to each site.</div>
+    <div>If you know your well log ID, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
+   </li>
+   <li><b>Find Site by OWRD State Observation Number</b>
+    <div>OWRD name are unique text assigned to each site.</div>
+    <div>If you know your state observation number, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
+   </li>
+   <li><b>Find Site by CDWR Site Code</b>
+    <div>CDWR name are unique text assigned to each site.</div>
+    <div>If you know CDWR site code, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
+   </li>
+  </ul>
+ </div>
+ <div>
+  Markers that fit the filter criteria will be highlighted on the
+  map.
+ </div>

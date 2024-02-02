@@ -1,0 +1,100 @@
+<div class="tutorials">
+ <div class="featureText">
+
+  <hr></hr> 
+  <div class="text" id="markers">
+   <p>Markers: Active <img src="icons/gw_act_30.png"> Inactive <img src="icons/gw_ina_30.png"> </p> 
+   <ul>
+    <li>Clicking on a marker will open a popup with basic site information.</li>
+    <li>Use the different links shown within the popup to investigate available groundwater information 
+        (see below for more information on each link).
+    </li>
+    <li>Use the <b class="linkText">DATA EXPLORATION TOOL </b> to investigate available groundwater 
+        information collected at each site.
+    </li>
+    <li>Each site has a status indicating whether it is an actively monitored site.  Active 
+        sites have been monitored within the past year.
+    </li>
+    <li>Clicking the <b class="linkText">Hydrograph</b> link in the popup will open a 
+        separate browser tab showing an interactive grapher for discrete groundwater measurements.
+    </li>
+    <li>Clicking the <b class="linkText">Well Log</b> link in the popup will open a 
+        link to the available well log filed by the driller for a well.
+    </li>
+    <li>Clicking the <b class="linkText">Well Lithology</b> link in the popup will open a 
+        link to the available well lithology log filed by the driller for a well. 
+    </li>
+    <li>Clicking the <b class="linkText">Well Construction</b> link in the popup will open a 
+        link to the available well construction filed by the driller for a well.
+    </li>
+   </ul>
+  </div>
+
+  <hr></hr>
+  <div class="text" id="layers">
+   <p> Map Legend </p> 
+    <ul>
+     <li>Shows the different symbols for different site types.</li>
+      <li><img src="icons/gw_act_30.png"> USGS/OWRD/CDWR Located Well [Measured within the last year]</li>
+      <li><img src="icons/gw_ina_30.png"> USGS/OWRD/CDWR Located Well [Not measured within the last year]</li>
+     <li><img src="icons/yellow_gw.png">Selected USGS/OWRD/CDWR Located Well</li>
+    </ul>
+   </div>
+  </div>
+
+  <hr></hr>
+  <div class="text" id="layers">
+   <p> Base map dropdown </p> 
+   <ul>
+    <li>This control allows the user to toggle different basemap layers to be shown on the map.</li>
+   </ul>
+   </div>
+
+   <hr></hr>
+   <div class="text" id="zoom">
+    <p><img src="icons/zoom.png"> Zoom Controls </p> 
+    <ul>
+     <li><b>Single-level Zooming:&nbsp;</b>To adjust zoom one level at a time, use the + and - buttons in the zoom control in the upper left corner of the map.</li>
+     <li> Click button <i class="fa fa-home"> </i> to zoom to the full extent of the map that will show all sites.</li>
+     <li><b>Box Zooming:&nbsp;</b>To zoom in on a rectangular area, press and hold the Shift key while drawing a box with your mouse.  When you release the mouse button, the map will zoom in on the rectangular area drawn with the mouse.</li>
+     <li><b>Advanced Options:&nbsp;</b>The zoom level box, located in the upper left corner of the map, displays the current zoom level and cursor coordinates.  Hovering your cursor over the zoom level box displays the following zooming options:</li>
+      <ul>
+       <li><b>Change Cursor Type:&nbsp;</b>The default cursor for the map is the grab cursor&nbsp;<img src="icons/grab.gif" /> but may be switched to a crosshairs cursor&nbsp;<img src="icons/cross.gif" />&nbsp;by clicking the image shown.</li>
+       <li><b>Scrollwheel Zooming:&nbsp;</b>By default, scrollwheel zooming with the mouse is disabled.  To turn this feature on and off, choose the "Scrollwheel Zoom" option.</li>
+      </ul>
+    </ul>
+   </div>
+
+  <hr></hr>
+  <div class="text" id="layers">
+   <p><i class="fa fa-home" style="line-height:1.65;"></i> Home </p> 
+   <p> This control allows the user to zoom the map to the project-wide view.
+  </div>
+
+   <hr></hr>
+   <div class="text" id="minimap">
+    <p><img src="icons/toggle.png"> Index Map </p> 
+    <ul>
+     <li>The index map, located in the bottom right corner of the main map, shows a view of the regional area outside of the main map view.</li>
+     <li>The index map has the same dragging and basemap options as the main map, although individual marker locations will not be shown.  Zoom options for the index map are limited to single-level and box zooming.</li>
+     <li>The orange and blue rectangles show the main map view and the bounds of the study area, respectively.  If the two rectangles overlap in the index map, the study area will be viewable on the main map.</li>
+     <li>The index map can be minimized using the arrow icon <img src="icons/toggle.png"> in its lower right corner.</li>
+    </ul>
+   </div>
+
+   <hr></hr>
+   <div class="text" id="geolocator">
+    <p><img src="stylesheets/images/geocoder.png"> Geo-locator Tool </p> 
+    <ul>
+     <li>The geo-locator, located to the right of the zoom controls,
+   allows you to customize the map view using custom location
+   information.  You may enter a city name, street address,
+   intersection, or longitude and latitude.<p id="examples">
+   Examples:<br />"Burns, Oregon"<br />"484 N Broadway Ave, Burns, OR"<br />"-121.623103,  41.953825"
+     </p></li>
+     <li>This tool is especially useful if you have a site on or near your property but don't know specific site information.</li>
+    </ul>
+   </div>
+  </div>
+</div>
+
