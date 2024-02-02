@@ -26,25 +26,73 @@
    <!-- Page Heading/Breadcrumbs -->             
    <div class="row"> 
     <div class="col-sm-12"> 
-     <h2 class="clear" style="margin-bottom:0.0em;">U.S. Geological Survey</h2>
-     <h2 class="clear" style="margin-top:0.0em;">Upper Klamath Basin Well Mapper</h2>
+     <div class="clear title title_top" >U.S. Geological Survey</div>
     </div>                 
    </div> 
-   <!-- End Page Heading/Breadcrumbs -->             
-         
-   <div class="row spacemetop"> 
-    <div class="col-sm-12">
-    <p class="national-level">
-     This mapper identifies wells that are monitored in the Upper
-     Klamath Basin Oregon and California by U.S. Geological Survey (USGS), Oregon Water Resources Department (OWRD),
-     and California Department of Water Resources (CDWR). This web page provides access to current and historic
-     groundwater-level data collected by monitoring partners, as well as water-level graphs and maps showing net
-     water-level changes between any two time periods. Data for individual wells showing net water-level changes are
-     filtered to remove measurements taken during active pumping because they do not accurately represent
-     conditions in the aquifer. 
-    </p>
-    </div>
-   </div>
+   <!-- End Page Heading/Breadcrumbs -->
+
+   <!-- Nav Bar -->
+   <div class="row spacemetop">
+     <div class="col-sm-12">
+       <nav class="navbar navbar-expand-sm bg-dark" data-bs-theme="dark">
+         <div class="container-fluid">
+           <a class="navbar-brand" href="#">
+             <div class="ps-1">
+               <img class="logoButton" id="usgsButton" src="logos/usgs4.png" alt="USGS> Geological Survey Logo" title="USGS, Oregon Water Science Center">
+               <img class="logoButton" id="owrdButton" src="logos/usbr.png" alt="Oregon Water Resources Department Logo" title="Oregon Water Resources Department">
+               <span class="ps-4">Upper Klamath Basin Well Mapper</span>
+             </div>
+             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+               <span class="navbar-toggler-icon"></span>
+             </button>
+           </a>
+
+           <ul class="nav navbar-nav me-auto mb-2 ps-2">
+
+             <!--Project Links-->
+             <li class="nav-item dropdown">
+               <a class="dropdown-toggle nav-link noJump" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                 <span id="projectHelp" data-tooltip="on" data-placement="bottom">
+                   Project Links
+                 </span>
+               </a>
+               <ul class="dropdown-menu dropdown-menu-dark ProjectLinks">
+                 <li>
+                   <a href="http://or.water.usgs.gov/" target="_blank">
+                     USGS Oregon Water Science Center Home
+                   </a>
+                 </li>
+                 <li>
+                   <a href="http://www.oregon.gov/OWRD/" target="_blank">Oregon Water Resources Department Home</a>
+                 </li>
+               </ul>
+             </li>
+
+             <!--Basemaps-->
+             <li class="nav-item dropdown">
+               <a class="dropdown-toggle nav-link noJump" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                 <span id="basemapsHelp" data-tooltip="on" data-placement="bottom">
+                   Basemaps
+                 </span>
+               </a>
+               <ul class="dropdown-menu dropdown-menu-dark BaseMaps" id="basemapMenu">
+               </ul>
+             </li>
+
+             <!--About-->
+             <li class="nav-item">
+               <a class="flex-sm-fill text-sm-center nav-link" href="#" data-bs-toggle="modal" data-bs-target="#aboutModal">
+                 <span id="aboutButton" data-tooltip="on" data-placement="right">
+                   About
+                 </span>
+               </a>
+             </li>
+
+           </ul>
+         </div>
+       </nav>
+     </div> <!-- <div class="col-sm-12"> -->
+     </div> <!-- <div class="row"> -->
 
    <div class="row spacemetop"> 
     <div class="col-sm-12" id="links">
@@ -54,6 +102,8 @@
       <div class="row">
 
        <div class="col-sm-3 left_panel">
+                            
+         <div class="wellHeader mb-2 ps-2">DATA EXPLORATION TOOL</div>
                             
          <div class="wellHeader monitoringAgency">Monitoring Agency</div>
          <div class="well monitoringAgency">   
@@ -89,7 +139,7 @@
          </div>
         </div>
         
-        <div class="row spacemetop">
+        <div class="row">
          <div class="col-sm-1"></div>
          <div class="col-sm-11">
           <span class="gwLevelContent"></span>
@@ -231,13 +281,38 @@
 
  <!--#include virtual="DrupalVisID/includes/footer_WRET.html"-->
 
+      <!-- Start About Modal -->
+      <div id="aboutModal" class="modal fade mx-auto rounded-5">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-content">
+
+            <div class="modal-header">
+              <span class="modal-title">USGS Upper Klamath Basin Well Mapper</span>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+             </div>
+
+            <div class="modal-body">
+              <div class="btn-group" role="group" aria-label="First group">
+                <button id="welcome" type="button" class="aboutButtons btn btn-secondary">Welcome</button>
+                <button id="mapFeatures" type="button" class="aboutButtons btn btn-secondary">Map Features</button>
+                <button id="dataExploration" type="button" class="aboutButtons btn btn-secondary">Data Exploration</button>
+                <button id="contacts" type="button" class="aboutButtons btn btn-secondary">Contact Us</button>
+              </div>
+
+              <!-- /.aboutContent -->
+              <div id="aboutContent" class="aboutContent"></div>
+
+            </div><!-- /.modal-body -->
+          </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+      </div><!-- /.modal -->
+
  <!-- Supporting scripts  -->
 
  <script src="javascripts/required/jquery.js"></script>
  <script src="javascripts/required/popper.min.js"></script>
  <script src="javascripts/required/tether.min.js"></script>
  <script src="javascripts/required/bootstrap.min.js"></script>
- <script src="javascripts/required/jquery.url.js"></script>
  <script src="javascripts/required/leaflet.js"></script>
  <script src="javascripts/required/L.Control.Locate.js"></script>
  <script src="javascripts/required/Control.MiniMap.min.js"></script>
@@ -262,11 +337,12 @@
  <!-- Local scripts -->
  <script src="javascripts/usgs/webRequest.js"></script>
  <script src="javascripts/usgs/modal.js"></script>
-
+ <script src="javascripts/usgs/aboutContent.js"></script>
  <script src="javascripts/usgs/popup.js"></script>
  <script src="javascripts/usgs/tableSupport.js"></script>
  <script src="javascripts/usgs/gwFilter.js"></script>
  <script src="javascripts/usgs/leftPanel.js"></script>
+ <script src="javascripts/usgs/baseMaps.js"></script>
  <script src="javascripts/usgs/map.js"></script>
  <script src="javascripts/usgs/main.js"></script>
 
