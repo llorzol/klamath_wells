@@ -1,15 +1,16 @@
 /**
- * Namespace: modal.css
+ * Namespace: navbar.css
  *
- * The file modal.css is a css file to providing styling for Modal popups. 
+ * The file navbar.css is a css file to providing styling for a navigation
+ *  bar above the map.
  *
- * version 2.02
- * January 27, 2024
+ * version 2.03
+ * February 1, 2024
 */
 
 /*
 ###############################################################################
-# Copyright (c) Office of Planning and Programming (OPP)
+# Copyright (c) Oregon Water Science Center
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,29 +32,40 @@
 ###############################################################################
 */
 
-.modal-header {
-    border: 2px solid #bbbbbb;
-    color: #ffffff;
-    font-weight: bold;
+.nav-item {
     font-size: 1.25rem;
-    background-color: #2d862d;
-}
-
-.modal-body {
-    border: 2px solid #bbbbbb;
-    color: #ffffff;
     font-weight: bold;
-    font-size: 18px;
-    box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
-    background-color: #2d862d;
+    width: auto;
+    white-space: nowrap;
 }
 
-.imagePopUp {
-    border: 2px solid #bbbbbb;
-    background-color: #ffffff;
-    box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
-    margin: 6px;
-    padding: 6px;
-    max-width: 200px;
-    height: auto;
+.navbar-brand {
+    font-size: 1.25rem;
+    font-weight: bold;
+    width: auto;
+    white-space: nowrap;
+    color: #ffffff !important;
+}
+
+.BaseMaps a, .ProjectLinks a {
+    font-size: 1.0rem;
+    font-weight: bold;
+    width: auto;
+    white-space: nowrap;
+    color: #ffffff !important;
+    text-decoration: none;
+}
+
+.BaseMaps a:hover, .ProjectLinks a:hover {
+    background-color: #FAA0A0 !important;
+    color: #000000 !important;
+}
+
+.active a {
+    background-color: #FFFF8F !important;
+    color: #000000 !important;
+}
+
+.logoButton {
+    height: 2rem;
 }
