@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.18
- * January 14, 2024
+ * version 3.21
+ * February 2, 2024
 */
 
 /*
@@ -208,6 +208,28 @@ function buildMap()
    // Add custom print option
    //
    customPrint(map)
+       
+   // Map bounds for geocoding tool
+   //
+   const bounds = map.getBounds();
+ 
+   // Create the geocoding control and add it to the map
+   //
+   var searchControl = new L.esri.Controls.Geosearch({ zoomToResult: false, searchBounds: bounds }).addTo(map);
+   jQuery('.geocoder-control').prop('title', "Enter address, intersection, or latitude/longitude");
+   $(".geocoder-control").on("click", (e) => {
+       e.preventDefault();
+       e.stopPropagation();
+   });
+ 
+      searchControl.on('results', function(data) {
+          //console.log("geocoding results ",data);
+          if(data.results.length == 1) {
+              // Set the bounds
+              //
+              map.fitBounds(data.bounds);
+          }
+   });
 
    // Show initial map zoom level
    //
@@ -375,7 +397,7 @@ function customPrint(mapRef)
    
       printPlugin = L.easyPrint({
           //hidden: true,
-          title: 'Export Map',
+          title: 'Export Map to Image',
           exportOnly: true,
           hideControlContainer: false,
           //filename: filename,
@@ -397,7 +419,7 @@ function customPrint(mapRef)
              setTimeout(function(){
                  cleanUpMap();
              },10000);
-      fadeModal(3000);
+      fadeModal(5000);
       });
      }
    else
@@ -428,6 +450,7 @@ function exportImage()
       $('#imageTitle').show();
       $('.leaflet-control-zoomhome').hide();
       $('.leaflet-control-easyPrint').hide();
+      $('.geocoder-control').hide();
       printPlugin.printMap('customPrintClass', filename)
   }
 
@@ -440,6 +463,7 @@ function cleanUpMap()
       $('#imageTitle').remove();
       $('.leaflet-control-zoomhome').show();
       $('.leaflet-control-easyPrint').show();
+      $('.geocoder-control').show();
   }
 
 // Set custom print
