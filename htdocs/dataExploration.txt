@@ -27,17 +27,17 @@
   agencies: USGS, OWRD, CDWR. <b>This tool selects from only those sites visible 
   on the map.</b>
   <ul>
-   <li><b>All wells - Any well measured at least once</b></li>
-   <li><b>All active wells - Any well measured at least once within the last year</b></li>
-   <li><b>All inactive wells - Any well NOT measured at least once within the last year</b></li>
-   <li><b>All periodic wells - Any well with at least one field measurement</b></li>
-   <li><b>Active periodic wells - Any well with at least one field measurement within the last year</b></li>
-   <li><b>Inactive periodic wells - Any well with no field measurements within the last year</b></li>
-   <li><b>Recorder wells - Any well with on-site automated recording equipment</b></li>
-   <li><b>Active recorder wells - Any well with on-site automated recording equipment with measurements
-   recorded within the last year</b></li>
-   <li><b>Inactive recorder wells - Any well with on-site automated recording equipment with no measurements
-   recorded within the last year</b></li>
+   <li><b>All wells</b> - Any well measured at least once</li>
+   <li><b>All active wells</b> - Any well measured at least once within the last year</li>
+   <li><b>All inactive wells</b> - Any well NOT measured at least once within the last year</li>
+   <li><b>All periodic wells</b> - Any well with at least one field measurement</li>
+   <li><b>Active periodic wells</b> - Any well with at least one field measurement within the last year</li>
+   <li><b>Inactive periodic wells</b> - Any well with no field measurements within the last year</li>
+   <li><b>Recorder wells</b> - Any well with on-site automated recording equipment</li>
+   <li><b>Active recorder wells</b> - Any well with on-site automated recording equipment with measurements
+   recorded within the last year</li>
+   <li><b>Inactive recorder wells</b> - Any well with on-site automated recording equipment with no measurements
+   recorded within the last year</li>
   </ul>
  </div>
  <div>

@@ -68,8 +68,28 @@
   <hr></hr>
   <div class="text" id="layers">
    <p><i class="fa fa-home" style="line-height:1.65;"></i> Home </p> 
-   <p> This control allows the user to zoom the map to the project-wide view.
+   <p> This control allows the user to zoom the map to the project-wide view.</p>
   </div>
+
+  <hr></hr>
+  <div class="text" id="layers">
+   <p><span id="exportLogo">&nbsp;</span>Export Map to Image</p> 
+   <p> This control allows the user to export the map to a PNG image.
+  </div>
+
+   <hr></hr>
+   <div class="text" id="geolocator">
+    <p><img src="css/required/img/search.png"> Geo-locator Tool </p> 
+    <ul>
+     <li>The geo-locator, located to the right of the zoom controls,
+   allows you to customize the map view using custom location
+   information.  You may enter a city name, street address,
+   intersection, or longitude and latitude.<p id="examples">
+   Examples:<br />"Burns, Oregon"<br />"484 N Broadway Ave, Burns, OR"<br />"-121.623103,  41.953825"
+     </p></li>
+     <li>This tool is especially useful if you have a site on or near your property but don't know specific site information.</li>
+    </ul>
+   </div>
 
    <hr></hr>
    <div class="text" id="minimap">
@@ -81,20 +101,7 @@
      <li>The index map can be minimized using the arrow icon <img src="icons/toggle.png"> in its lower right corner.</li>
     </ul>
    </div>
-
-   <hr></hr>
-   <div class="text" id="geolocator">
-    <p><img src="stylesheets/images/geocoder.png"> Geo-locator Tool </p> 
-    <ul>
-     <li>The geo-locator, located to the right of the zoom controls,
-   allows you to customize the map view using custom location
-   information.  You may enter a city name, street address,
-   intersection, or longitude and latitude.<p id="examples">
-   Examples:<br />"Burns, Oregon"<br />"484 N Broadway Ave, Burns, OR"<br />"-121.623103,  41.953825"
-     </p></li>
-     <li>This tool is especially useful if you have a site on or near your property but don't know specific site information.</li>
-    </ul>
-   </div>
+   
   </div>
 </div>
 
