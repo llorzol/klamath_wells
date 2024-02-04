@@ -58,12 +58,19 @@
                </a>
                <ul class="dropdown-menu dropdown-menu-dark ProjectLinks">
                  <li>
-                   <a href="http://or.water.usgs.gov/" target="_blank">
+                   <a href="https://or.water.usgs.gov/" target="_blank">
                      USGS Oregon Water Science Center Home
                    </a>
                  </li>
                  <li>
-                   <a href="http://www.oregon.gov/OWRD/" target="_blank">Oregon Water Resources Department Home</a>
+                   <a href="https://www.usbr.gov/pn/" target="_blank">
+                     USBR Columbia-Pacific Northwest Region
+                   </a>
+                 </li>
+                 <li>
+                   <a href="https://www.oregon.gov/OWRD/" target="_blank">
+                     Oregon Water Resources Department Home
+                   </a>
                  </li>
                </ul>
              </li>
@@ -154,7 +161,7 @@
           <option id="bySiteNumber" value="bySiteNumber wells">USGS Site Number</option>
           <option id="byWellLogId" value="byWellLogId wells">OWRD Well Log ID</option>
           <option id="byCdwrId" value="byStateObs wells">CDWR Site Code</option>
-          <option id="byStateObs" value="byStateObs wells">State Obs Name</option>
+          <option id="byStateObs" value="byStateObs wells">OWRD State Obs Name</option>
          </select>
          <input type="text" id="searchSites" placeholder="Enter search text"/>
         </div>
@@ -308,7 +315,6 @@
       </div><!-- /.modal -->
 
  <!-- Supporting scripts  -->
-
  <script src="javascripts/required/jquery.js"></script>
  <script src="javascripts/required/popper.min.js"></script>
  <script src="javascripts/required/tether.min.js"></script>
@@ -317,18 +323,25 @@
  <script src="javascripts/required/L.Control.Locate.js"></script>
  <script src="javascripts/required/Control.MiniMap.min.js"></script>
 
+ <!-- Home feature  -->
  <link rel="stylesheet" href="css/required/leaflet.zoomhome.css"/>
  <script src="javascripts/required/leaflet.zoomhome.min.js"></script>
 
+ <!-- Export feature  -->
  <link rel="stylesheet" href="css/usgs/easyPrint.css"/>
  <script src="javascripts/required/easyPrint.min.js"></script>
 
+ <!-- Zoom to your location feature  -->
+ <link rel="stylesheet" href="css/required/L.Control.Locate.css">
+ <script src="javascripts/required/L.Control.Locate.min.js"></script>
+
+ <!-- Geocoder feature  -->
  <link rel="stylesheet" href="css/required/esri-leaflet-geocoder.css"/>
  <link rel="stylesheet" href="css/required/geocoder.css"/>
  <script src="javascripts/required/esri-leaflet-core.js"></script>
  <script src="javascripts/required/esri-leaflet-geocoder.js"></script>
 
- <!-- Supporting scripts  -->
+ <!-- Supporting local scripts  -->
  <script src="javascripts/required/jquery.dataTables.min.js"></script>
  <script src="javascripts/required/dataTables.bootstrap5.min.js"></script>
  <script src="javascripts/required/dataTables.buttons.min.js"></script>

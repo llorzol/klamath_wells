@@ -2,11 +2,15 @@
 <p>
      This mapper identifies wells that are monitored in the Upper
      Klamath Basin Oregon and California by U.S. Geological Survey (USGS), Oregon Water Resources Department (OWRD),
-     and California Department of Water Resources (CDWR). This web page provides access to current and historic
+     and California Department of Water Resources (CDWR). The U.S. Bureau of Reclamation has provided
+     funding to the USGS to monitor wells in the Upper Klamath Basin, process of these groundwater measurements,
+     and for maintaining this website.
+     This web page provides access to current and historic
      groundwater-level data collected by monitoring partners, as well as water-level graphs and maps showing net
      water-level changes between any two time periods. Data for individual wells showing net water-level changes are
      filtered to remove measurements taken during active pumping because they do not accurately represent
-     conditions in the aquifer. 
+     conditions in the aquifer. For help using the USGS-OWRD interactive web page, click the about button 
+  (found in the upper right) and a text window will appear with options describing web page features.
 </p> 
 <p>
   Users are cautioned to consider the nature of the information presented here before making decisions 

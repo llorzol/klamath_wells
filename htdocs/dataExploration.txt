@@ -46,12 +46,11 @@
 <hr></hr>
  <div><b>Groundwater Level Change</b></div>
   <div>
-   The change map tool can be accessed by clicking the "Groundwater Level Change" tab in the data 
-   tools control. Using the change map tool you can view net groundwater-level changes over a range of time
-   periods. Data for individual wells are filtered to remove
-   measurements taken during active pumping because they do not
-   accurately represent conditions in the aquifer.  <b>This tool selects from only those sites visible 
-   on the map.</b>
+   Using the change map tool you can view net groundwater-level changes over a range of time
+   periods starting in 2001 until the present. Data for individual wells are filtered to remove
+   measurements taken during active pumping because they do not accurately represent conditions in the
+   aquifer. All sites in the basin are evaluated to determine wells with a measurement in each specified
+   time period.
    <ul>
     <li><b>How to View Groundwater-Level Changes</b>
      <div>
@@ -65,10 +64,10 @@
            Clicking on a dropdown menu will toggle the menu open - scroll through options and 
            click the desired option to select it.  Seasons are defined as follows:
          <ul>
-          <li>January 1 - March 31</li>
-          <li>April 1 - June 31</li>
-          <li>July 1 - September 30</li>
-          <li>October 1 - December 31</li>
+          <li>Spring: March 1 - May 31</li>
+          <li>Spring: June 1 - August 30</li>
+          <li>Fall: September 1 - November 30</li>
+          <li>Winter: December 1 - February 28 of the following year</li>
          </ul>
         </p>
        </li>
@@ -110,29 +109,28 @@
   and continuously measured data. <b>This tool selects from only those sites visible 
   on the map.</b>
   <ul>
+   <li><b>Find Site by Station Name (default)</b>
+    <div>USGS station name are unique text assigned to each site.</div>
+    <div>If you know your station name, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
+   </li>
    <li><b>Find Site by Site Number</b>
     <div>USGS site numbers are 9-15 digit numbers that are unique to each site.</div>
     <div>If you know your site number, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
-   </li>
-   <li><b>Find Site by Station Name</b>
-    <div>USGS station name are unique text assigned to each site.</div>
-    <div>If you know your station name, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
    </li>
    <li><b>Find Site by OWRD Well Log ID</b>
     <div>OWRD name are unique text assigned to each site.</div>
     <div>If you know your well log ID, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
    </li>
-   <li><b>Find Site by OWRD State Observation Number</b>
-    <div>OWRD name are unique text assigned to each site.</div>
-    <div>If you know your state observation number, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
-   </li>
    <li><b>Find Site by CDWR Site Code</b>
     <div>CDWR name are unique text assigned to each site.</div>
     <div>If you know CDWR site code, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
    </li>
+   <li><b>Find Site by OWRD State Observation Number</b>
+    <div>OWRD name are unique text assigned to each site.</div>
+    <div>If you know your state observation number, you may select one site directly from the list.  Station names are visible by hovering the cursor over a site number in the list.</div>
+   </li>
   </ul>
  </div>
  <div>
-  Markers that fit the filter criteria will be highlighted on the
-  map.
+  Markers that fit the filter criteria will be highlighted on the map.
  </div>
