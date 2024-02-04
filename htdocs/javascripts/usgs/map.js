@@ -172,6 +172,8 @@ function buildMap()
    //
    map.fitBounds(allSites.getBounds());
 
+   map.setMaxBounds(allSites.getBounds());
+
    // Show on map
    //
    allSites.addTo(map);
@@ -204,6 +206,15 @@ function buildMap()
    //
    var zoomHome = L.Control.zoomHome();
    zoomHome.addTo(map);
+
+   // Add zoom to your location
+   //
+   var myLocate = L.control.locate({
+       drawCircle: false,
+       drawMarker: false,
+       clickBehavior: { outOfView: 'stop' },
+       strings: { title: "Move and zoom to your location" }
+   }).addTo(map);
 
    // Add custom print option
    //
