@@ -1,367 +1,365 @@
- 
 <!DOCTYPE html> 
 
-<html lang="en"> 
- <head> 
-  <title>U.S. Geological Survey Upper Klamath Basin Well Mapper</title>
-  <meta charset="utf-8"> 
-  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+<html lang="en">
+  <head>
+    <title>U.S. Geological Survey Upper Klamath Basin Well Mapper</title>
 
-  <!-- css -->
+    <!-- meta -->
+    <!--#include virtual="includes/meta_inc.html" -->
 
-  <!--#include virtual="DrupalVisID/includes/meta-css.html" -->
-  <!--#include virtual="includes/css_inc.html" -->
-  <!-- end css -->
-        
- </head>  
-   
- <body id="offwhite">
+    <!-- css -->
+    <!--#include virtual="DrupalVisID/includes/meta-css.html" -->
+    <!--#include virtual="includes/css_inc.html" -->
+    <!-- end css -->
 
-  <!--#include virtual="DrupalVisID/includes/header_WRET.html"-->
+  </head>
 
-  <!-- Container (About Section) -->         
-  <div id="about" class="container">
+  <body id="offwhite">
 
-   <!-- Page Heading/Breadcrumbs -->             
-   <div class="row"> 
-    <div class="col-sm-12"> 
-     <div class="clear title title_top" >U.S. Geological Survey</div>
-    </div>                 
-   </div> 
-   <!-- End Page Heading/Breadcrumbs -->
+    <!--#include virtual="DrupalVisID/includes/header_WRET.html"-->
 
-   <!-- Nav Bar -->
-   <div class="row spacemetop">
-     <div class="col-sm-12">
-       <nav class="navbar navbar-expand-sm bg-dark" data-bs-theme="dark">
-         <div class="container-fluid">
-           <a class="navbar-brand" href="#">
-             <div class="ps-1">
-               <img class="logoButton" id="usgsButton" src="logos/usgs4.png" alt="USGS> Geological Survey Logo" title="USGS, Oregon Water Science Center">
-               <img class="logoButton" id="owrdButton" src="logos/usbr.png" alt="Oregon Water Resources Department Logo" title="Oregon Water Resources Department">
-               <span class="ps-4">Upper Klamath Basin Well Mapper</span>
-             </div>
-             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
-               <span class="navbar-toggler-icon"></span>
-             </button>
-           </a>
+    <!-- Container -->
+    <div class="container">
 
-           <ul class="nav navbar-nav me-auto mb-2 ps-2">
-
-             <!--Project Links-->
-             <li class="nav-item dropdown">
-               <a class="dropdown-toggle nav-link noJump" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                 <span id="projectHelp" data-tooltip="on" data-placement="bottom">
-                   Project Links
-                 </span>
-               </a>
-               <ul class="dropdown-menu dropdown-menu-dark ProjectLinks">
-                 <li>
-                   <a href="https://or.water.usgs.gov/" target="_blank">
-                     USGS Oregon Water Science Center Home
-                   </a>
-                 </li>
-                 <li>
-                   <a href="https://www.usbr.gov/pn/" target="_blank">
-                     USBR Columbia-Pacific Northwest Region
-                   </a>
-                 </li>
-                 <li>
-                   <a href="https://www.oregon.gov/OWRD/" target="_blank">
-                     Oregon Water Resources Department Home
-                   </a>
-                 </li>
-               </ul>
-             </li>
-
-             <!--Basemaps-->
-             <li class="nav-item dropdown">
-               <a class="dropdown-toggle nav-link noJump" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                 <span id="basemapsHelp" data-tooltip="on" data-placement="bottom">
-                   Basemaps
-                 </span>
-               </a>
-               <ul class="dropdown-menu dropdown-menu-dark BaseMaps" id="basemapMenu">
-               </ul>
-             </li>
-
-             <!--About-->
-             <li class="nav-item">
-               <a class="flex-sm-fill text-sm-center nav-link" href="#" data-bs-toggle="modal" data-bs-target="#aboutModal">
-                 <span id="aboutButton" data-tooltip="on" data-placement="right">
-                   About
-                 </span>
-               </a>
-             </li>
-
-           </ul>
-         </div>
-       </nav>
-     </div> <!-- <div class="col-sm-12"> -->
-     </div> <!-- <div class="row"> -->
-
-   <div class="row spacemetop"> 
-    <div class="col-sm-12" id="links">
-    <!--map-->
-    <div class="body-wrap">
-     <div class="container">
+      <!-- Page Heading/Breadcrumbs -->
       <div class="row">
-
-       <div class="col-sm-3 left_panel">
-                            
-         <div class="wellHeader mb-2 ps-2">DATA EXPLORATION TOOL</div>
-                            
-         <div class="wellHeader monitoringAgency">Monitoring Agency</div>
-         <div class="well monitoringAgency">   
-          <select id="monitoringAgency" class="form-select">
-           <option id="all"  value="ALL" selected="selected">All agencies</option>
-           <option id="cdwr" value="USGS">USGS</option>
-           <option id="cdwr" value="OWRD">OWRD</option>
-           <option id="cdwr" value="CDWR">CDWR</option>
-          </select>
-         </div>
-                            
-        <div class="wellHeader monitoringStatus">Monitoring Status</div>
-        <div class="well monitoringStatus">   
-         <select id="monitoringStatus" class="form-select">
-          <option id="allWells" value="All wells" selected="selected">All wells</option>
-          <option id="allActive" value="All active wells">All active wells</option>
-          <option id="allInactive" value="All inactive wells">All inactive wells</option>
-          <option id="periodicAll" value="Periodic wells">Periodic wells</option>
-          <option id="periodicActive" value="Active periodic wells">Active periodic wells</option>
-          <option id="periodicInactive" value="Inactive periodic wells">Inactive periodic wells</option>
-          <option id="recordersAll" value="Recorders wells">Recorders wells</option>
-          <option id="recordersActive" value="Active recorders wells">Active recorders wells</option>
-          <option id="recordersInactive" value="Inactive recorders wells">Inactive recorders wells</option>
-          </select>
-         </div>
-        
-        <div class="wellHeader monitoringGwChange">Groundwater Level Change</div>
-        <div id="monitoringGwChange" class="well monitoringGwChange">   
-         <div id="collapse-filterGw">
-          <div class="card-block">
-           <span id="filterGroundwaterContent"></span>
-          </div>
-         </div>
+        <div class="col-sm-12">
+          <div class="clear title title_top" >U.S. Geological Survey</div>
         </div>
-        
-        <div class="row">
-         <div class="col-sm-1"></div>
-         <div class="col-sm-11">
-          <span class="gwLevelContent"></span>
-          <div class="gwChangeLegend"></div>
-         </div>
-        </div>
-                            
-        <div class="wellHeader siteFinder">Site Finder</div>
-        <div class="well siteFinder">   
-         <select id="finderLinks" class="form-select">
-          <option id="byStationName" value="byStationName wells" selected="selected">Station Name</option>
-          <option id="bySiteNumber" value="bySiteNumber wells">USGS Site Number</option>
-          <option id="byWellLogId" value="byWellLogId wells">OWRD Well Log ID</option>
-          <option id="byCdwrId" value="byStateObs wells">CDWR Site Code</option>
-          <option id="byStateObs" value="byStateObs wells">OWRD State Obs Name</option>
-         </select>
-         <input type="text" id="searchSites" placeholder="Enter search text"/>
-        </div>
-        
-        <div class="wellHeader sitesList">Sites<span id="siteCount"></span></div>
-        <div class="well sitesList">   
-         <div class="site siteList">
-          <ul id="siteLinks" class="list-group scrolling"></ul>
-         </div>
-        </div>
-
-        <div id="legend">
-        </div>
-
-       </div>
-        
-       <div class="col-sm-9">
-
-         <div class="row">
-           <a href="mapFeatures.html" target="_blank" style="float: right; position: relative; font-size: 90%;">Basic Map Features Tutorial</a>
-         </div>
-         <div class="row">
-        <!-- Start Leaflet Map object -->
-        <div id="maps">
-         <div id="map" class="mapUSA" style="cursor"></div>
-        </div>
-        <!-- End Leaflet Map object -->
-         </div>
-
-       </div>
       </div>
-     </div>
-    </div>
-   </div><!--end map--> 
-        
+      <!-- End Page Heading/Breadcrumbs -->
 
-  <!-- Summary of Sites -->
-  <div class="row">
+      <!-- Nav Bar -->
+      <div class="row spacemetop">
+        <div class="col-sm-12">
+          <nav class="navbar navbar-expand-md navbar-dark bg-dark" data-bs-theme="dark">
+            <div class="container-fluid">
+              <a class="navbar-brand" href="#">
+                <div class="ps-1">
+                  <img class="logoButton" id="usgsButton" src="logos/usgs4.png" alt="USGS> Geological Survey Logo" title="USGS, Oregon Water Science Center">
+                  <img class="logoButton" id="owrdButton" src="logos/usbr.png" alt="USBR Columbia-Pacific Northwest Region Logo" title="USBR Columbia-Pacific Northwest Region">
+                  <span class="ps-4">Upper Klamath Basin Well Mapper</span>
+                </div>
+              </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#myNavbar" aria-controls="myNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                  <span class="navbar-toggler-icon"></span>
+                </button>
 
-  <div class="col-xs-1"></div>
-  <div class="col-xs-10">
+              <ul id="myNavbar" class="nav collapse navbar-collapse navbar-nav me-auto mb-2 ps-2">
 
-    <div class="row spacemetop"> 
-     <table id="countsTable">
+                <!--Project Links-->
+                <li class="nav-item dropdown">
+                  <a class="dropdown-toggle nav-link noJump" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span id="projectHelp" data-tooltip="on" data-placement="bottom">
+                      Project Links
+                    </span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-dark ProjectLinks">
+                    <li>
+                      <a href="https://or.water.usgs.gov/" target="_blank">
+                        USGS Oregon Water Science Center Home
+                      </a>
+                    </li>
+                    <li>
+                      <a href="https://www.usbr.gov/pn/" target="_blank">
+                        USBR Columbia-Pacific Northwest Region
+                      </a>
+                    </li>
+                    <li>
+                      <a href="https://www.oregon.gov/OWRD/" target="_blank">
+                        Oregon Water Resources Department Home
+                      </a>
+                    </li>
+                  </ul>
+                </li>
 
-      <caption>
-       <span>Summary of Monitoring Agencies and Status --&nbsp;</span><span id="TotalStations"></span> 
-      selected sites are within mapped area.
-      </caption>
-      <thead>
-       <tr>
-        <th class="symbols leftJustified">
-         <span class="NumberUSGS">0</span>&nbsp;USGS&nbsp;monitored sites</th>
-        <th class="symbols leftJustified">
-         <span class="NumberOWRD">0</span>&nbsp;OWRD&nbsp;monitored sites</th>
-        <th class="symbols leftJustified">
-         <span class="NumberCDWR">0</span>&nbsp;CDWR&nbsp;monitored sites</th>
-        <th class="symbols leftJustified">
-         <span class="NumberALL">0</span>&nbsp;Monitored by two or more agencies</th>
-       </tr>
-      </thead>
+                <!--Basemaps-->
+                <li class="nav-item dropdown">
+                  <a class="dropdown-toggle nav-link noJump" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span id="basemapsHelp" data-tooltip="on" data-placement="bottom">
+                      Basemaps
+                    </span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-dark BaseMaps" id="basemapMenu">
+                  </ul>
+                </li>
 
-      <tbody>
-       <tr>
-        <td class="leftJustified">&nbsp;--- Site has been monitored by USGS only</td>
-        <td class="leftJustified">&nbsp;--- Site has been monitored by OWRD only</td>
-        <td class="leftJustified">&nbsp;--- Site has been monitored by CDWR only</td>
-        <td class="leftJustified">&nbsp;--- Site has been monitored by USGS or OWRD or CDWR collectively</td>
-       </tr>
+                <!--About-->
+                <li class="nav-item">
+                  <a class="flex-sm-fill text-sm-center nav-link" href="#" data-bs-toggle="modal" data-bs-target="#aboutModal">
+                    <span id="aboutButton" data-tooltip="on" data-placement="right">
+                      About
+                    </span>
+                  </a>
+                </li>
 
-       <tr>
-        <td class="BoldText centerJustified">Active/Inactive</td>
-        <td class="BoldText centerJustified">Active/Inactive</td>
-        <td class="BoldText centerJustified">Active/Inactive</td>
-        <td class="BoldText centerJustified">Active/Inactive</td>
-       </tr>
+              </ul>
+            </div>
+          </nav>
+        </div> <!-- <div class="col-sm-12"> -->
+      </div> <!-- <div class="row"> -->
 
-       <tr>
-        <td class="centerJustified">
-         <span class="NumberUSGSactive">0</span>
-         /
-         <span class="NumberUSGSinactive">0</span>
-        </td>
-        <td class="centerJustified">
-         <span class="NumberOWRDactive">0</span>
-         /
-         <span class="NumberOWRDinactive">0</span>
-        </td>
-        <td class="centerJustified">
-         <span class="NumberCDWRactive">0</span>
-         /
-         <span class="NumberCDWRinactive">0</span>
-        </td>
-        <td class="centerJustified">
-         <span class="NumberALLactive">0</span>
-         /
-         <span class="NumberALLinactive">0</span>
-        </td>
-       </tr>
-       
-      <tbody>
+      <div class="row spacemetop">
+        <div class="col-sm-12" id="links">
+          <!--map-->
+          <div class="body-wrap">
+            <div class="container">
+              <div class="row">
 
-     </table>
-    </div>
-        
-   </div>
-   <div class="col-xs-1"></div>
-  </div>
+                <div class="col-sm-3 left_panel">
 
-  <!-- Explanation Text removed -->
+                  <div class="wellHeader mb-2 ps-2">DATA EXPLORATION TOOL</div>
 
-  <!-- Summary of Sites -->
-  <div class="row">
-   <div class="col-xs-1"></div>
-   <div class="col-xs-10">
-    <div id="siteTable" class="spacemetop"></div>
-   </div>
-   <div class="col-xs-1"></div>
-  </div>
-  
- </div>
+                  <div class="wellHeader monitoringAgency">Monitoring Agency</div>
+                  <div class="well monitoringAgency">
+                    <select id="monitoringAgency" class="form-select">
+                      <option id="all"  value="ALL" selected="selected">All agencies</option>
+                      <option id="usgs" value="USGS">USGS</option>
+                      <option id="owrd" value="OWRD">OWRD</option>
+                      <option id="cdwr" value="CDWR">CDWR</option>
+                    </select>
+                  </div>
 
- </div> <!-- <div class="container-fluid"> -->
+                  <div class="wellHeader monitoringStatus">Monitoring Status</div>
+                  <div class="well monitoringStatus">
+                    <select id="monitoringStatus" class="form-select">
+                      <option id="allWells" value="All wells" selected="selected">All wells</option>
+                      <option id="allActive" value="All active wells">All active wells</option>
+                      <option id="allInactive" value="All inactive wells">All inactive wells</option>
+                      <option id="periodicAll" value="Periodic wells">Periodic wells</option>
+                      <option id="periodicActive" value="Active periodic wells">Active periodic wells</option>
+                      <option id="periodicInactive" value="Inactive periodic wells">Inactive periodic wells</option>
+                      <option id="recordersAll" value="Recorders wells">Recorders wells</option>
+                      <option id="recordersActive" value="Active recorders wells">Active recorders wells</option>
+                      <option id="recordersInactive" value="Inactive recorders wells">Inactive recorders wells</option>
+                    </select>
+                  </div>
 
- <!--#include virtual="DrupalVisID/includes/footer_WRET.html"-->
+                  <div class="wellHeader monitoringGwChange">Groundwater Level Change</div>
+                  <div id="monitoringGwChange" class="well monitoringGwChange">
+                    <div id="collapse-filterGw">
+                      <div class="card-block">
+                        <span id="filterGroundwaterContent"></span>
+                      </div>
+                    </div>
+                  </div>
 
-      <!-- Start About Modal -->
-      <div id="aboutModal" class="modal fade mx-auto rounded-5">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-          <div class="modal-content">
+                  <div class="row">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-11">
+                      <span class="gwLevelContent"></span>
+                      <div class="gwChangeLegend"></div>
+                    </div>
+                  </div>
 
-            <div class="modal-header">
-              <span class="modal-title">USGS Upper Klamath Basin Well Mapper</span>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-             </div>
+                  <div class="wellHeader siteFinder">Site Finder</div>
+                  <div class="well siteFinder">
+                    <select id="finderLinks" class="form-select">
+                      <option id="byStationName" value="byStationName wells" selected="selected">Station Name</option>
+                      <option id="bySiteNumber" value="bySiteNumber wells">USGS Site Number</option>
+                      <option id="byWellLogId" value="byWellLogId wells">OWRD Well Log ID</option>
+                      <option id="byCdwrId" value="byStateObs wells">CDWR Site Code</option>
+                      <option id="byStateObs" value="byStateObs wells">OWRD State Obs Name</option>
+                    </select>
+                    <input type="text" id="searchSites" placeholder="Enter search text">
+                  </div>
 
-            <div class="modal-body">
-              <div class="btn-group" role="group" aria-label="First group">
-                <button id="welcome" type="button" class="aboutButtons btn btn-secondary">Welcome</button>
-                <button id="mapFeatures" type="button" class="aboutButtons btn btn-secondary">Map Features</button>
-                <button id="dataExploration" type="button" class="aboutButtons btn btn-secondary">Data Exploration</button>
-                <button id="contacts" type="button" class="aboutButtons btn btn-secondary">Contact Us</button>
+                  <div class="wellHeader sitesList">Sites<span id="siteCount"></span></div>
+                  <div class="well sitesList">
+                    <div class="site siteList">
+                      <ul id="siteLinks" class="list-group scrolling"></ul>
+                    </div>
+                  </div>
+
+                  <div id="legend">
+                  </div>
+
+                </div>
+
+                <div class="col-sm-9">
+
+                  <div class="row">
+                    <a href="mapFeatures.html" target="_blank" style="float: right; position: relative; font-size: 90%;">Basic Map Features Tutorial</a>
+                  </div>
+                  <div class="row">
+                    <!-- Start Leaflet Map object -->
+                    <div id="maps">
+                      <div id="map" class="mapUSA"></div>
+                    </div>
+                    <!-- End Leaflet Map object -->
+                  </div>
+
+                </div>
               </div>
+            </div>
+          </div>
+        </div><!--end map-->
 
-              <!-- /.aboutContent -->
-              <div id="aboutContent" class="aboutContent"></div>
 
-            </div><!-- /.modal-body -->
-          </div><!-- /.modal-content -->
-        </div><!-- /.modal-dialog -->
-      </div><!-- /.modal -->
+        <!-- Summary of Sites -->
+        <div class="row">
 
- <!-- Supporting scripts  -->
- <script src="javascripts/required/jquery.js"></script>
- <script src="javascripts/required/popper.min.js"></script>
- <script src="javascripts/required/tether.min.js"></script>
- <script src="javascripts/required/bootstrap.min.js"></script>
- <script src="javascripts/required/leaflet.js"></script>
- <script src="javascripts/required/Control.MiniMap.min.js"></script>
+          <div class="col-xs-1"></div>
+          <div class="col-xs-10">
 
- <!-- Home feature  -->
- <link rel="stylesheet" href="css/required/leaflet.zoomhome.css"/>
- <script src="javascripts/required/leaflet.zoomhome.min.js"></script>
+            <div class="row spacemetop">
+              <table id="countsTable">
 
- <!-- Export feature  -->
- <link rel="stylesheet" href="css/usgs/easyPrint.css"/>
- <script src="javascripts/required/easyPrint.min.js"></script>
+                <caption>
+                  <span>Summary of Monitoring Agencies and Status --&nbsp;</span><span id="TotalStations"></span>
+                  selected sites are within mapped area.
+                </caption>
+                <thead>
+                  <tr>
+                    <th class="symbols leftJustified">
+                      <span class="NumberUSGS">0</span>&nbsp;USGS&nbsp;monitored sites</th>
+                    <th class="symbols leftJustified">
+                      <span class="NumberOWRD">0</span>&nbsp;OWRD&nbsp;monitored sites</th>
+                    <th class="symbols leftJustified">
+                      <span class="NumberCDWR">0</span>&nbsp;CDWR&nbsp;monitored sites</th>
+                    <th class="symbols leftJustified">
+                      <span class="NumberALL">0</span>&nbsp;Monitored by two or more agencies</th>
+                  </tr>
+                </thead>
 
- <!-- Zoom to your location feature  -->
- <link rel="stylesheet" href="css/required/L.Control.Locate.css">
- <script src="javascripts/required/L.Control.Locate.min.js"></script>
+                <tbody>
+                  <tr>
+                    <td class="leftJustified">&nbsp;--- Site has been monitored by USGS only</td>
+                    <td class="leftJustified">&nbsp;--- Site has been monitored by OWRD only</td>
+                    <td class="leftJustified">&nbsp;--- Site has been monitored by CDWR only</td>
+                    <td class="leftJustified">&nbsp;--- Site has been monitored by USGS or OWRD or CDWR collectively</td>
+                  </tr>
 
- <!-- Geocoder feature  -->
- <link rel="stylesheet" href="css/required/esri-leaflet-geocoder.css"/>
- <link rel="stylesheet" href="css/required/geocoder.css"/>
- <script src="javascripts/required/esri-leaflet-core.js"></script>
- <script src="javascripts/required/esri-leaflet-geocoder.js"></script>
+                  <tr>
+                    <td class="BoldText centerJustified">Active/Inactive</td>
+                    <td class="BoldText centerJustified">Active/Inactive</td>
+                    <td class="BoldText centerJustified">Active/Inactive</td>
+                    <td class="BoldText centerJustified">Active/Inactive</td>
+                  </tr>
 
- <!-- Supporting local scripts  -->
- <script src="javascripts/required/jquery.dataTables.min.js"></script>
- <script src="javascripts/required/dataTables.bootstrap5.min.js"></script>
- <script src="javascripts/required/dataTables.buttons.min.js"></script>
- <link rel="stylesheet" href="css/required/buttons.dataTables.min.css"/>
- <script src="javascripts/required/jszip.min.js"></script>
- <script src="javascripts/required/pdfmake.min.js"></script>
- <script src="javascripts/required/vfs_fonts.js"></script>
- <script src="javascripts/required/buttons.html5.min.js"></script>
- <script src="javascripts/required/buttons.print.min.js"></script>
- 
- <!-- Local scripts -->
- <script src="javascripts/usgs/webRequest.js"></script>
- <script src="javascripts/usgs/modal.js"></script>
- <script src="javascripts/usgs/aboutContent.js"></script>
- <script src="javascripts/usgs/popup.js"></script>
- <script src="javascripts/usgs/tableSupport.js"></script>
- <script src="javascripts/usgs/gwFilter.js"></script>
- <script src="javascripts/usgs/leftPanel.js"></script>
- <script src="javascripts/usgs/baseMaps.js"></script>
- <script src="javascripts/usgs/map.js"></script>
- <script src="javascripts/usgs/main.js"></script>
+                  <tr>
+                    <td class="centerJustified">
+                      <span class="NumberUSGSactive">0</span>
+                      /
+                      <span class="NumberUSGSinactive">0</span>
+                    </td>
+                    <td class="centerJustified">
+                      <span class="NumberOWRDactive">0</span>
+                      /
+                      <span class="NumberOWRDinactive">0</span>
+                    </td>
+                    <td class="centerJustified">
+                      <span class="NumberCDWRactive">0</span>
+                      /
+                      <span class="NumberCDWRinactive">0</span>
+                    </td>
+                    <td class="centerJustified">
+                      <span class="NumberALLactive">0</span>
+                      /
+                      <span class="NumberALLinactive">0</span>
+                    </td>
+                  </tr>
+
+                <tbody>
+
+              </table>
+            </div>
+
+          </div>
+          <div class="col-xs-1"></div>
+        </div>
+
+        <!-- Explanation Text removed -->
+
+        <!-- Summary of Sites -->
+        <div class="row">
+          <div class="col-xs-1"></div>
+          <div class="col-xs-10">
+            <div id="siteTable" class="spacemetop"></div>
+          </div>
+          <div class="col-xs-1"></div>
+        </div>
+
+      </div>
+
+    </div> <!-- <div class="container"> -->
+
+    <!--#include virtual="DrupalVisID/includes/footer_WRET.html"-->
+
+    <!-- Start About Modal -->
+    <div id="aboutModal" class="modal fade mx-auto rounded-5">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+
+          <div class="modal-header">
+            <span class="modal-title">USGS Upper Klamath Basin Well Mapper</span>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="btn-group" role="group" aria-label="First group">
+              <button id="welcome" type="button" class="aboutButtons btn btn-secondary">Welcome</button>
+              <button id="mapFeatures" type="button" class="aboutButtons btn btn-secondary">Map Features</button>
+              <button id="dataExploration" type="button" class="aboutButtons btn btn-secondary">Data Exploration</button>
+              <button id="contacts" type="button" class="aboutButtons btn btn-secondary">Contact Us</button>
+            </div>
+
+            <!-- /.aboutContent -->
+            <div id="aboutContent" class="aboutContent"></div>
+
+          </div><!-- /.modal-body -->
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <!-- Supporting scripts  -->
+    <script src="javascripts/required/jquery.js"></script>
+    <script src="javascripts/required/popper.min.js"></script>
+    <script src="javascripts/required/tether.min.js"></script>
+    <script src="javascripts/required/bootstrap.min.js"></script>
+    <script src="javascripts/required/leaflet.js"></script>
+    <script src="javascripts/required/Control.MiniMap.min.js"></script>
+
+    <!-- Home feature  -->
+    <link rel="stylesheet" href="css/required/leaflet.zoomhome.css">
+    <script src="javascripts/required/leaflet.zoomhome.min.js"></script>
+
+    <!-- Export feature  -->
+    <link rel="stylesheet" href="css/usgs/easyPrint.css">
+    <script src="javascripts/required/easyPrint.min.js"></script>
+
+    <!-- Zoom to your location feature  -->
+    <link rel="stylesheet" href="css/required/L.Control.Locate.css">
+    <script src="javascripts/required/L.Control.Locate.min.js"></script>
+
+    <!-- Geocoder feature  -->
+    <link rel="stylesheet" href="css/required/esri-leaflet-geocoder.css">
+    <link rel="stylesheet" href="css/required/geocoder.css">
+    <script src="javascripts/required/esri-leaflet-core.js"></script>
+    <script src="javascripts/required/esri-leaflet-geocoder.js"></script>
+
+    <!-- Supporting local scripts  -->
+    <script src="javascripts/required/jquery.dataTables.min.js"></script>
+    <script src="javascripts/required/dataTables.bootstrap5.min.js"></script>
+    <script src="javascripts/required/dataTables.buttons.min.js"></script>
+    <link rel="stylesheet" href="css/required/buttons.dataTables.min.css">
+    <script src="javascripts/required/jszip.min.js"></script>
+    <script src="javascripts/required/pdfmake.min.js"></script>
+    <script src="javascripts/required/vfs_fonts.js"></script>
+    <script src="javascripts/required/buttons.html5.min.js"></script>
+    <script src="javascripts/required/buttons.print.min.js"></script>
+
+    <!-- Local scripts -->
+    <script src="javascripts/usgs/webRequest.js"></script>
+    <script src="javascripts/usgs/modal.js"></script>
+    <script src="javascripts/usgs/aboutContent.js"></script>
+    <script src="javascripts/usgs/popup.js"></script>
+    <script src="javascripts/usgs/tableSupport.js"></script>
+    <script src="javascripts/usgs/gwFilter.js"></script>
+    <script src="javascripts/usgs/leftPanel.js"></script>
+    <script src="javascripts/usgs/baseMaps.js"></script>
+    <script src="javascripts/usgs/map.js"></script>
+    <script src="javascripts/usgs/main.js"></script>
 
  </body>
 </html>
