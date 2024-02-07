@@ -3,7 +3,7 @@
  *
  * Provides set of functions to build a Popup.
  *
- * version 4.03
+ * version 4.04
  * December 18, 2023
 */
 
