@@ -4,7 +4,7 @@
  * baseMaps is a JavaScript library to set of functions to manage
  *  the base maps layers on the map.
  *
- * version 2.01
+ * version 2.02
  * January 30, 2024
 */
 
