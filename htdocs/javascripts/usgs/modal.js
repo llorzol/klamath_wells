@@ -2,7 +2,7 @@
  *
  * Dialog is a JavaScript library to display modal windows.
  *
- * version 2.02
+ * version 2.03
  * January 26, 2024
  */
 
