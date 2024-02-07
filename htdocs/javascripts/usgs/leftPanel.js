@@ -5,7 +5,7 @@
  *  a list of sites in a left panel that is linked to the sites on
  *  on the web map.
  *
- * version 3.14
+ * version 3.15
  * January 14, 2024
 */
 
