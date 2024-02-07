@@ -4,7 +4,7 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.21
+ * version 3.22
  * February 2, 2024
 */
 
