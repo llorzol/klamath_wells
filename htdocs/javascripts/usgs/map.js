@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.22
- * February 2, 2024
+ * version 3.23
+ * February 7, 2024
 */
 
 /*
@@ -76,6 +76,12 @@ function buildMap()
    //
    map = new L.map('map', { scrollWheelZoom: false, zoomControl: false, maxZoom: maximumZoom, minZoom: minimumZoom });
    //map.maxZoom = maximumZoom;
+
+   // Create map pane formap title caption
+   //
+   exportPane = map.createPane('exportImage');
+   map.getPane('exportImage').style.zIndex = 625;
+   map.getPane('exportImage').style.pointerEvents = 'none';
 
    // Create map pane for higlighted/unlighted site
    //
@@ -241,22 +247,12 @@ function buildMap()
               map.fitBounds(data.bounds);
           }
    });
-
-   // Show initial map zoom level
-   //
-   //jQuery( ".mapZoom" ).html( "<b>Zoom Level: </b>" + map.getZoom());
  
    // Refresh sites on extent change
    //
    map.on('zoomend dragend', function(evt) {
-       //jQuery( ".mapZoom" ).html( "<b>Zoom Level: </b>" + map.getZoom());
 
        map.closePopup();
-   });
- 
-   // Refresh sites on extent change
-   //
-   map.on('zoomend dragend', function(evt) {
  
       console.log('zoomend dragend');
 
@@ -437,7 +433,7 @@ function customPrint(mapRef)
      {
       message = "Unable to process image of map";
       console.log(message);
-      closeModal();
+      //closeModal();
       openModal(message);
       fadeModal(3000);
       return;
@@ -460,6 +456,7 @@ function exportImage()
       $(message).insertBefore('.leaflet-control-zoomhome');
       $('#imageTitle').show();
       $('.leaflet-control-zoomhome').hide();
+      $('.leaflet-control-locate').hide();
       $('.leaflet-control-easyPrint').hide();
       $('.geocoder-control').hide();
       printPlugin.printMap('customPrintClass', filename)
@@ -473,8 +470,46 @@ function cleanUpMap()
       console.log(message);
       $('#imageTitle').remove();
       $('.leaflet-control-zoomhome').show();
+      $('.leaflet-control-locate').show();
       $('.leaflet-control-easyPrint').show();
       $('.geocoder-control').show();
+  }
+
+// Set custom print
+//
+function exportImageNew()
+  {
+      console.log("exportImage");
+          
+      const filename = `klamath_wells-${new Date().toISOString().substr(0, 19)}`;
+      message = "Exporting map to image file " + filename;
+      openModal(message);
+      //console.log(message);
+      
+      printPlugin.options.customWindowTitle = $('#stationsCaption').text();
+      message = ['<span id="imageTitle">', $('#stationsCaption').text(), '</span>'].join('');
+      //console.log(message);
+      $(message).prepend('#map');
+      //$(message).insertBefore('.leaflet-control-zoomhome');
+      $('span#imageTitle').show();
+      $('.leaflet-control-container').hide();
+      printPlugin.printMap('customPrintClass', filename)
+  }
+
+// Set custom print
+//
+function cleanUpMapNew()
+  {
+      message = "Exported map";
+      openModal(message);
+      fadeModal(3000);
+      console.log(message);
+      //$('span#imageTitle').remove();
+      $('.leaflet-control-container').show();
+      //$('.leaflet-control-zoomhome').show();
+      //$('.leaflet-control-locate').show();
+      //$('.leaflet-control-easyPrint').show();
+      //$('.geocoder-control').show();
   }
 
 // Set custom print
