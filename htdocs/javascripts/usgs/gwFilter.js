@@ -4,8 +4,8 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.23
- * January 29, 2024
+ * version 3.24
+ * February 10, 2024
 */
 
 /*
@@ -50,7 +50,7 @@ var SeasonIntervals = {
     'Fall'  : ['09','10','11','Max'],
     'Winter': ['12','01','02','Min']
                       };
-var SeasonsList = ['Winter','Spring','Summer','Fall'];
+var SeasonsList = ['Spring','Summer','Fall','Winter'];
 
 var selectedSeasonIntervals;
 var prepareGwChangeMap = true;
@@ -278,19 +278,16 @@ function setfilterGwHtml()
 
       // Set available season for selected year
       //
-      var startingYear = "";
-      jQuery("#startingYear option:selected").each(function() {
-         startingYear = jQuery( this ).val();
-      });
+      var startingYear = jQuery('#startingYear').prop('value');
       jQuery("#startingSeason").empty();
       var content = "";
-      jQuery.each(SeasonsList, function(index, seasonOption) 
+      for (season of SeasonsList)
         {
-         if(selectedSeasonIntervals[startingYear].includes(seasonOption))
+         if(selectedSeasonIntervals[startingYear].includes(season))
            {
-            content    += "    <option value='" + season + "'>" + seasonOption + "</option>";
+            content    += "    <option value='" + season + "'>" + season + "</option>";
            }
-      });
+      }
       jQuery("#startingSeason").append(content);
 
      });
@@ -301,19 +298,16 @@ function setfilterGwHtml()
 
       // Set available season for selected year
       //
-      var endingYear = "";
-      jQuery("#endingYear option:selected").each(function() {
-         endingYear = jQuery( this ).val();
-      });
+      var endingYear = jQuery('#endingYear').prop('value');
       jQuery("#endingSeason").empty();
       var content = "";
-      jQuery.each(SeasonsList, function(index, seasonOption) 
+      for (season of SeasonsList)
         {
-         if(selectedSeasonIntervals[startingYear].includes(seasonOption))
+         if(selectedSeasonIntervals[endingYear].includes(seasonOption))
            {
-            content    += "    <option value='" + season + "'>" + seasonOption + "</option>";
+            content    += "    <option value='" + season + "'>" + season + "</option>";
            }
-      });
+      }
       jQuery("#endingSeason").append(content);
 
      });
@@ -326,21 +320,13 @@ function setfilterGwHtml()
 
       // Ensure starting season has been selected
       //
-      jQuery("#startingYear option:selected").each(function() {
-         startingYear = jQuery( this ).val();
-      });
-      jQuery("#startingSeason option:selected").each(function() {
-         startingSeason = jQuery( this ).val();
-      });
+      var startingYear   = jQuery('#startingYear').prop('value');
+      var startingSeason = jQuery('#startingSeason').prop('value');
 
       // Ensure ending season has been selected
       //
-      jQuery("#endingYear option:selected").each(function() {
-         endingYear = jQuery( this ).val();
-      });
-      jQuery("#endingSeason option:selected").each(function() {
-         endingSeason = jQuery( this ).val();
-      });
+      var endingYear     = jQuery('#endingYear').prop('value');
+      var endingSeason   = jQuery('#endingSeason').prop('value');
 
       // Ensure starting season < ending season
       //
@@ -357,6 +343,11 @@ function setfilterGwHtml()
       else
         {
          buildSelectModal();
+         message  = ' startingSeason -> ' + startingSeason;
+         message += ' startingYear -> ' + startingYear;
+         message += ' endingSeason -> ' + endingSeason;
+         message += ' endingYear -> ' + endingYear;
+         console.log(message);
          requestGwChange(startingSeason, startingYear, endingSeason, endingYear);
         }
    });
