@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.23
- * February 7, 2024
+ * version 3.25
+ * February 12, 2024
 */
 
 /*
@@ -42,12 +42,12 @@ var customSites         = new L.FeatureGroup();
 var customLevels        = new L.FeatureGroup();
 
 var mySiteInfo          = {};
+var geojsonSites        = {};
 
 // Keeps track of present bounding box [used by refresh map feature]
 //
 var maximumZoom         = 15;
 var minimumZoom         =  7;
-var presentMapExtent    = {};
 
 // Set basemap
 //
@@ -79,9 +79,9 @@ function buildMap()
 
    // Create map pane formap title caption
    //
-   exportPane = map.createPane('exportImage');
-   map.getPane('exportImage').style.zIndex = 625;
-   map.getPane('exportImage').style.pointerEvents = 'none';
+   //exportPane = map.createPane('exportImage');
+   //map.getPane('exportImage').style.zIndex = 625;
+   //map.getPane('exportImage').style.pointerEvents = 'none';
 
    // Create map pane for higlighted/unlighted site
    //
@@ -254,30 +254,24 @@ function buildMap()
 
        map.closePopup();
  
-      console.log('zoomend dragend');
-
       // Remove existing groundwater change level
       //
       if(!map.hasLayer(customLevels))
-        {
- 
-      console.log('Reset table');
- 
-      // Build tables
-      //
-      var mySiteSet =  buildSiteList();
-      leftPanel(mySiteSet);
-      var siteTable = createTable(mySiteSet);
-      $('#siteTable').html("");
-      $('#siteTable').html(siteTable);
-      $(".siteCount").text(mySiteSet.length);
- 
-      // Add table sorting
-      //
-      var myTitle = $('caption#stationsCaption').text();
-      DataTables ("#stationsTable");
-      $(".dt-buttons").css('width', '100%');
-     }
+       {
+           // Build tables
+           //
+           var mySiteSet =  buildSiteList();
+           leftPanel(mySiteSet);
+           var siteTable = createTable(mySiteSet);
+           $('#siteTable').html("");
+           $('#siteTable').html(siteTable);
+           $(".siteCount").text(mySiteSet.length);
+
+           // Add table sorting
+           //
+           var myTitle = $('caption#stationsCaption').text();
+           DataTables ("#stationsTable");
+       }
  
    });
 
@@ -292,7 +286,6 @@ function buildMap()
   // Add table sorting
   //
   var myTable = DataTables ("#stationsTable");
-  $(".dt-buttons").css('width', '100%');
 
    // Close
    //
@@ -543,10 +536,6 @@ function createTable (mySiteSet)
    console.log("createTable ");
    //console.log(mySiteSet);
 
-   // Set active date
-   //
-   var activeDate = new Date(2018, 0, 1, 0, 0, 0);
-
    // Check what the agency currently set to
    //
    var myAgency = $("#monitoringAgency").prop('value');
@@ -566,6 +555,12 @@ function createTable (mySiteSet)
    myCaption.push(mySiteSet.length + ' sites');
    myCaption.push('(Monitored by ' + myAgency + ' -- ');
    myCaption.push(myStatus + ' sites)');
+
+   // Set object for geojson output
+   //
+   geojsonSites            = {};
+   geojsonSites.type       = 'FeatureColllection';
+   geojsonSites.features   = [];
 
    // Set
    //
@@ -626,6 +621,8 @@ function createTable (mySiteSet)
       var periodic             = mySiteInfo[siteID].periodic;
       var recorder             = mySiteInfo[siteID].recorder;
           
+      var gw_change            = mySiteInfo[siteID].gw_change;
+          
       var gw_status            = mySiteInfo[siteID].gw_status;
       var gw_begin_date        = mySiteInfo[siteID].gw_begin_date;
       var gw_end_date          = mySiteInfo[siteID].gw_end_date;
@@ -664,6 +661,18 @@ function createTable (mySiteSet)
       var cdwr_rc_end_date     = mySiteInfo[siteID].cdwr_rc_end_date;
       var cdwr_rc_count        = mySiteInfo[siteID].cdwr_rc_count;
       var cdwr_rc_status       = mySiteInfo[siteID].cdwr_rc_status;
+
+      // Set object for geojson output
+      //
+      geojsonSites.type       = 'FeatureColllection';
+      geojsonSites.features.push({
+          'type' : 'Feature',
+          'properties' : mySiteInfo[siteID],
+          'geometry' : { 'type' : 'Point',
+                         'coordinates' : [mySiteInfo[siteID].dec_long_va,
+                                             mySiteInfo[siteID].dec_lat_va]
+                          }
+         });
 
       //console.log(" Table");
       //console.log("User myAgency " + myAgency + " myStatus " + myStatus);
@@ -798,7 +807,7 @@ function createTable (mySiteSet)
       //
       summary_table.push(
                          ' <td id="gw_' + site_id + '" class="stationName">',
-                         '',
+                         gw_change,
                          ' </td>'
                         );
 
@@ -869,6 +878,9 @@ function createTable (mySiteSet)
    $(".NumberCDWRinactive").text(NumberCDWRinactive);
    $(".NumberALLactive").text(NumberALLactive);
    $(".NumberALLinactive").text(NumberALLinactive);
+ 
+   console.log(" geojsonSites");
+   console.log(geojsonSites);
  
    return summary_table.join("\n");
   }
