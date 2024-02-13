@@ -3,8 +3,8 @@
  *
  * The file table.css is a css file to providing styling for employee table. 
  *
- * version 2.03
- * February 11, 2024
+ * version 2.04
+ * February 13, 2024
 */
 
 /*
@@ -143,5 +143,12 @@ tr.Rise {
   --dt-row-selected-text: #000000;
   --dt-row-selected: #b3d1ff;
   background-color: #b3d1ff!important;
+  fill-opacity: 0.15!important;
+}
+
+tr.NoChange {
+  --dt-row-selected-text: #000000;
+  --dt-row-selected: #ffb3ff;
+  background-color: #ffb3ff!important;
   fill-opacity: 0.15!important;
 }
