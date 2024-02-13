@@ -4,8 +4,8 @@
  * datatablesSupport is a JavaScript library to provide a set of functions to build
  *  a table with buttons to export table content.
  *
- * version 3.04
- * January 11, 2024
+ * version 3.06
+ * February 12, 2024
 */
 
 /*
@@ -253,6 +253,19 @@ function DataTables (tableSelector)
                     doc.defaultStyle.fontSize = 8;
                     doc.styles.tableHeader.fontSize = 8;
                 }
+            },
+            {
+                text: 'Geojson',
+                autoPrint: true,
+                action: function ( e, dt, node, config ) {
+                    message = 'Exporting sites in geojson format';
+                    openModal(message);
+                    fadeModal(3000);
+                    var file = 'customSites.geojson';
+                      saveAs(new File([JSON.stringify(geojsonSites)], file, {
+                        type: "text/plain;charset=utf-8"
+                      }), file);
+                }
             }
         ]
      });
@@ -411,4 +424,22 @@ function exportCustomExcel (tableSelector, myTitle)
             } )
         ]
      });
+  }
+
+// Select table rows that match text
+//
+function selectRows (tableSelector, selectText, selectClass) 
+{
+    // Find indexes of rows which have a value for groundwater change
+    //
+    var table   = $('#stationsTable').DataTable();
+    var indexes = table.rows().eq( 0 ).filter( function (rowIdx) {
+        return table.cell( rowIdx, gwChangeColumn ).data() === selectText ? true : false;
+    } );                    //console.log(message);
+
+    // Add a class to those rows using an index selector
+    table.rows( indexes )
+        .nodes()
+        .to$()
+        .addClass( selectClass );
   }
