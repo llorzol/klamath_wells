@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.25
- * February 12, 2024
+ * version 3.26
+ * February 13, 2024
 */
 
 /*
@@ -811,6 +811,8 @@ function createTable (mySiteSet)
                          ' </td>'
                         );
 
+      // Period of record
+      //
       var por_txt    = '';
       var porRecords = [];
       var td_color   = '';
