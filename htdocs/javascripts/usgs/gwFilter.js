@@ -4,8 +4,8 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.24
- * February 10, 2024
+ * version 3.27
+ * February 12, 2024
 */
 
 /*
@@ -53,9 +53,11 @@ var SeasonIntervals = {
 var SeasonsList = ['Spring','Summer','Fall','Winter'];
 
 var selectedSeasonIntervals;
+
 var prepareGwChangeMap = true;
+var gwLevelContent     = ''
    
-var SeasonAgruments = [];
+var SeasonAgruments    = [];
 for (var season in SeasonIntervals)
     {
         SeasonAgruments.push([season, SeasonIntervals[season].join(',')]);
@@ -200,22 +202,22 @@ function setfilterGwHtml()
    content    += "   </select>";
 
    content    += "   <select id='startingSeason'>";
-   var selectedOption = "None";
-   jQuery.each(SeasonsList, function(index, seasonOption) 
+   var selectedOption = true;
+   for (season of SeasonsList)
      {
-      if(selectedSeasonIntervals[firstYear].includes(seasonOption))
+      if(selectedSeasonIntervals[firstYear].includes(season))
         {
-         if(selectedOption === "None")
+         if(selectedOption)
            {
-            content += "    <option value='" + seasonOption + "' selected='selected'>" + seasonOption + "</option>";
-            selectedOption = true;
+            content += "    <option value='" + season + "' selected='selected'>" + season + "</option>";
+            selectedOption = false;
            }
          else
            {
-            content += "    <option value='" + seasonOption + "'>" + seasonOption + "</option>";
+            content += "    <option value='" + season + "'>" + season + "</option>";
            }
         }
-     });
+     }
    content    += "   </select>";
 
    content    += "  </div>";
@@ -241,22 +243,22 @@ function setfilterGwHtml()
    content    += "   </select>";
 
    content    += "   <select id='endingSeason'>";
-   var selectedOption = "None";
-   jQuery.each(SeasonsList, function(index, seasonOption) 
+   var selectedOption = true;
+   for (season of SeasonsList)
      {
-      if(selectedSeasonIntervals[firstYear].includes(seasonOption))
+      if(selectedSeasonIntervals[firstYear].includes(season))
         {
-         if(selectedOption === "None")
+         if(selectedOption)
            {
-            content += "    <option value='" + seasonOption + "' selected='selected'>" + seasonOption + "</option>";
-            selectedOption = true;
+            content += "    <option value='" + season + "' selected='selected'>" + season + "</option>";
+            selectedOption = false;
            }
          else
            {
-            content += "    <option value='" + seasonOption + "'>" + seasonOption + "</option>";
+            content += "    <option value='" + season + "'>" + season + "</option>";
            }
         }
-     });
+     }
    content    += "   </select>";
    content    += "  </div>";
    content    += " </div>";
@@ -392,7 +394,7 @@ function requestGwChange(startingSeason, startingYear, endingSeason, endingYear)
                 ];
     seasonTwo = [endingYear, SeasonIntervals[endingSeason]];
 
-    var gwLevelContent = [
+    gwLevelContent = [
                           'Groundwater Change Starting',
                           startingYear,
                           SeasonIntervals[startingSeason][0],
@@ -405,7 +407,7 @@ function requestGwChange(startingSeason, startingYear, endingSeason, endingYear)
                           SeasonIntervals[endingSeason][SeasonIntervals[endingSeason].length - 2]
                          ]
 
-    var gwLevelContent = [
+    gwLevelContent = [
                           'Groundwater Change Starting',
                           startingSeason,
                           'of',
@@ -436,35 +438,6 @@ function requestGwChange(startingSeason, startingYear, endingSeason, endingYear)
    $('.siteFinder').hide();
    $('.sitesList').hide();
    $('#countsTable').hide();
-
-   // Check for all sites
-   //
-   if(!map.hasLayer(allSites))
-     {
-      map.addLayer(allSites);
-     }
-
-   // Set the bounds 
-   //
-   map.fitBounds(allSites.getBounds());
-
-    // Build tables
-    //
-    var mySiteSet =  buildSiteList();
-    leftPanel(mySiteSet);
-    var siteTable = createTable(mySiteSet);
-    $('#siteTable').html("");
-    $('#siteTable').html(siteTable);
-    $(".siteCount").text(mySiteSet.length);
-
-    // Set table caption
-    //
-    $("#stationsCaption").html(gwLevelContent.join(" "));  
-
-    // Set table
-    //
-    DataTables ("#stationsTable")
-    $(".dt-buttons").css('width', '100%');
      
     // Request for wells
     //
@@ -485,9 +458,240 @@ function requestGwChange(startingSeason, startingYear, endingSeason, endingYear)
 function makeGwChangeMap(gwChanges)
   {
    console.log("makeGwChangeMap");
-   console.log("gwChanges");
-   console.log(gwChanges);
-   console.log("gwChanges");
+
+   var mySiteList   = [];
+   var customList   = [];
+   var siteCount    = 0;
+
+   // Check if there are sites with value for change levels
+   //
+   if('message' in gwChanges)
+     {
+         $('#selectMessage').append('</br><div class="text-danger">Warning ' + gwChanges.message + "</div>");
+         return;
+     }
+
+   // Remove existing custom sites
+   //
+   if(map.hasLayer(customLevels))
+     {
+      customLevels.clearLayers();
+     }
+
+   // Check for all sites
+   //
+   if(!map.hasLayer(allSites))
+     {
+      map.addLayer(allSites);
+     }
+
+   // Set the bounds 
+   //
+   map.fitBounds(allSites.getBounds());
+
+   var mapBounds    = map.getBounds();
+
+   // Build site list
+   //
+   allSites.eachLayer(function(site)
+     {
+      // Only process sites in mapview
+      //
+      if(map.hasLayer(site))
+        {
+         if(mapBounds.contains(site.getLatLng()))
+           {
+            // Attributes
+            //
+            var properties        = site.feature.properties;
+            var site_id           = properties.site_id;
+            var site_no           = properties.site_no;
+            var coop_site_no      = properties.coop_site_no;
+            var cdwr_id           = properties.cdwr_id;
+            var station_nm        = properties.station_nm;
+            var state_well_nmbr   = properties.state_well_nmbr;
+            var site_tp_cd        = properties.site_tp_cd;
+            var site_status       = 'Active';
+
+            // Set marker
+            //                  
+            myIcon                   = setIcon(site_id, site_tp_cd, site_status);
+            mySiteInfo[site_id].icon = myIcon;
+               
+            // Groundwater change value for user-chosen interval
+            //
+            if(gwChanges[site_id])
+              {
+               var myTitle    = [];
+               if(site_no)      { myTitle.push("USGS " + site_no); }
+               if(coop_site_no) { myTitle.push("OWRD " + coop_site_no); }
+               if(cdwr_id)      { myTitle.push("CDWR " + state_well_nmbr); }
+
+               var latitude   = site.feature.geometry.coordinates[1];
+               var longitude  = site.feature.geometry.coordinates[0];
+
+               var gwValue    = gwChanges[site_id];
+               var radius     = getRadius(Math.abs(parseFloat(gwValue)));
+               var color      = getColor(gwValue);
+
+               // Add selected
+               //
+               $('#tr_' + site_id).addClass('selected gwChange');
+
+               // Text
+               //
+               if(gwValue > 0)
+                 { 
+                  table_txt = "Rise " + Math.abs(gwValue) + " feet";
+                  myTitle.push(table_txt);
+                  $('#tr_' + site_id).addClass('Rise');
+                 }
+               else if(gwValue < 0)
+                 {
+                  table_txt = "Decline " + Math.abs(gwValue) + " feet";
+                  myTitle.push(table_txt);
+                  $('#tr_' + site_id).addClass('Decline');
+                 }
+               else
+                 {
+                  table_txt = "No change";
+                  myTitle.push(table_txt);
+                 }
+                  
+               site.feature.properties.gwchange = gwValue;
+                  
+               var circle     = L.circleMarker([latitude, longitude], 
+                                               { 
+                                                //site_no: coop_site_no,
+                                                pane: 'gwChangePane',
+                                                radius: radius,
+                                                color: color,
+                                                weight: 1,
+                                                fillColor: color,
+                                                fillOpacity: 0.15
+               });
+
+               // Bind tooltip to show value on hover
+               //
+               circle.bindTooltip(myTitle.join(" ")).openTooltip();
+
+               // Add layer
+               //
+               customLevels.addLayer(circle);
+
+               customList.push(site_id);
+                         
+               // Prepare list
+               //
+               mySiteList.push({
+                      'site_id': site_id,
+                      'site_no': site_no,
+                      'coop_site_no': coop_site_no,
+                      'cdwr_id': cdwr_id,
+                      'state_well_nmbr': state_well_nmbr,
+                      'station_nm': station_nm,
+                      'site_status': site_status,
+                      'site_icon': myIcon,
+                  });
+                  
+               mySiteInfo[site_id].gw_change = table_txt;
+                  
+               siteCount++;
+              }
+               
+            // No groundwater change value for user-chosen interval
+            //
+            else
+              {
+               mySiteInfo[site_id].gw_change = null;
+              }
+           }
+ 
+         // Add text to gw change column in table
+         //
+         if($('#gw_' + site_id).length > 0)
+           {
+            myTable.cell('#gw_' + site_id).data(table_txt);
+           }
+        }
+   });
+
+   // Add layer of selected sites
+   //
+   console.log("CustomLevels count " + siteCount);
+   if(siteCount > 0)
+     {
+      // Remove existing sites
+      //
+      if(map.hasLayer(allSites))
+        {
+         map.removeLayer(allSites);
+        }
+
+      // Remove existing sites
+      //
+      if(map.hasLayer(customSites))
+        {
+         map.removeLayer(customSites);
+        }
+
+      customLevels.addTo(map).bringToFront();
+
+      // Add legend
+      //
+      $('.gwChangeLegend').show();
+
+      // Build tables
+      //
+      var siteTable = createTable(mySiteList);
+      $('#siteTable').html("");
+      $('#siteTable').html(siteTable);
+      $(".siteCount").text(siteCount);
+
+      // Set table caption
+      //
+      $("#stationsCaption").html(gwLevelContent.join(" "));  
+      $("#stationsCaption").append([" --", siteCount, "Sites with measurements"].join(" "));
+
+      // Set table
+      //
+      DataTables ("#stationsTable")
+         
+      // Toggle the visibility of column
+      //
+      var myTable = $('#stationsTable').DataTable();
+      var gwChangeColumn = 0
+      myTable.columns().header().to$().each(function( index ) {
+        //console.log( index + ": " + $( this ).text() );
+        if($( this ).text() === 'Groundwater Change') {
+            myTable.column([index]).visible( true );
+            gwChangeColumn = index;
+        }
+      });
+     }
+      
+   else
+     {
+      closeModal();
+      var message = "No sites met the selection criteria";
+      openModal(message);
+      fadeModal(2000);
+      clearCustomLevels()
+      setfilterGwHtml();
+     }
+
+   // Close
+   //
+   fadeModal(2000);
+
+   return customLevels;
+  }
+
+// Builds selected sites
+//
+function makeGwChangeMapSave(gwChanges)
+  {
+   console.log("makeGwChangeMap");
 
    // Check if there are sites with value for change levels
    //
@@ -499,9 +703,7 @@ function makeGwChangeMap(gwChanges)
 
    var customList   = [];
    var siteCount    = 0;
-
    var mapBounds    = map.getBounds();
-   presentMapExtent = mapBounds;
 
    // Remove existing custom sites
    //
@@ -513,10 +715,12 @@ function makeGwChangeMap(gwChanges)
     // Toggle the visibility of column
     //
     var myTable = $('#stationsTable').DataTable();
+    var gwChangeColumn = 0
     myTable.columns().header().to$().each(function( index ) {
-        console.log( index + ": " + $( this ).text() );
+        //console.log( index + ": " + $( this ).text() );
         if($( this ).text() === 'Groundwater Change') {
             myTable.column([index]).visible( true );
+            gwChangeColumn = index;
         }
     });
     //myTable.column([6]).visible( true );
@@ -530,6 +734,8 @@ function makeGwChangeMap(gwChanges)
                
          var properties      = site.feature.properties;
          var site_id         = properties.site_id;
+
+         properties.gwchange = 'NULL';
 
          //console.log("Site " + site_id);
          if($('#gw_' + site_id).length > 0)
@@ -548,13 +754,13 @@ function makeGwChangeMap(gwChanges)
             var siteID          = site_id;
                
             var site_txt        = [];
-            if(site_no > 0) { site_txt.push("USGS " + site_no); }
-            if(coop_site_no > 0) { site_txt.push("OWRD " + coop_site_no); }
-            if(cdwr_id > 0)      { site_txt.push("CDWR " + state_well_nmbr); }
+            if(site_no)      { site_txt.push("USGS " + site_no); }
+            if(coop_site_no) { site_txt.push("OWRD " + coop_site_no); }
+            if(cdwr_id)      { site_txt.push("CDWR " + state_well_nmbr); }
 
             // Groundwater change value for user-chosen interval
             //
-            if(typeof gwChanges[siteID] !== "undefined")
+            if(gwChanges[siteID])
               {
                var latitude   = site.feature.geometry.coordinates[1];
                var longitude  = site.feature.geometry.coordinates[0];
@@ -563,23 +769,31 @@ function makeGwChangeMap(gwChanges)
                var radius     = getRadius(Math.abs(parseFloat(gwValue)));
                var color      = getColor(gwValue);
 
+               // Add selected
+               //
+               $('#tr_' + site_id).addClass('selected gwChange');
+
                // Text
                //
                if(gwValue > 0)
                  { 
                   table_txt = "Rise " + Math.abs(gwValue) + " feet";
                   site_txt.push(table_txt);
+                  $('#tr_' + site_id).addClass('Rise');
                  }
                else if(gwValue < 0)
                  {
                   table_txt = "Decline " + Math.abs(gwValue) + " feet";
                   site_txt.push(table_txt);
+                  $('#tr_' + site_id).addClass('Decline');
                  }
                else
                  {
                   table_txt = "No change";
                   site_txt.push(table_txt);
                  }
+                  
+               site.feature.properties.gwchange = gwValue;
                   
                var circle     = L.circleMarker([latitude, longitude], 
                                                { 
@@ -686,7 +900,7 @@ function clearCustomLevels()
    //
    var myTable = $('#stationsTable').DataTable();
    myTable.columns().header().to$().each(function( index ) {
-       console.log( index + ": " + $( this ).text() );
+       //console.log( index + ": " + $( this ).text() );
        if($( this ).text() === 'Groundwater Change') {
            myTable.column([index]).visible( false );
        }
@@ -711,7 +925,6 @@ function clearCustomLevels()
    // Add table sorting
    //
    DataTables ("#stationsTable")
-   $(".dt-buttons").css('width', '100%');
   }	
 
 // Obtain values for selected sites
