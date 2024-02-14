@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.26
- * February 13, 2024
+ * version 3.27
+ * February 14, 2024
 */
 
 /*
@@ -559,7 +559,7 @@ function createTable (mySiteSet)
    // Set object for geojson output
    //
    geojsonSites            = {};
-   geojsonSites.type       = 'FeatureColllection';
+   geojsonSites.type       = 'FeatureCollection';
    geojsonSites.features   = [];
 
    // Set
@@ -664,13 +664,13 @@ function createTable (mySiteSet)
 
       // Set object for geojson output
       //
-      geojsonSites.type       = 'FeatureColllection';
+      geojsonSites.type       = 'FeatureCollection';
       geojsonSites.features.push({
           'type' : 'Feature',
           'properties' : mySiteInfo[siteID],
           'geometry' : { 'type' : 'Point',
-                         'coordinates' : [mySiteInfo[siteID].dec_long_va,
-                                             mySiteInfo[siteID].dec_lat_va]
+                         'coordinates' : [parseFloat(mySiteInfo[siteID].dec_long_va),
+                                          parseFloat(mySiteInfo[siteID].dec_lat_va)]
                           }
          });
 
