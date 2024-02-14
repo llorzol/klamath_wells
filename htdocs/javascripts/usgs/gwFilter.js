@@ -305,7 +305,7 @@ function setfilterGwHtml()
       var content = "";
       for (season of SeasonsList)
         {
-         if(selectedSeasonIntervals[endingYear].includes(seasonOption))
+         if(selectedSeasonIntervals[endingYear].includes(season))
            {
             content    += "    <option value='" + season + "'>" + season + "</option>";
            }
