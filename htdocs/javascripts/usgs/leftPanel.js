@@ -5,8 +5,8 @@
  *  a list of sites in a left panel that is linked to the sites on
  *  on the web map.
  *
- * version 3.15
- * January 14, 2024
+ * version 3.16
+ * February 11, 2024
 */
 
 /*
@@ -47,7 +47,7 @@ $("#monitoringAgency").on( "change", function( evt ) {
    clearSelectModal();
    setfilterGwHtml();
  
-   // Build tables
+   // Prepare tables
    //
    var mySiteSet =  buildSiteList();
    leftPanel(mySiteSet);
@@ -56,11 +56,9 @@ $("#monitoringAgency").on( "change", function( evt ) {
    $('#siteTable').html(siteTable);
    $(".siteCount").text(mySiteSet.length);
  
-   // Add table sorting
+   // Build table
    //
    DataTables ("#stationsTable")
-   $(".dt-buttons").css('width', '100%');
- 
 });
  
 // Enable selection of measuring status and reset sites visible
@@ -73,7 +71,7 @@ $("#monitoringStatus").on( "change", function( evt ) {
    clearSelectModal();
    setfilterGwHtml();
  
-   // Build tables
+   // Prepare tables
    //
    var mySiteSet =  buildSiteList();
    leftPanel(mySiteSet);
@@ -82,11 +80,9 @@ $("#monitoringStatus").on( "change", function( evt ) {
    $('#siteTable').html(siteTable);
    $(".siteCount").text(mySiteSet.length);
  
-   // Add table sorting
+   // Build table
    //
    DataTables ("#stationsTable")
-   $(".dt-buttons").css('width', '100%');
- 
 });
  
 // Enable selection by USGS, OWRD, or CDWR Id 
@@ -95,7 +91,7 @@ $("#finderLinks").on( "change", function( evt ) {
  
    $("#searchSites").val('');
  
-   // Build tables
+   // Prepare tables
    //
    var mySiteSet =  setFinderFilter();
    leftPanel(mySiteSet);
@@ -104,11 +100,9 @@ $("#finderLinks").on( "change", function( evt ) {
    $('#siteTable').html(siteTable);
    $(".siteCount").text(mySiteSet.length);
  
-   // Add table sorting
+   // Build table
    //
    DataTables ("#stationsTable")
-   $(".dt-buttons").css('width', '100%');
- 
 });
 
 // Set leftPanel
@@ -291,9 +285,7 @@ function buildSiteList()
    var mySiteList   = [];
    var customList   = [];
    var siteCount    = 0;
-
    var mapBounds    = map.getBounds();
-   presentMapExtent = mapBounds;
 
    // Check for all sites
    //
@@ -541,15 +533,19 @@ function buildSiteList()
                if(coop_site_no)    { myTitle.push("OWRD " + coop_site_no); }
                if(cdwr_id)         { myTitle.push("CDWR " + cdwr_id); }
 
-               // Add layer
+               // Set marker
                //                  
                myIcon                   = setIcon(site_id, site_tp_cd, site_status);
                mySiteInfo[site_id].icon = myIcon;
 
                // Add layer
                //
-               var latlng = L.latLng({ lat: latitude, lng: longitude });
-               var layer  = L.marker(latlng, {pane: 'customSites', icon: myIcon, title: myTitle.join(" "), siteID: site_id } );
+               var latlng  = L.latLng({ lat: latitude, lng: longitude });
+               var layer   = L.marker(latlng, {pane: 'customSites', icon: myIcon, title: myTitle.join(" "), siteID: site_id } );
+               var feature = layer.feature = layer.feature || {};
+               var feature = feature.type = feature.type || "Feature";
+               var props   = feature.properties = feature.properties || {};
+               layer.feature.properties = site.feature.properties;
 
                // Popup and highlight/unhighlight site in list of left panel
                //
@@ -561,7 +557,7 @@ function buildSiteList()
 
                customList.push(layer);
                          
-                  mySiteList.push({
+               mySiteList.push({
                       'site_id': site_id,
                       'site_no': site_no,
                       'coop_site_no': coop_site_no,
@@ -593,11 +589,13 @@ function buildSiteList()
 
    // Add layer of selected sites
    //
-   if(customList.length > 0)
+   if(siteCount > 0)
      {
-      console.log("customSites --> " + customList.length);
+      console.log("customSites --> " + siteCount);
 
       customSites = new L.FeatureGroup(customList);
+      //console.log('customSites');
+      //console.log(customSites);
 
       customSites.addTo(map).bringToFront();
      }
