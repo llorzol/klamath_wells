@@ -4,7 +4,7 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.27
+ * version 3.29
  * February 14, 2024
 */
 
@@ -621,7 +621,11 @@ function createTable (mySiteSet)
       var periodic             = mySiteInfo[siteID].periodic;
       var recorder             = mySiteInfo[siteID].recorder;
           
-      var gw_change            = mySiteInfo[siteID].gw_change;
+      var gw_change            = '';
+      if(gwChangeSites[siteID])
+        {
+         gw_change = gwChangeSites[siteID];
+        }
           
       var gw_status            = mySiteInfo[siteID].gw_status;
       var gw_begin_date        = mySiteInfo[siteID].gw_begin_date;
@@ -880,9 +884,6 @@ function createTable (mySiteSet)
    $(".NumberCDWRinactive").text(NumberCDWRinactive);
    $(".NumberALLactive").text(NumberALLactive);
    $(".NumberALLinactive").text(NumberALLinactive);
- 
-   console.log(" geojsonSites");
-   console.log(geojsonSites);
  
    return summary_table.join("\n");
   }
