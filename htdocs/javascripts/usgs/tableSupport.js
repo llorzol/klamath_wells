@@ -154,7 +154,7 @@ function DataTables (tableSelector)
   {
      console.log("datatablesInit " + jQuery(tableSelector).length);
      var myTitle = $('caption#stationsCaption').text();
-     console.log("myTitle " + myTitle);
+     //console.log("myTitle " + myTitle);
 
      // TableSorter - New Version with Fixed Headers
      //-------------------------------------------------
@@ -261,7 +261,7 @@ function DataTables (tableSelector)
                     message = 'Exporting sites in geojson format';
                     openModal(message);
                     fadeModal(3000);
-                    var file = 'customSites.geojson';
+                    var file = 'KlamathSites.geojson';
                       saveAs(new File([JSON.stringify(geojsonSites)], file, {
                         type: "text/plain;charset=utf-8"
                       }), file);
