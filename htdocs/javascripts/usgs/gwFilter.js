@@ -4,7 +4,7 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.29
+ * version 3.30
  * February 14, 2024
 */
 
