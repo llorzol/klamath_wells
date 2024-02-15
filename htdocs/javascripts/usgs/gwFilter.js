@@ -4,8 +4,8 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.28
- * February 13, 2024
+ * version 3.29
+ * February 14, 2024
 */
 
 /*
@@ -32,6 +32,10 @@
 ###############################################################################
 */
 
+// Set groundwater change data
+//-----------------------------------------------
+var gwChangeSites = {};
+
 // Set starting year
 //-----------------------------------------------
 var startingYear = "2001";
@@ -54,7 +58,6 @@ var SeasonsList = ['Spring','Summer','Fall','Winter'];
 
 var selectedSeasonIntervals;
 
-var prepareGwChangeMap = true;
 var gwLevelContent     = ''
    
 var SeasonAgruments    = [];
@@ -558,8 +561,6 @@ function makeGwChangeMap(gwChanges)
                   myTitle.push(table_txt);
                  }
                   
-               site.feature.properties.gwchange = gwValue;
-                  
                var circle     = L.circleMarker([latitude, longitude], 
                                                { 
                                                 //site_no: coop_site_no,
@@ -594,7 +595,9 @@ function makeGwChangeMap(gwChanges)
                       'site_icon': myIcon,
                   });
                   
-               mySiteInfo[site_id].gw_change = table_txt;
+               // Assign gw change data
+               //
+               gwChangeSites[site_id] = table_txt;
                   
                siteCount++;
               }
@@ -898,11 +901,16 @@ function clearCustomLevels()
    //
    if(map.hasLayer(customLevels))
      {
+      gwChangeSites = {};
       map.removeLayer(customLevels);
       customLevels.clearLayers();
      }
          
-   // Toggle the visibility
+   // Clear gw change data
+   //
+   var myTable = $('#stationsTable').DataTable();
+         
+   // Toggle the visibility gw change column
    //
    var myTable = $('#stationsTable').DataTable();
    myTable.columns().header().to$().each(function( index ) {
@@ -913,6 +921,8 @@ function clearCustomLevels()
    });
    //myTable.column([6]).visible( false );
 
+   // Reset features
+   //
    $('.monitoringAgency').show();
    $('.monitoringStatus').show();
    $('#countsTable').show();
