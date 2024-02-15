@@ -4,8 +4,8 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.30
- * February 14, 2024
+ * version 3.31
+ * February 15, 2024
 */
 
 /*
@@ -905,6 +905,10 @@ function clearCustomLevels()
       map.removeLayer(customLevels);
       customLevels.clearLayers();
      }
+
+   // Set the bounds 
+   //
+   map.fitBounds(allSites.getBounds());
          
    // Clear gw change data
    //
