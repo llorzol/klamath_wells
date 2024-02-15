@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.29
- * February 14, 2024
+ * version 3.30
+ * February 15, 2024
 */
 
 /*
@@ -178,7 +178,7 @@ function buildMap()
    //
    map.fitBounds(allSites.getBounds());
 
-   map.setMaxBounds(allSites.getBounds());
+   //map.setMaxBounds(allSites.getBounds());
 
    // Show on map
    //
@@ -218,10 +218,19 @@ function buildMap()
    var myLocate = L.control.locate({
        drawCircle: false,
        drawMarker: false,
+       returnToPrevBounds: true,
        clickBehavior: { outOfView: 'stop' },
-       strings: { title: "Move and zoom to your location" }
+       onLocationOutsideMapBounds: function(context) { // called when outside map boundaries
+           message = context.options.strings.outsideMapBoundsMsg;
+           openModal(message);
+           console.log(message);
+       },
+       strings: {
+           title: "Move and zoom to your location",
+           outsideMapBoundsMsg: "You seem located outside the boundaries of the map" 
+       }
    }).addTo(map);
-
+ 
    // Add custom print option
    //
    customPrint(map)
@@ -254,7 +263,7 @@ function buildMap()
 
        map.closePopup();
  
-      // Remove existing groundwater change level
+      // Check what FeatureGroup is displayed
       //
       if(!map.hasLayer(customLevels))
        {
