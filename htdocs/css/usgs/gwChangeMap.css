@@ -4,8 +4,8 @@
  *  information for a legend display symbols to explain
  *  groundwater cange cricle markers.
  *
- * version 1.05
- * September 15, 2021
+ * version 1.07
+ * February 17, 2024
  */
 
 /*
@@ -34,49 +34,21 @@
 
 .circleBase {
     display: inline-block;
-    border-radius: 50%;
     opacity: 0.7;
-	 border: 2px solid black; 
-    behavior: url(PIE/PIE.htc); /* remove if you don't care about IE8 */
+    border: 2px solid black;
 }
-
- .legendCircle
-   {  
-    display: inline-block;
-    opacity: 0.7;
-    top: 0px;
-    left: 1px;
-    -moz-border-radius : 50%; /* Firefox */
-    -webkit-border-radius : 50%; /* Safari & Chrome */
-    -khtml-border-radius : 50%; /* Linux browsers */ 
-    border-radius : 50% 50% 50% 50%; /* CSS3 compatible browsers */
-    background: transparent;
-    border: 2px solid #f00;
-   }
 
  .gwDecliningCircle
    {  
     display: inline-block;
-    top: 0px;
-    left: 1px;
-    -moz-border-radius : 50%; /* Firefox */
-    -webkit-border-radius : 50%; /* Safari & Chrome */
-    -khtml-border-radius : 50%; /* Linux browsers */ 
-    border-radius : 50% 50% 50% 50%; /* CSS3 compatible browsers */
-    background: rgb(240, 108, 0, 0.5); /* #f06c00; */
+    background: rgba(240, 108, 0, 0.5); /* #f06c00; */
     border: 2px solid #f06c00;
    }
 
  .gwRisingCircle
    {  
     display: inline-block;
-    top: 0px;
-    left: 1px;
-    -moz-border-radius : 50%; /* Firefox */
-    -webkit-border-radius : 50%; /* Safari & Chrome */
-    -khtml-border-radius : 50%; /* Linux browsers */ 
-    border-radius : 50% 50% 50% 50%; /* CSS3 compatible browsers */
-    background: rgb(0, 102, 153, 0.5); /* #006699; */
+    background: rgba(0, 102, 153, 0.5); /* #006699; */
     border: 2px solid #006699;
    }
 
@@ -84,47 +56,10 @@
    {  
     display: inline-block;
     opacity: 0.5;
-    top: 0px;
-    left: 1px;
-    -moz-border-radius : 50%; /* Firefox */
-    -webkit-border-radius : 50%; /* Safari & Chrome */
-    -khtml-border-radius : 50%; /* Linux browsers */ 
-    border-radius : 50% 50% 50% 50%; /* CSS3 compatible browsers */
-    background: rgb(153, 0, 153, 0.5); /* #990099; */
+    background: rgba(153, 0, 153, 0.5); /* #990099; */
     border: 2px solid #990099;
    }
 
- .legendSphere
-   {  
-    width: 10px;
-    height: 10px;
-    position: relative;
-    top: 0px;
-    left: 1px;
-    -moz-border-radius : 50%; /* Firefox */
-    -webkit-border-radius : 50%; /* Safari & Chrome */
-    -khtml-border-radius : 50%; /* Linux browsers */ 
-    border-radius : 50% 50% 50% 50%; /* CSS3 compatible browsers */
-    background: #f00;
-   }
-
-.vertical-centered-text {
-  position: relative;
-  top: 50%;
-  transform: perspective(1px) translateY(-50%);
-}
-
-ul.no-bullets {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-}
-
-span.gwLevelContent {
-    margin-top: 5px;
-    padding-top: 5px;
-    color: black;
-    text-align: center;
-    font-weight: bold;
-    font-size: 10pt;
+span.fs-6 {
+    font-size: 0.75rem;
 }
