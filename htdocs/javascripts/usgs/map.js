@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.30
- * February 15, 2024
+ * version 3.32
+ * February 20, 2024
 */
 
 /*
@@ -280,6 +280,8 @@ function buildMap()
            //
            var myTitle = $('caption#stationsCaption').text();
            DataTables ("#stationsTable");
+
+           $("#siteTable thead").addClass("border");
        }
  
    });
@@ -592,8 +594,9 @@ function createTable (mySiteSet)
 
        summary_table.push('<table id="stationsTable" class="stations_table">');
        summary_table.push('<caption id="stationsCaption">' +  myCaption.join(" ") + '</caption>');
-       summary_table.push('<thead class="bottom-border">');
-       summary_table.push('<tr class="bottom-border">');
+       //summary_table.push('<thead class="bottom-border">');
+       summary_table.push('<thead>');
+       summary_table.push('<tr>');
        summary_table.push(' <th>Status</th>');
        summary_table.push(' <th>Graph</th>');
        summary_table.push(' <th>USGS site number</th>');
@@ -758,7 +761,7 @@ function createTable (mySiteSet)
       if(i == 0)
         {
 //         summary_table.push('<tr class="topBorder symbols">');
-         summary_table.push('<tr id="tr_' + site_id + '" class="topBorder">');
+         summary_table.push('<tr id="tr_' + site_id + '">');
         }
       else
         {
