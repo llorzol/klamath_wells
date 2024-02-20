@@ -3,8 +3,8 @@
  *
  * The file leftPanel.css providing the main styling for the left panel. 
  *
- * version 2.03
- * February 4, 2024
+ * version 2.06
+ * February 20, 2024
 */
 
 /*
@@ -31,16 +31,18 @@
 ###############################################################################
 */
 
-div.site.siteList, .scrolling  {
-    overflow-x: visible;
-    width: 100%;
-    height: 200px;
-    margin-left: 1px;
-    margin-right: 1px;
+.form-select {
+	font-size: 0.8rem;
+	font-weight: bold;
+}
+
+.form-select:focus {
+    border-color: transparent;
+    box-shadow: none;
 }
 
 .site_link {
-    font-size: 9pt !important;
+    font-size: 0.8rem !important;
 }
 
 .site_link:hover {
@@ -55,68 +57,45 @@ div.site.siteList, .scrolling  {
     color: #000000 !important;
 }
 
-/* Sidebar link styling */
-.list-group-item {
-	padding: 3px 15px !important;
-}
-.list-group {
-    margin-bottom: 0px !important;
-}
-.well {
-	padding: 10px !important;
-	margin-bottom: 15px !important;
-}
-.well.wellList {
-	max-height: 400px;
-	overflow: auto;
-}
-.well .btn {   
-    text-align: left;
-    padding: 3px 12px;
-    font-size: 13px;
-}
-.well .dropdown-toggle .caret {
-    position: absolute;
-    right: 12px;
-    top: calc(50% - 2px);
-}
-.well .dropdown-toggle {   
-    overflow: hidden;
-    text-align: left;
-    text-overflow: ellipsis;    
-    width: 100%;
-}
-.well .dropdown-menu {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-}
 .wellHeader {
 	background: #2e4d61;
-	margin: 0px;
-	padding: 7px 10px 5px 15px;
 	color: #FFF;
-	text-align:left;
 	text-transform: uppercase;
-	font-size: 13px;
+	font-size: 0.8rem;
 	font-weight: bold;
-	-webkit-border-top-left-radius: 4px;
-    -webkit-border-top-right-radius: 4px;
-    -moz-border-radius-topleft: 4px;
-    -moz-border-radius-topright: 4px;
-	border-top-left-radius: 4px;
-	border-top-right-radius: 4px;
 }
 
-#centerName > a {
-    margin-top: 60px;
-    font-family: 'Source Sans Pro',sans-serif;
-    font-size: 20px;
-    line-height: 1.42857;
+.scrolling {
+    overflow-y: scroll;
+    overflow-x: scroll;
+    width: auto;
+    height: 200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.aboutButtons {
-    border-style: solid;
-    border-color: grey;
-    border-width: 1px;
+.makeList, .refresh, #selectMessage {
+    font-size: 0.875rem;
+    font-weight: bold;
+    line-height: 1;
+    display: inline-block;
+}
+
+.sectionHead, .dlist {
+    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.sectionHead {
+    border: 1px solid #CCC;
+    background-color: #DDD;
+}
+
+.closeDiv .sectionHead {
+    font-size: 115%;
+    margin: 5px 0;
+    margin-left: 15px;
+    background-color: transparent;
+    border: none;
 }
