@@ -2,8 +2,8 @@
  *
  * Dialog is a JavaScript library to display modal windows.
  *
- * version 2.03
- * January 26, 2024
+ * version 2.04
+ * February 18, 2024
  */
 
 /*
@@ -34,7 +34,7 @@ var modalDialog = [];
 modalDialog.push('<div class="modal fade" id="messageDialog">');
 modalDialog.push('  <div class="modal-dialog" role="document">');
 modalDialog.push('    <div class="modal-content">');
-modalDialog.push('      <div class="modal-body">');
+modalDialog.push('      <div class="modal-body border-5 border-dark-subtle shadow-lg rounded-2">');
 modalDialog.push('       <div><img src="images/ajax-loader.gif"></div>');
 modalDialog.push('       <span id="message"</span>');
 modalDialog.push('      </div>');
