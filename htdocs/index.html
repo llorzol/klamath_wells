@@ -22,15 +22,16 @@
     <div class="container">
 
       <!-- Page Heading/Breadcrumbs -->
-      <div class="row">
+      <div class="row mt-5">
         <div class="col-sm-12">
-          <div class="clear title title_top" >U.S. Geological Survey</div>
+          <div class="clear title title_1" >U.S. Geological Survey</div>
+          <div class="clear title title_1" >Oregon Science Center</div>
         </div>
       </div>
       <!-- End Page Heading/Breadcrumbs -->
 
       <!-- Nav Bar -->
-      <div class="row spacemetop">
+      <div class="row mt-3">
         <div class="col-sm-12">
           <nav class="navbar navbar-expand-md navbar-dark bg-dark" data-bs-theme="dark">
             <div class="container-fluid">
@@ -99,7 +100,7 @@
         </div> <!-- <div class="col-sm-12"> -->
       </div> <!-- <div class="row"> -->
 
-      <div class="row spacemetop">
+      <div class="row mt-3">
         <div class="col-sm-12" id="links">
           <!--map-->
           <div class="body-wrap">
@@ -108,10 +109,10 @@
 
                 <div class="col-sm-3 left_panel">
 
-                  <div class="wellHeader mb-2 ps-2">DATA EXPLORATION TOOL</div>
+                  <div class="wellHeader text-start rounded-top ps-1 py-2">DATA EXPLORATION TOOL</div>
 
-                  <div class="wellHeader monitoringAgency">Monitoring Agency</div>
-                  <div class="well monitoringAgency">
+                  <div class="wellHeader monitoringAgency text-start rounded-top mt-2 ps-1 py-1">Monitoring Agency</div>
+                  <div class="monitoringAgency">
                     <select id="monitoringAgency" class="form-select">
                       <option id="all"  value="ALL" selected="selected">All agencies</option>
                       <option id="usgs" value="USGS">USGS</option>
@@ -120,8 +121,8 @@
                     </select>
                   </div>
 
-                  <div class="wellHeader monitoringStatus">Monitoring Status</div>
-                  <div class="well monitoringStatus">
+                  <div class="wellHeader monitoringStatus text-start rounded-top mt-2 ps-1 py-1">Monitoring Status</div>
+                  <div class="monitoringStatus">
                     <select id="monitoringStatus" class="form-select">
                       <option id="allWells" value="All wells" selected="selected">All wells</option>
                       <option id="allActive" value="All active wells">All active wells</option>
@@ -135,8 +136,8 @@
                     </select>
                   </div>
 
-                  <div class="wellHeader monitoringGwChange">Groundwater Level Change</div>
-                  <div id="monitoringGwChange" class="well monitoringGwChange">
+                  <div class="wellHeader monitoringGwChange text-start rounded-top mt-2 ps-1 py-1">Groundwater Level Change</div>
+                  <div id="monitoringGwChange" class="monitoringGwChange">
                     <div id="collapse-filterGw">
                       <div class="card-block">
                         <span id="filterGroundwaterContent"></span>
@@ -147,31 +148,27 @@
                   <div class="row">
                     <div class="col-sm-1"></div>
                     <div class="col-sm-11">
-                      <span class="gwLevelContent"></span>
                       <div class="gwChangeLegend"></div>
                     </div>
                   </div>
 
-                  <div class="wellHeader siteFinder">Site Finder</div>
-                  <div class="well siteFinder">
-                    <select id="finderLinks" class="form-select">
+                  <div class="wellHeader siteFinder text-start rounded-top mb-2 ps-1 py-1">Site Finder</div>
+                  <div class="siteFinder">
+                    <select id="finderLinks" class="form-select mb-2">
                       <option id="byStationName" value="byStationName wells" selected="selected">Station Name</option>
                       <option id="bySiteNumber" value="bySiteNumber wells">USGS Site Number</option>
                       <option id="byWellLogId" value="byWellLogId wells">OWRD Well Log ID</option>
                       <option id="byCdwrId" value="byStateObs wells">CDWR Site Code</option>
                       <option id="byStateObs" value="byStateObs wells">OWRD State Obs Name</option>
                     </select>
-                    <input type="text" id="searchSites" placeholder="Enter search text">
+                    <input type="text" id="searchSites" class="mb-2" placeholder="Enter search text">
                   </div>
 
-                  <div class="wellHeader sitesList">Sites<span id="siteCount"></span></div>
-                  <div class="well sitesList">
+                  <div class="wellHeader sitesList text-start rounded-top mb-2 ps-1 py-1">Sites<span id="siteCount"></span></div>
+                  <div class="sitesList">
                     <div class="site siteList">
-                      <ul id="siteLinks" class="list-group scrolling"></ul>
+                      <ul id="siteLinks" class="list-group border border-black scrolling"></ul>
                     </div>
-                  </div>
-
-                  <div id="legend">
                   </div>
 
                 </div>
@@ -202,58 +199,58 @@
           <div class="col-xs-1"></div>
           <div class="col-xs-10">
 
-            <div class="row spacemetop">
-              <table id="countsTable">
+            <div class="row mt-3">
+              <table id="countsTable" class="table table-striped-columns border">
 
-                <caption>
+                <caption class="text-center">
                   <span>Summary of Monitoring Agencies and Status --&nbsp;</span><span id="TotalStations"></span>
                   selected sites are within mapped area.
                 </caption>
                 <thead>
-                  <tr>
-                    <th class="symbols leftJustified">
+                  <tr scope="row">
+                    <th scope="col" class="text-start">
                       <span class="NumberUSGS">0</span>&nbsp;USGS&nbsp;monitored sites</th>
-                    <th class="symbols leftJustified">
+                    <th scope="col" class="text-start">
                       <span class="NumberOWRD">0</span>&nbsp;OWRD&nbsp;monitored sites</th>
-                    <th class="symbols leftJustified">
+                    <th scope="col" class="text-start">
                       <span class="NumberCDWR">0</span>&nbsp;CDWR&nbsp;monitored sites</th>
-                    <th class="symbols leftJustified">
+                    <th scope="col" class="text-start">
                       <span class="NumberALL">0</span>&nbsp;Monitored by two or more agencies</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  <tr>
-                    <td class="leftJustified">&nbsp;--- Site has been monitored by USGS only</td>
-                    <td class="leftJustified">&nbsp;--- Site has been monitored by OWRD only</td>
-                    <td class="leftJustified">&nbsp;--- Site has been monitored by CDWR only</td>
-                    <td class="leftJustified">&nbsp;--- Site has been monitored by USGS or OWRD or CDWR collectively</td>
+                  <tr scope="row">
+                    <td class="text-start">&nbsp;--- Site has been monitored by USGS only</td>
+                    <td class="text-start">&nbsp;--- Site has been monitored by OWRD only</td>
+                    <td class="text-start">&nbsp;--- Site has been monitored by CDWR only</td>
+                    <td class="text-start">&nbsp;--- Site has been monitored by USGS or OWRD or CDWR collectively</td>
                   </tr>
 
-                  <tr>
-                    <td class="BoldText centerJustified">Active/Inactive</td>
-                    <td class="BoldText centerJustified">Active/Inactive</td>
-                    <td class="BoldText centerJustified">Active/Inactive</td>
-                    <td class="BoldText centerJustified">Active/Inactive</td>
+                  <tr scope="row">
+                    <td class="BoldText text-center">Active/Inactive</td>
+                    <td class="BoldText text-center">Active/Inactive</td>
+                    <td class="BoldText text-center">Active/Inactive</td>
+                    <td class="BoldText text-center">Active/Inactive</td>
                   </tr>
 
-                  <tr>
-                    <td class="centerJustified">
+                  <tr scope="row">
+                    <td class="text-center">
                       <span class="NumberUSGSactive">0</span>
                       /
                       <span class="NumberUSGSinactive">0</span>
                     </td>
-                    <td class="centerJustified">
+                    <td class="text-center">
                       <span class="NumberOWRDactive">0</span>
                       /
                       <span class="NumberOWRDinactive">0</span>
                     </td>
-                    <td class="centerJustified">
+                    <td class="text-center">
                       <span class="NumberCDWRactive">0</span>
                       /
                       <span class="NumberCDWRinactive">0</span>
                     </td>
-                    <td class="centerJustified">
+                    <td class="text-center">
                       <span class="NumberALLactive">0</span>
                       /
                       <span class="NumberALLinactive">0</span>
@@ -275,7 +272,7 @@
         <div class="row">
           <div class="col-xs-1"></div>
           <div class="col-xs-10">
-            <div id="siteTable" class="spacemetop"></div>
+            <div id="siteTable" class="mt-3"></div>
           </div>
           <div class="col-xs-1"></div>
         </div>
