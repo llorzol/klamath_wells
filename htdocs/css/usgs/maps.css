@@ -3,8 +3,8 @@
  *
  * The file map.css providing the main styling for the map features. 
  *
- * version 2.01
- * July 16, 2023
+ * version 2.02
+ * February 19, 2024
 */
 
 /*
@@ -33,15 +33,11 @@
 .mapUSA, .map {
    height: 800px;
    max-width: 800px;
-   -webkit-box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
-   -moz-box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
    box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
    border: 2px solid #bbbbbb;
    border-radius: 4px;
 }
 .leaflet-control-minimap {
-   -webkit-box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
-   -moz-box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
    box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
    border: 2px solid #bbbbbb;
    border-radius: 4px;
@@ -68,53 +64,3 @@
 .yellow {
    background: yellow;
 }
-  
-  .map_legend_table 
-    {
-     text-align: left;
-     border: 3px solid black; 
-     padding: 5px;
-    }
-  
-  .map_legend_table th
-    {
-     background: #d9d9d9;
-     padding: 5px;
-     font-size: 13px;
-     white-space: nowrap;
-    }
-  
-  .map_legend_table td
-    {
-     font-size: 13px;
-     padding: 5px;
-    }
-  
-  .leftJustified
-    {
-     text-align: left;
-     border: 1px solid black;
-    }
-  
-  .centerJustified
-    {
-     text-align: center;
-     border: 1px solid black;
-    }
-  
-  .rightJustified
-    {
-     text-align: right;
-     border: 1px solid black;
-    }
-  
-  .symbols img
-    {
-     width: 18px;
-     height: 25px;
-     position: relative;
-     top: 0px;
-     padding: 0px !important;
-     display: inline-block;
-     white-space: nowrap;
-    }
