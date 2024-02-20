@@ -3,8 +3,8 @@
  *
  * The file table.css is a css file to providing styling for employee table. 
  *
- * version 2.04
- * February 13, 2024
+ * version 2.05
+ * February 20, 2024
 */
 
 /*
@@ -30,11 +30,6 @@
 # DEALINGS IN THE SOFTWARE.
 ###############################################################################
 */
-
-.top-bottom-border {
-  border-top: 2px solid black;
-  border-bottom: 2px solid black;
-}
 
 .no-border {
   border: none;
