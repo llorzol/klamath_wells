@@ -4,8 +4,8 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.31
- * February 15, 2024
+ * version 3.32
+ * February 20, 2024
 */
 
 /*
@@ -73,7 +73,7 @@ var filterGroundwater = [];
 filterGroundwater.push('  <!-- Groundwater Filter -->');
 filterGroundwater.push('  <div id="groundWater" class="chooseGw">');
 filterGroundwater.push('   <div>');
-filterGroundwater.push('    <div class="section text-xs-left">');
+filterGroundwater.push('    <div class="section text-start">');
 filterGroundwater.push('    </div> <!-- class="section" -->');
 filterGroundwater.push('    <div class="filterGw"></div>');
 filterGroundwater.push('   </div> <!-- id="selectGwChange" -->');
@@ -90,34 +90,31 @@ $('.gwChangeLegend').hide();
 //
 var interval     = [0,1,5,10,20,30];
 var circleRadius = 10;
-var content      = '<ul class="no-bullets">';
-content         += '<li>';
-//content         += ' <img class="symbols lineSymbol" src="icons/red_gw.png" />';
-content         += ' <span class="gwDecliningCircle" style="vertical-align:middle; width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius + 'px"></span>';
-content         += ' <span class="vertical-centered-text">Groundwater Level Decline</span>';
+var content      = '<ul class="list-group list-group-flush">';
+content         += '<li class="list-group-item">';
+content         += ' <span class="gwDecliningCircle rounded-circle align-middle" style="width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius + 'px"></span>';
+content         += ' <span class="fs-6 text-start align-middle">Groundwater Level Decline</span>';
 content         += '</li>';
-content         += '<li>';
-//content         += ' <img class="symbols lineSymbol" src="icons/blue_gw.png" />';
-content         += ' <span class="gwRisingCircle" style="vertical-align:middle; width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius + 'px"></span>';
-content         += ' <span class="vertical-centered-text">Groundwater Level Rise</span>';
+content         += '<li class="list-group-item">';
+content         += ' <span class="gwRisingCircle rounded-circle align-middle" style="width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius + 'px"></span>';
+content         += ' <span class="fs-6 text-start align-middle">Groundwater Level Rise</span>';
 content         += '</li>';
-content         += '<li>';
-//content         += ' <img class="symbols lineSymbol" src="icons/violet_gw.png" />';
-content         += ' <span class="gwNeutralCircle" style="vertical-align:middle; width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius + 'px"></span>';
-content         += ' <span class="vertical-centered-text">No Change</span>';
+content         += '<li class="list-group-item">';
+content         += ' <span class="gwNeutralCircle rounded-circle align-middle" style="width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius + 'px"></span>';
+content         += ' <span class="fs-6 text-start align-middle">No Change</span>';
 content         += '</li>';
 
 for(var i = 0; i < interval.length-1; i++)
   {
-   content += '<li><span class="circleBase" style="vertical-align:middle; width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius +'px"></span>';
-   content += '    <span>' + interval[i].toFixed(1) + (interval[i + 1].toFixed(1) ? '&ndash;' + interval[i + 1].toFixed(1) + '</span>' : '+');
+   content += '<li class="list-group-item"><span class="circleBase rounded-circle align-middle" style="width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius +'px"></span>';
+   content += '    <span class="fs-6 text-start align-middle">' + interval[i].toFixed(1) + (interval[i + 1].toFixed(1) ? '&ndash;' + interval[i + 1].toFixed(1) + '</span>' : '+');
    content += '</li>';
 
    circleRadius += 5;
   }
-content         += '<li>';
-content         += ' <span class="circleBase text-left" style="vertical-align:middle; width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius +'px"></span>';
-content         += ' <span>>' + interval[i].toFixed(1) + '</span>';
+content         += '<li class="list-group-item">';
+content         += ' <span class="circleBase rounded-circle align-middle" style="width: ' + 2*circleRadius +'px; height: ' + 2*circleRadius +'px"></span>';
+content         += ' <span class="fs-6 text-start align-middle">>' + interval[i].toFixed(1) + '</span>';
 content         += '</li>';
 content         += '</ul>';
       
@@ -182,14 +179,14 @@ function setfilterGwHtml()
         
    // Define content
    //
-   var content = '<div class="sectionHead">Select a Year then Season</div>';
+   var content = '<div class="sectionHead mb-2 p-1 rounded">Select a Year then Season</div>';
    content    += '<div class="warningModal">';
-   content    += ' <div class="dlist">Choose an Older Year and Season:';
-   content    += "  <div class='row'>";
+   content    += ' <div class="dlist mb-2">Choose an Older Year and Season:';
+   //content    += "  <div class='row'>";
         
    // Define oldest year and season
    //
-   content    += "   <select id='startingYear'>";
+   content    += "   <select id='startingYear' class='mb-2 me-5 ps-3 pe-5'>";
    var firstYear = oldestYears[0];
    jQuery.each(oldestYears, function(index, year) 
      {
@@ -204,7 +201,7 @@ function setfilterGwHtml()
      });
    content    += "   </select>";
 
-   content    += "   <select id='startingSeason'>";
+   content    += "   <select id='startingSeason' class='mb-2 ps-3 pe-5'>";
    var selectedOption = true;
    for (season of SeasonsList)
      {
@@ -224,13 +221,13 @@ function setfilterGwHtml()
    content    += "   </select>";
 
    content    += "  </div>";
-   content    += " </div>";
+   //content    += " </div>";
 
    // Define youngest year and season
    //
-   content    += ' <div class="dlist">Choose a Younger Year and Season:';
-   content    += "  <div class='row'>";
-   content    += "   <select id='endingYear'>";
+   content    += ' <div class="dlist mb-2">Choose a Younger Year and Season:';
+   //content    += "  <div class='row'>";
+   content    += "   <select id='endingYear' class='mb-2 me-5 ps-3 pe-5'>";
    var firstYear = newestYears[0];
    jQuery.each(newestYears, function(index, year) 
      {
@@ -245,7 +242,7 @@ function setfilterGwHtml()
      });
    content    += "   </select>";
 
-   content    += "   <select id='endingSeason'>";
+   content    += "   <select id='endingSeason' class='mb-2 ps-3 pe-5'>";
    var selectedOption = true;
    for (season of SeasonsList)
      {
@@ -263,12 +260,12 @@ function setfilterGwHtml()
         }
      }
    content    += "   </select>";
-   content    += "  </div>";
+   //content    += "  </div>";
    content    += " </div>";
    content    += "</div>";
 
-   content    += ' <div><button type="button" class="btn btn-primary makeList" data-toggle="button">Display Selection</button></div>';
-   content    += ' <div><button type="button" class="btn-default refresh" data-toggle="button">Refresh Map</button></div>';
+   content    += ' <div><button type="button" class="btn btn-primary makeList rounded mb-2 p-1" data-toggle="button">Display Selection</button></div>';
+   content    += ' <div><button type="button" class="btn-default refresh rounded mb-2 p-1" data-toggle="button">Refresh Map</button></div>';
    content    += "</div>";
 
    // Set content for site filter
