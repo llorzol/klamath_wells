@@ -3,8 +3,8 @@
  * porLegend.css is a CSS file to specify styling
  *  information for proportional circles representing a value.
  *
- * version 1.10
- * January 21, 2021
+ * version 2.01
+ * February 19, 2024
  */
 
 /*
@@ -42,64 +42,10 @@
 .title_1 {
   font-size: 2.0rem;
   font-weight: 700;
-  margin-top: 1rem;
-}
-
-.title_top {
-  font-size: 2.0rem;
-  font-weight: 700;
-  margin-top: 4rem;
 }
 
 .title_2 {
   font-size: 2.5rem;
   font-weight: 700;
-  margin-top: 2rem;
-  margin-bottom: 3rem;
 }
 
-.card-title {
-  font-family: "Merriweather", "Georgia", "Cambria", "Times New Roman", "Times", serif;
-  font-size: 10pt;
-  color: #565b5f;
-}
-
-.card-title > span > a {
-  font-family: "Merriweather", "Georgia", "Cambria", "Times New Roman", "Times", serif;
-  font-size: 10pt;
-  color: #329c98;
-}
-
-.card-text {
-  font-family: "Merriweather", "Georgia", "Cambria", "Times New Roman", "Times", serif;
-  font-size: 10pt;
-  color: #565b5f;
-}
-
-.card-text > span > a, .card-text > a  {
-  font-family: "Merriweather", "Georgia", "Cambria", "Times New Roman", "Times", serif;
-  font-size: 10pt;
-  color: #329c98;
-}
-
-.card-text > span > a:hover, .card-text > a:hover, a#contactEmail:hover   {
-    color: #707811;
-    text-decoration: underline;
-}
-
-.card-header {
-  color: #ffffff;
-}
-
-.spaceme
-{
-    padding-bottom: 5px;
-}
-.spacemetop
-{
-    padding-top: 15px;
-}
-.spacemebottom
-{
-    padding-bottom: 5px;
-}
