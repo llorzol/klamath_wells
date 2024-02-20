@@ -3,13 +3,13 @@
  *
  * The file popup.css is a css file to providing styling for Popups. 
  *
- * version 1.15
- * January 21, 2018
+ * version 2.03
+ * February 19, 2024
 */
 
 /*
 ###############################################################################
-# Copyright (c) 2018 Oregon Water Science Center
+# Copyright (c) Oregon Water Science Center
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,63 +31,42 @@
 ###############################################################################
 */
 
-/* popup */
 .leaflet-popup { 
-   position: absolute;
-   text-align: center;
-   max-width: 300px;
-   margin-bottom: 20px;
-   bottom: -7px;
-	}
+    position: absolute;
+    text-align: center;
+    max-width: 300px;
+    margin-bottom: 20px;
+}
 .leaflet-popup-content-wrapper {
-	padding: 1px;
-	text-align: left;
-   border: 2px solid #2e4d61;
-   border-top: 30px solid #2e4d61;
-   -webkit-border-radius: 5px; /* for safari */
-   -moz-border-radius: 5px; /* for firefox < 4 */
-   border-radius: 5px; /* for all other that support it */
+    padding: 1px;
+    text-align: left;
+    border-style: solid;
+    border-width: 30px 2px 2px 2px;
+    border-color: #2e4d61;
 }
 .leaflet-popup-content {
-   position: relative;
-   top: 0px;
-   margin: 12px 10px 12px 10px;
-   line-height: 1.4;
-}
-.leaflet-popup-content {
-   position: relative;
-   top: 0px;
-   margin: 12px 10px 12px 10px;
-   line-height: 1.4;
-}
-.leaflet-popup-content span.label {
-    font-weight: bold;
-    color: #111;
-    font-size: 100%;
-}
-.leaflet-popup-content p {
-	margin: 0px !important;
-	padding: 5px 0;
-	font-size: 14px;
+    position: relative;
+    top: 0px;
+    margin: 12px 10px 12px 10px;
+    line-height: 1.4;
 }
 .leaflet-popup-content a:link {
-	color: #2e4d61;
-	text-decoration: none;
-	display: block;
-	padding: 2px 0;
-	font-size: 10pt;
+    color: #2e4d61;
+    text-decoration: none;
+    display: block;
+    padding: 2px 0px;
+    font-size: 10pt;
 }
 .leaflet-popup-content a:visited {
-	color: #2e4d61;
-	text-decoration: none;
-	display: block;
-	padding: 2px 0;
-	font-size: 10pt;
+    color: #2e4d61;
+    text-decoration: none;
+    display: block;
+    padding: 2px 0px;
+    font-size: 10pt;
 }
 .leaflet-popup-content a:hover {
-	text-decoration: underline !important;
+    text-decoration: underline !important;
 }
-
 .leaflet-popup-title {
     position: absolute;
     text-align:left;
@@ -101,76 +80,76 @@
     height: 18px;
 }
 .leaflet-popup-body {
-	margin: 0px;
+    margin: 0px;
 }
 .leaflet-popup-tip-container {
-	margin: 0 auto;
-	width: 40px;
-	height: 20px;
-	position: absolute;
-	left: 50%;
-   margin-left: -20px;
-	overflow: hidden;
+    margin: 0px auto;
+    width: 40px;
+    height: 20px;
+    position: absolute;
+    left: 50%;
+    margin-left: -20px;
+    overflow: hidden;
 }
 .leaflet-popup-tip {
-	width: 15px;
-	height: 15px;
-	padding: 1px;
-	margin: -10px auto 0;
+    width: 15px;
+    height: 15px;
+    padding: 1px;
+    margin: -10px auto 0px;
 
-	-webkit-transform: rotate(45deg);
-	   -moz-transform: rotate(45deg);
-	    -ms-transform: rotate(45deg);
-	     -o-transform: rotate(45deg);
-	        transform: rotate(45deg);
-	}
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-	background: white;
-	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
-	}
+    background: white;
+    box-shadow: 0px 3px 14px rgba(0,0,0,0.4);
+}
 .leaflet-container a.leaflet-popup-close-button {
-	position: absolute;
-	top: 5px;
-	right: 5px;
-	padding: 4px 5px 0 0;
-	text-align: center;
-	width: 14px;
-	height: 14px;
-	font: 16px/14px Tahoma, Verdana, sans-serif;
-	color: #FFFFFF;
-	text-decoration: none;
-	font-weight: bold;
-	background: #394a04;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 4px 5px 0px 0px;
+    text-align: center;
+    width: 14px;
+    height: 14px;
+    font: 16px/14px Tahoma, Verdana, sans-serif;
+    color: #FFFFFF;
+    text-decoration: none;
+    font-weight: bold;
+    background: #394a04;
 }
 .leaflet-container a.leaflet-popup-close-button:hover, .leaflet-container a.leaflet-popup-close-button:active {
-	color: #999 !important;
-	text-decoration: none !important;
+    color: #999 !important;
+    text-decoration: none !important;
 }
 .leaflet-popup-scrolled {
-	overflow: auto;
-	border-bottom: 1px solid #ddd;
-	border-top: 1px solid #ddd;
+    overflow: auto;
+    border-bottom: 1px solid #ddd;
+    border-top: 1px solid #ddd;
 }
 .divTable{
-	display: table;
-	width: 100%;
-	/* background: #ccc; */
+    display: table;
+    width: 100%;
+    /* background: #ccc; */
 }
 .divTableRow {
-	display: table-row;
-	border: 1px solid black;
+    display: table-row;
+    border: 1px solid black;
 }
 .divTableCell {
-	/* background: #FFF; */
-	display: table-cell;
-	padding: 3px 3px;
+    /* background: #FFF; */
+    display: table-cell;
+    padding: 3px 3px;
 }
 .divTableBody {
-	display: table-row-group;
+    display: table-row-group;
 }
 .divSeparator {
-	height: 10px;
+    height: 10px;
 }
 .label {
-	height: 10px;
+    height: 10px;
 }
