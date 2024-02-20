@@ -3,8 +3,8 @@
  *
  * The file modal.css is a css file to providing styling for Modal popups. 
  *
- * version 2.03
- * February 4, 2024
+ * version 2.04
+ * February 18, 2024
 */
 
 /*
@@ -32,7 +32,7 @@
 */
 
 .modal-header {
-    border: 2px solid #bbbbbb;
+    border-color: #bbbbbb;
     color: #ffffff;
     font-weight: bold;
     font-size: 1.25rem;
@@ -40,20 +40,9 @@
 }
 
 .modal-body {
-    border: 2px solid #bbbbbb;
+    border-color: #bbbbbb;
     color: #ffffff;
     font-weight: bold;
-    font-size: 18px;
-    box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
+    font-size: 1.0rem;
     background-color: #2d862d;
-}
-
-.imagePopUp {
-    border: 2px solid #bbbbbb;
-    background-color: #ffffff;
-    box-shadow: 6px 6px 9px -2px rgba(120,120,120,1);
-    margin: 6px;
-    padding: 6px;
-    max-width: 200px;
-    height: auto;
 }
