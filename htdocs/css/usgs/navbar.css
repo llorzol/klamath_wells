@@ -4,8 +4,8 @@
  * The file navbar.css is a css file to providing styling for a navigation
  *  bar above the map.
  *
- * version 2.03
- * February 1, 2024
+ * version 2.04
+ * February 20, 2024
 */
 
 /*
@@ -45,6 +45,12 @@
     width: auto;
     white-space: nowrap;
     color: #ffffff !important;
+}
+
+.aboutButtons {
+    border-style: solid;
+    border-color: grey;
+    border-width: 1px;
 }
 
 .BaseMaps a, .ProjectLinks a {
