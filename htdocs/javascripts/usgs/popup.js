@@ -3,8 +3,8 @@
  *
  * Provides set of functions to build a Popup.
  *
- * version 4.04
- * December 18, 2023
+ * version 4.05
+ * February 18, 2024
 */
 
 /*
@@ -92,7 +92,7 @@ function createPopUp(site, siteID)
 
    //  Create popup content
    //
-   var popupContent  = '<div class="leaflet-popup-body">';
+   var popupContent  = '<div class="leaflet-popup-body rounded-4">';
    popupContent     += '<div class="divTable">';
    popupContent     += '<div class="divTableBody">';
 
