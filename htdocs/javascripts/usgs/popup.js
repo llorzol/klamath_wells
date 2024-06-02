@@ -3,8 +3,8 @@
  *
  * Provides set of functions to build a Popup.
  *
- * version 4.05
- * February 18, 2024
+ * version 4.06
+ * May 31, 2024
 */
 
 /*
@@ -166,10 +166,10 @@ function createPopUp(site, siteID)
       popupContent     += addTableRow('<span class="label">Well Construction</span>', well_link);
      }
 
-      console.log(" ");
-      console.log("Site " + site_id + " gw_agency " + gw_agency_cd + " rc_agency_cd " + rc_agency_cd);
-      console.log("rc_agency_cd " + rc_agency_cd.length)
-      console.log(rc_agency_cd.includes('USGS'))
+      //console.log(" ");
+      //console.log("Site " + site_id + " gw_agency " + gw_agency_cd + " rc_agency_cd " + rc_agency_cd);
+      //console.log("rc_agency_cd " + rc_agency_cd.length)
+      //console.log(rc_agency_cd.includes('USGS'))
           
    // Recorder
    //
