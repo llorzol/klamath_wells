@@ -75,8 +75,8 @@ from WebRequest_mod import webRequest
 from WebRequest_mod import buildURL
 
 program         = "USGS Build Collection File Script"
-version         = "2.16"
-version_date    = "December 9, 2023"
+version         = "2.17"
+version_date    = "Janaury 20, 2024"
 usage_message   = """
 Usage: buildCollectionFile.py
                 [--help]
@@ -208,9 +208,33 @@ def processCollectionSites (collection_file, mySiteFields):
             else:
                myValue = str(valuesL[ namesL.index(myColumn) ])
                
+         else:
+            myValue = ''
+               
          siteInfoD[site_id][myColumn] = myValue
-         
 
+      # Fix site if needed
+      #
+      if len(siteInfoD[site_id]['coop_site_no']) > 0:
+         siteInfoD[site_id]['coop_site_no'] = '%4s%07d' % (siteInfoD[site_id]['coop_site_no'][:4], int(siteInfoD[site_id]['coop_site_no'][5:]))
+         
+      if siteInfoD[site_id]['station_nm'].find(' ') > 0:
+         siteInfoD[site_id]['station_nm'] = siteInfoD[site_id]['station_nm'].replace(' ', '')
+         
+      if len(siteInfoD[site_id]['site_no']) > 0:
+         siteInfoD[site_id]['agency_cd'] = 'USGS'
+         site_no                         = siteInfoD[site_id]['site_no']
+         siteInfoD[site_id]['site_id']   = site_no
+         siteInfoD[site_no]              = siteInfoD[site_id]
+         del siteInfoD[site_id]
+      else:
+         siteInfoD[site_id]['agency_cd'] = 'OWRD'
+         coop_site_no                    = siteInfoD[site_id]['coop_site_no']
+         siteInfoD[site_id]['site_id']   = coop_site_no
+         siteInfoD[coop_site_no]         = siteInfoD[site_id]
+         del siteInfoD[site_id]
+         
+   
    # Count sites
    # -------------------------------------------------
    #
@@ -348,7 +372,7 @@ def processFipsCodes (fipsCodesL):
    return fipsCodesD
 # =============================================================================
 
-def processUSGS (siteInfoD, myUsgsFields, fipsCodesL):
+def processUSGS (siteInfoD, mySiteFields, fipsCodesL):
 
    gwInfoD        = {}
 
@@ -463,7 +487,7 @@ def processUSGS (siteInfoD, myUsgsFields, fipsCodesL):
       if site_id not in gwInfoD:
          gwInfoD[site_id] = {}
    
-      for myColumn in myUsgsFields:
+      for myColumn in mySiteFields:
          myValue = ''
          if myColumn == 'site_id':
             myValue = site_id
@@ -476,6 +500,14 @@ def processUSGS (siteInfoD, myUsgsFields, fipsCodesL):
                   myValue = siteInfoD[site_id][myColumn]
                
          gwInfoD[site_id][myColumn] = myValue
+
+      # Set well depth if blank with hole depth
+      #
+      if 'hole_depth_va' in namesL:
+         if len(str(gwInfoD[site_id]['well_depth_va'])) < 1:
+            if len(str(valuesL[ namesL.index('hole_depth_va') ])) > 0:
+               gwInfoD[site_id]['well_depth_va'] = str(valuesL[ namesL.index('hole_depth_va') ])
+                  
 
       del linesL[0]
       
@@ -683,6 +715,13 @@ def processUSGS (siteInfoD, myUsgsFields, fipsCodesL):
                myValue = ''
                   
             gwInfoD[site_id][myColumn] = myValue
+
+         # Set well depth if blank with hole depth
+         #
+         if 'hole_depth_va' in namesL:
+            if len(str(gwInfoD[site_id]['well_depth_va'])) < 1:
+               if len(str(valuesL[ namesL.index('hole_depth_va') ])) > 0:
+                  gwInfoD[site_id]['well_depth_va'] = str(valuesL[ namesL.index('hole_depth_va') ])
    
          del linesL[0]
 
@@ -797,7 +836,6 @@ def processUSGS (siteInfoD, myUsgsFields, fipsCodesL):
    #
    periodicSitesD = {x:gwInfoD[x] for x in gwInfoD if len(gwInfoD[x]['periodic']) > 0}
    recorderSitesD = {x:gwInfoD[x] for x in gwInfoD if len(gwInfoD[x]['recorder']) > 0}
-   #recorderSitesD = {key : val for key, val in gwSitesD.items() if len(gwSitesD[key]['recorder']) > 0 }
 
    # Update collection sites for periodic/recorder information
    #
@@ -806,11 +844,25 @@ def processUSGS (siteInfoD, myUsgsFields, fipsCodesL):
    for site_id in sorted(collectionL):
       
       if site_id in gwInfoD:
+
+         for myColumn in mySiteFields:
+
+            if len(str(siteInfoD[site_id][myColumn])) < 1:
+               if len(str(gwInfoD[site_id][myColumn])) > 0:
+                  siteInfoD[site_id][myColumn] = gwInfoD[site_id][myColumn]
+         
+         if siteInfoD[site_id]['station_nm'].find(gwInfoD[site_id]['station_nm']) < 0:
+            siteInfoD[site_id]['station_nm'] = gwInfoD[site_id]['station_nm']
+         
+         if len(str(siteInfoD[site_id]['well_depth_va'])) < 1:
+            if len(str(gwInfoD[site_id]['well_depth_va'])) > 0:
+               siteInfoD[site_id]['well_depth_va'] = gwInfoD[site_id]['well_depth_va']
+        
          periodic = 0
          if len(str(siteInfoD[site_id]['periodic'])) > 0:
             periodic += int(siteInfoD[site_id]['periodic'])
          if len(str(gwInfoD[site_id]['periodic'])) > 0:
-            periodic += int(siteInfoD[site_id]['periodic'])
+            periodic += int(gwInfoD[site_id]['periodic'])
          siteInfoD[site_id]['periodic'] = periodic
          
          if len(gwInfoD[site_id]['recorder']) > 0:
@@ -868,13 +920,16 @@ def processUSGS (siteInfoD, myUsgsFields, fipsCodesL):
       messages.append(fmt % ('Site Number', 'Station', 'Counts',   'Counts'))
       messages.append('\t%s' % (ncols * '-'))
       for site_no in sorted(usgsSitesL):
-         periodic = ''
+         periodic   = ''
+         recorder   = ''
+         station_nm = ''
+         if site_no in siteInfoD:
+            station_nm = siteInfoD[site_no]['station_nm'][:40]
          if site_no in gwInfoD:
-            periodic = gwInfoD[site_no]['periodic']
-         recorder = ''
-         if site_no in gwInfoD:
-            recorder = gwInfoD[site_no]['recorder']
-         messages.append(fmt % (site_no, gwInfoD[site_no]['station_nm'][:40], periodic, recorder))
+            periodic   = gwInfoD[site_no]['periodic']
+            recorder   = gwInfoD[site_no]['recorder']
+            station_nm = gwInfoD[site_no]['station_nm'][:40]
+         messages.append(fmt % (site_no, station_nm, periodic, recorder))
       messages.append('\t%s' % (ncols * '-'))
    if len(newperiodicL) > 0:
       messages.append('')
@@ -909,13 +964,16 @@ def processUSGS (siteInfoD, myUsgsFields, fipsCodesL):
       messages.append(fmt % ('Site Number', 'Station', 'Counts',   'Counts'))
       messages.append('\t%s' % (ncols * '-'))
       for site_no in sorted(missSitesL):
-         periodic = ''
+         periodic   = ''
+         recorder   = ''
+         station_nm = ''
+         if site_no in siteInfoD:
+            station_nm = siteInfoD[site_no]['station_nm'][:40]
          if site_no in gwInfoD:
-            periodic = gwInfoD[site_no]['periodic']
-         recorder = ''
-         if site_no in gwInfoD:
-            recorder = gwInfoD[site_no]['recorder']
-         messages.append('\t%-20s %-40s %10s %10s' % (site_no, gwInfoD[site_no]['station_nm'][:40], periodic, recorder))
+            periodic   = gwInfoD[site_no]['periodic']
+            recorder   = gwInfoD[site_no]['recorder']
+            station_nm = gwInfoD[site_no]['station_nm'][:40]
+         messages.append('\t%-20s %-40s %10s %10s' % (site_no, station_nm, periodic, recorder))
       messages.append('\t%s' % (ncols * '-'))
    messages.append('\n')
    messages.append('\n')
@@ -1264,7 +1322,11 @@ def processOWRD (siteInfoD, mySiteFields, owrdOtherIdD, fipsCodesD, owrd_file):
                   elif column == 'range_char':
                      valuesL[ namesL.index(column) ] += '-'
                   elif column == 'sctn':
-                     valuesL[ namesL.index(column) ] = '%02d' % int(valuesL[ namesL.index(column) ])
+                     sctn = valuesL[ namesL.index(column) ]
+                     if sctn.isnumeric():
+                        valuesL[ namesL.index(column) ] = '%02d' % int(sctn)
+                     else:
+                        valuesL[ namesL.index(column) ] = sctn
                   elif column in ['qtr160', 'qtr40', 'qtr10']:
                      if len(valuesL[ namesL.index(column) ]) > 0:
                         valuesL[ namesL.index(column) ] = myQtrD[valuesL[ namesL.index(column) ]]
@@ -1412,8 +1474,8 @@ def processOWRD (siteInfoD, mySiteFields, owrdOtherIdD, fipsCodesD, owrd_file):
                   count_nu   = ''
                   owrdColumn = 'water_level_count'
                   if owrdColumn in myRecord:
-                     if len(myRecord[owrdColumn]) > 0:
-                        gwInfoD[site_id]['periodic'] = myRecord[owrdColumn]
+                     if len(str(myRecord[owrdColumn])) > 0:
+                        gwInfoD[site_id]['periodic'] = str(myRecord[owrdColumn])
                   
                # Set search column for count of recorder records
                #
@@ -1438,11 +1500,16 @@ def processOWRD (siteInfoD, mySiteFields, owrdOtherIdD, fipsCodesD, owrd_file):
    for site_id in sorted(collectionL):
       
       if site_id in gwInfoD:
+         
+         if len(siteInfoD[site_id]['site_no']) < 1 :
+            if siteInfoD[site_id]['station_nm'].find(gwInfoD[site_id]['station_nm']) < 0:
+               siteInfoD[site_id]['station_nm'] = gwInfoD[site_id]['station_nm']
+         
          periodic = 0
          if len(str(siteInfoD[site_id]['periodic'])) > 0:
             periodic += int(siteInfoD[site_id]['periodic'])
          if len(str(gwInfoD[site_id]['periodic'])) > 0:
-            periodic += int(siteInfoD[site_id]['periodic'])
+            periodic += int(gwInfoD[site_id]['periodic'])
          siteInfoD[site_id]['periodic'] = periodic
          
          if len(gwInfoD[site_id]['recorder']) > 0:
