@@ -75,8 +75,8 @@ from WebRequest_mod import webRequest
 from WebRequest_mod import buildURL
 
 program         = "USGS OWRD CDWR Waterlevel Measurement Script"
-version         = "2.36"
-version_date    = "January 29, 2024"
+version         = "2.37"
+version_date    = "May 7, 2024"
 usage_message   = """
 Usage: buildWaterlevelFile.py
                 [--help]
@@ -1462,7 +1462,9 @@ def processOWRD (siteInfoD, mySiteFields, myGwFields, owrd_gw_file, owrd_rc_file
                lev_meth_cd = "A"
             elif lev_meth_cd == "AIRLINE CALIBRATED":
                lev_meth_cd = "C"
-            elif lev_meth_cd == "RECORDER DIGITAL":
+            elif lev_meth_cd == "TRANSDUCER":
+               lev_meth_cd = "F"
+             elif lev_meth_cd == "RECORDER DIGITAL":
                lev_meth_cd = "F"
             elif lev_meth_cd == "PRESSURE GAGE":
                lev_meth_cd = "G"
