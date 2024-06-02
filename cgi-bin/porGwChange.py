@@ -69,8 +69,8 @@ quiet           = False
 debug           = False
 
 program         = "USGS OWRD Seasonal Interval Script"
-version         = "2.03"
-version_date    = "October 1, 2023"
+version         = "2.04"
+version_date    = "February 9, 2024"
 
 program_args    = []
 
@@ -155,8 +155,8 @@ def processSeasons (keyColumn, SeasonsL, SeasonIntervals, startingYear, columnL,
       
       # Since Winter Dec, Jan, Feb for year of Dec
       #
-      if wlMonth == '12':
-         wlYear += 1
+      if wlMonth in ['01', '02']:
+         wlYear -= 1
 
       wlSeason = "--"
       seasonS  = "--"
