@@ -9,7 +9,7 @@
 # Author:   Leonard Orzol <llorzol@usgs.gov>
 #
 ###############################################################################
-# Copyright (c) 2017 Leonard Orzol <llorzol@usgs.gov>
+# Copyright (c) Leonard Orzol <llorzol@usgs.gov>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -49,6 +49,13 @@ import requests
 # Disable requests logging handler to warning level
 #
 logging.getLogger("requests").setLevel(logging.WARNING)
+
+# ------------------------------------------------------------
+# -- Program
+# ------------------------------------------------------------
+program        = "USGS Web Requests Module Script"
+version        = "2.01"
+version_date   = "May 22, 2024"
 
 # --------------------------------------------------------                
 # -- Format URL string for screen display
