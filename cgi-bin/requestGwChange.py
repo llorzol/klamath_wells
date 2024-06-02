@@ -69,8 +69,8 @@ params = cgi.FieldStorage()
 debug           = False
 
 program         = "Groundwater Water-Level Change Of Record Script"
-version         = "2.03"
-version_date    = "October 1, 2023"
+version         = "2.04"
+version_date    = "February 9, 2024"
 
 program_args    = []
 
@@ -181,8 +181,8 @@ def processWls (keyColumn, SeasonOne, SeasonTwo, columnL, linesL):
          
          # Since Winter Dec, Jan, Feb for year of Dec
          #
-         if wlMonth == '12':
-            wlYear += 1
+         if wlMonth in ['01', '02']:
+            wlYear -= 1
    
          site_id = str(valuesL[ namesL.index('site_id') ])
 
@@ -282,6 +282,8 @@ if HardWired is not None:
    params= {}
    params['seasonOne'] = '2019,12,01,02,Min'
    params['seasonTwo'] = '2020,12,01,02,Min'
+   params['seasonOne'] = '2022,09,10,11,Max'
+   params['seasonTwo'] = '2023,09,10,11,Max'
 
 # Check arguements
 #
@@ -366,6 +368,8 @@ for site_id in sorted(Sites1L):
 
    countSites += 1
 
+   if site_id in ['425804121344701', '430649121305201', '430029121552101']:
+      screen_logger.info("Site %s one -> %s two -> %s" % (site_id, (",").join(season1SitesD[site_id]), (",").join(season2SitesD[site_id])))
    screen_logger.debug("Site %s one -> %s two -> %s" % (site_id, (",").join(season1SitesD[site_id]), (",").join(season2SitesD[site_id])))
       
    valueSeasonOne = None
@@ -403,6 +407,10 @@ for site_id in sorted(Sites1L):
          
       recordString = '"%s": %.2f' % (site_id, deltaGw)
       recordsL.append(recordString.replace("\'","\""))
+
+      if site_id in ['425804121344701', '430649121305201', '430029121552101']:
+         message = "Site %s one -> %s two -> %s = %s" % (site_id, str(valueSeasonOne),  str(valueSeasonTwo), str(deltaGw))
+         screen_logger.info(message)
 
 # No sites for user specified interval
 # -------------------------------------------------
