@@ -4,8 +4,8 @@
  * Main is a JavaScript library to provide a set of functions to manage
  *  the web requests.
  *
- * version 3.16
- * January 29, 2024
+ * version 3.17
+ * May 30, 2024
 */
 
 /*
@@ -34,6 +34,9 @@
 
 // Global variables for icon symbols
 //
+var mySites;
+var BasinBoundary;
+
 var mapSymbolUrl         = "icons/";
 
 // Global variables for images
@@ -99,11 +102,24 @@ $(document).ready(function()
       
    // Web request
    //
-   webRequests.push($.ajax( {
-                             method:   request_type,
-                             url:      script_http, 
-                             data:     data_http, 
-                             dataType: dataType
+    webRequests.push($.ajax( {
+      method:   request_type,
+      url:      script_http,
+      data:     data_http,
+      dataType: dataType,
+      success: function (myData) {
+        message = "Processed site information";
+        openModal(message);
+        fadeModal(2000);
+        mySites = myData;
+        console.log(`mySites ${mySites}`);
+      },
+      error: function (error) {
+        message = `Failed to load site information ${error}`;
+        openModal(message);
+        fadeModal(2000);
+        return false;
+      }
    }));
 
    // Request for water-level information
@@ -116,21 +132,31 @@ $(document).ready(function()
       data_http += "&startingYear=" + startingYear;
      }
    var dataType     = "json";
-   console.log("just ran porGwChange.py")
       
    // Web request
    //
-   webRequests.push($.ajax( {
-                             method:   request_type,
-                             url:      script_http, 
-                             data:     data_http, 
-                             dataType: dataType
+    webRequests.push($.ajax( {
+      method:   request_type,
+      url:      script_http,
+      data:     data_http,
+      dataType: dataType,
+      success: function (myData) {
+        message = "Processed groundwater change information";
+        openModal(message);
+        fadeModal(2000);
+        processGwChange(myData);
+        console.log(`processGwChange ${myData}`);
+      },
+      error: function (error) {
+        message = `Failed to load groundwater change information ${error}`;
+        openModal(message);
+        fadeModal(2000);
+        return false;
+      }
    }));
 
    // Set basin boundary
    //	
-   //console.log("BasinBoundary " + BasinBoundary);
-           
    if(BasinBoundary)
      {
       console.log("Adding BasinBoundary " + BasinBoundary);
@@ -144,119 +170,33 @@ $(document).ready(function()
       
       // Web request
       //
-      webRequests.push($.ajax( {
-                                method:   request_type,
-                                url:      script_http, 
-                                data:     data_http, 
-                                dataType: dataType
-      }));
+       webRequests.push($.ajax( {
+         method:   request_type,
+         url:      script_http,
+         data:     data_http,
+         dataType: dataType,
+         success: function (myData) {
+           message = "Processed basin boundary information";
+           openModal(message);
+           fadeModal(2000);
+           BasinBoundary = myData;
+           console.log(`mySites ${mySites}`);
+         },
+         error: function (error) {
+           message = `Failed to load basin boundary information ${error}`;
+           openModal(message);
+           fadeModal(2000);
+           return false;
+         }
+       }));
      }
 
    // Run ajax requests
    //
-   var j       = 0;
    $.when.apply($, webRequests).then(function() {
-        console.log('Responses');
-        //console.log("Responses length " + arguments.length);
-        //console.log(arguments);
 
-        // Retrieve site information
-        //
-        var i = 0;
-        if(arguments.length > 0)
-          {
-           var myInfo  = arguments[i];
-           //console.log("arguments " + i);
-           //console.log(arguments[i]);
-
-           if(myInfo[1] === "success")
-             {
-              // Loading message
-              //
-              message = "Processed site information";
-              openModal(message);
-              fadeModal(2000);
-
-              mySites     = myInfo[0];
-             }
-            else
-             {
-              // Loading message
-              //
-              message = "Failed to load site information";
-              openModal(message);
-              fadeModal(2000);
-              return false;
-             }
-          }
-
-        // Retrieve groundwater change information
-        //
-        i++;
-        console.log("Retrieve groundwater change information ");
-        //console.log(arguments[i]);
-        if(arguments.length > i)
-          {
-           var myInfo = arguments[i];
-
-           if(myInfo[1] === "success")
-             {
-              // Loading message
-              //
-              message = "Processed groundwater change information";
-              openModal(message);
-              fadeModal(2000);
-
-              processGwChange(myInfo[0]);
-             }
-            else
-             {
-              // Loading message
-              //
-              message = "Failed to load groundwater change information";
-              openModal(message);
-              fadeModal(2000);
-              return false;
-             }
-          }
-
-        // Retrieve basin boundary information
-        //
-        i++;
-        console.log("Retrieve basin boundary " + i);
-        //console.log(arguments[i]);
-        if(arguments.length > i)
-          {
-           var myInfo = arguments[i];
-
-           if(myInfo[1] === "success")
-             {
-              // Loading message
-              //
-              message = "Processed basin boundary information";
-              openModal(message);
-              fadeModal(2000);
-
-              BasinBoundary = myInfo[0];
-             }
-            else
-             {
-              // Loading message
-              //
-              message = "Failed to load basin boundary information";
-              openModal(message);
-              fadeModal(2000);
-              return false;
-             }
-          }
-
-        //console.log("done with main");
         fadeModal(2000);
 
         buildMap();
-
-        // Side panel
-        //
-        //leftPanel();
    });
   });
