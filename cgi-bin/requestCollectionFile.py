@@ -37,14 +37,6 @@ import datetime
 
 import json
 
-# Import modules for CGI handling
-#
-import cgi, cgitb 
-
-# Create instance of FieldStorage
-#
-params = cgi.FieldStorage()
-
 # Set up logging
 #
 import logging
@@ -66,8 +58,8 @@ screen_logger.setLevel(logging.INFO)
 debug           = False
 
 program         = "USGS OWRD CDWR Site Loading Script"
-version         = "2.05"
-version_date    = "December 14, 2023"
+version         = "2.06"
+version_date    = "January 21, 2023"
 
 program_args    = []
 
