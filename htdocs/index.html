@@ -55,7 +55,7 @@
                       Project Links
                     </span>
                   </a>
-                  <ul class="dropdown-menu dropdown-menu-dark ProjectLinks">
+                  <ul class="dropdown-menu dropdown-menu-dark ProjectLinks p-2">
                     <li>
                       <a href="https://or.water.usgs.gov/" target="_blank">
                         USGS Oregon Water Science Center Home
@@ -81,7 +81,7 @@
                       Basemaps
                     </span>
                   </a>
-                  <ul class="dropdown-menu dropdown-menu-dark BaseMaps" id="basemapMenu">
+                  <ul class="dropdown-menu dropdown-menu-dark BaseMaps p-2" id="basemapMenu">
                   </ul>
                 </li>
 
@@ -318,8 +318,8 @@
     <script src="javascripts/required/Control.MiniMap.min.js"></script>
 
     <!-- Home feature  -->
-    <link rel="stylesheet" href="css/required/leaflet.zoomhome.css">
-    <script src="javascripts/required/leaflet.zoomhome.min.js"></script>
+    <link rel="stylesheet" href="zoombar/L.Control.ZoomBar.css"/>
+    <script type="text/javascript" src="zoombar/L.Control.ZoomBar.js"></script>
 
     <!-- Export feature  -->
     <link rel="stylesheet" href="css/usgs/easyPrint.css">
@@ -328,12 +328,10 @@
     <!-- Zoom to your location feature  -->
     <link rel="stylesheet" href="css/required/L.Control.Locate.css">
     <script src="javascripts/required/L.Control.Locate.min.js"></script>
-
-    <!-- Geocoder feature  -->
-    <link rel="stylesheet" href="css/required/esri-leaflet-geocoder.css">
-    <link rel="stylesheet" href="css/required/geocoder.css">
-    <script src="javascripts/required/esri-leaflet-core.js"></script>
-    <script src="javascripts/required/esri-leaflet-geocoder.js"></script>
+    
+    <!-- Leaflet Geosearch -->
+    <script src="leaflet-geosearch/leaflet-geosearch.min.js"></script>
+    <link rel="stylesheet" href="leaflet-geosearch/leaflet-geosearch.css">
 
     <!-- Supporting local scripts  -->
     <script src="javascripts/required/jquery.dataTables.min.js"></script>
