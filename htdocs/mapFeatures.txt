@@ -1,6 +1,6 @@
 <!--
- * version 3.21
- * February 5, 2024
+ * version 3.22
+ * October 3, 2024
 -->
 <div class="tutorials">
  <div class="featureText">
@@ -89,7 +89,7 @@
    allows you to customize the map view using custom location
    information.  You may enter a city name, street address,
    intersection, or longitude and latitude.<p id="examples">
-   Examples:<br />"Burns, Oregon"<br />"484 N Broadway Ave, Burns, OR"<br />"-121.623103,  41.953825"
+   Examples:<br />Klamath Falls, Oregon<br />500 Klamath Ave, Klamath Falls, OR 97601<br />42.2233902 -121.7818484<br />42.2233902N 121.7818484W
      </p></li>
      <li>This tool is especially useful if you have a site on or near your property but don't know specific site information.</li>
     </ul>
