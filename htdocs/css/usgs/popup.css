@@ -3,8 +3,8 @@
  *
  * The file popup.css is a css file to providing styling for Popups. 
  *
- * version 2.03
- * February 19, 2024
+ * version 2.04
+ * October 3, 2024
 */
 
 /*
@@ -48,21 +48,19 @@
     position: relative;
     top: 0px;
     margin: 12px 10px 12px 10px;
-    line-height: 1.4;
+    font-size: 0.75rem;
 }
 .leaflet-popup-content a:link {
     color: #2e4d61;
     text-decoration: none;
     display: block;
     padding: 2px 0px;
-    font-size: 10pt;
 }
 .leaflet-popup-content a:visited {
     color: #2e4d61;
     text-decoration: none;
     display: block;
     padding: 2px 0px;
-    font-size: 10pt;
 }
 .leaflet-popup-content a:hover {
     text-decoration: underline !important;
@@ -72,7 +70,7 @@
     text-align:left;
     pointer-events:none;
     font-family: Verdana, Geneva, Arial, Helvetica, sans-serif; 
-    font-size: 14px; 
+    font-size: 1.0rem; 
     font-weight: bold;
     color: white;
     top: 5px;
@@ -150,6 +148,6 @@
 .divSeparator {
     height: 10px;
 }
-.label {
-    height: 10px;
+span.label {
+    font-weight: bold;
 }
