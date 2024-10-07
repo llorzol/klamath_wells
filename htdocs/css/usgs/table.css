@@ -3,8 +3,8 @@
  *
  * The file table.css is a css file to providing styling for employee table. 
  *
- * version 2.05
- * February 20, 2024
+ * version 2.06
+ * October 6, 2024
 */
 
 /*
@@ -64,17 +64,10 @@ div.dt-buttons {
 #countsTable caption {
     caption-side: top;
     color: black;
-    text-align: center;
-    font-weight: bold;
-    font-size: 1.25rem;
-    border-bottom: 2px solid black;
 }
 
 #countsTable thead,
-#siteTable thead {
-    text-align: left;
-    font-weight: bold;
-    font-size: 1.0rem;
+#siteTable thead{
     border: 2px solid black;
 }
 
@@ -103,8 +96,9 @@ th.sorting {
 }
 
 
-button.dt-button {
-          margin-right: 1em;
+button.dt-button, .dataTables_filter{
+          margin-top: 0.5rem;
+          margin-right: 0.25rem;
         }
 
 button.dt-button:hover {
