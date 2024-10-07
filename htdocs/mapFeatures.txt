@@ -1,6 +1,6 @@
 <!--
- * version 3.22
- * October 3, 2024
+ * version 3.24
+ * October 6, 2024
 -->
 <div class="tutorials">
  <div class="featureText">
@@ -54,9 +54,15 @@
    </ul>
    </div>
 
+  <hr></hr>
+  <div class="text" id="layers">
+   <p><img src="zoombar/images/zoom-to-start-26.png" class="pe-2">Home </p> 
+   <p> This control allows the user to zoom the map to the project-wide view.</p>
+  </div>
+
    <hr></hr>
    <div class="text" id="zoom">
-    <p><img src="icons/zoom.png"> Zoom Controls </p> 
+    <p><img src="icons/zoom.png" class="pe-2">Zoom Controls </p> 
     <ul>
      <li><b>Single-level Zooming:&nbsp;</b>To adjust zoom one level at a time, use the + and - buttons in the zoom control in the upper left corner of the map.</li>
      <li> Click button <i class="fa fa-home"> </i> to zoom to the full extent of the map that will show all sites.</li>
@@ -71,19 +77,25 @@
 
   <hr></hr>
   <div class="text" id="layers">
-   <p><i class="fa fa-home" style="line-height:1.65;"></i> Home </p> 
-   <p> This control allows the user to zoom the map to the project-wide view.</p>
+   <p><img src="zoombar/images/zoom-to-area-26.png" class="pe-2">Move and zoom to your location</p> 
+   <p> This control allows the user to zoom to your location. To zoom to your location, click this button and then agree to provide access to your location.</p>
   </div>
 
   <hr></hr>
   <div class="text" id="layers">
-   <p><span id="exportLogo">&nbsp;</span>Export Map to Image</p> 
+   <p><img src='data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="black" d="M445 4 29 195c-48 23-32 93 19 93h176v176c0 51 70 67 93 19L508 67c16-38-25-79-63-63z"/></svg>' style="transform: scale(1); width: 1.0rem; height: 1.0rem;"><span class="ps-3">Zoom to selected area</span></p> 
+   <p> This control allows the user to zoom the map to the user selected area. To zoom in on a rectangular area, click this button and then click on the map and hold while drawing a box with your mouse.</p>
+  </div>
+
+  <hr></hr>
+  <div class="text" id="layers">
+   <p><span id="exportLogo" class="pe-4"></span>Export Map to Image</p> 
    <p> This control allows the user to export the map to a PNG image.
   </div>
 
    <hr></hr>
    <div class="text" id="geolocator">
-    <p><img src="css/required/img/search.png"> Geo-locator Tool </p> 
+    <p><img src="css/required/img/search.png" class="pe-1"> Geo-locator Tool </p> 
     <ul>
      <li>The geo-locator, located to the right of the zoom controls,
    allows you to customize the map view using custom location
