@@ -4,8 +4,8 @@
  * The file leaflet-control-geosearch.css is a css file to providing styling for
  *  Geosearch tool. 
  *
- * version 3.04
- * September 26, 2024
+ * version 3.05
+ * October 6, 2024
  *
  * disabled .leaflet-control-geosearch a.leaflet-bar-part:before and
  *          .leaflet-control-geosearch a.leaflet-bar-part:after
@@ -36,6 +36,11 @@
 # DEALINGS IN THE SOFTWARE.
 ###############################################################################
 */
+/* Customize styling */
+.searchPng {
+  padding-bottom: 0.5rem;
+}
+
 /* global styling */
 .leaflet-control-geosearch *,
 .leaflet-control-geosearch *:before,
