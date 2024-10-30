@@ -1,7 +1,8 @@
 
                  Klamath Wells Website
 =============================================================================
-December 11, 2023
+Version 3.01
+Version_Date January 20, 2024
 =============================================================================
 
 =============================================================================
@@ -126,6 +127,9 @@ Using the current collection.txt as a seed
 Run
 ----
 ./buildCollectionFile.py -sites data/collection.txt -output allsites.txt --owrd data/OWRD/gw_site.txt --other data/OWRD/gw_other_identity.txt --counties 41035 06093 06049 --count 10
+    41035 - Klamath County Oregon
+    06093 - Siskiyou County California
+    06049 - Modoc County California
 
 WinMerge
 ----
@@ -142,27 +146,6 @@ public or.water
 Use AFS
 Copy collection/recorder files to cgi-bin/klamath_wells/data directory
 Review results with web browser
-
-
-
-
-Build collection recorder sites (NO LONGER NEEDED)
--------------------------------------
-Using the current recorder.txt as a seed
-
-Run
-----
-./buildCollectionFile.py -sites data/recorders.txt -output recorders.txt --recorder --owrd data/OWRD/gw_site.txt --other data/OWRD/gw_other_identity.txt --counties 41035 06093 06049
-    41035 - Klamath County Oregon
-    06093 - Siskiyou County California
-    06049 - Modoc County California
-
-WinMerge
-----
-compare and review changes in the current data/recorder.txt with recorder.txt
-
-
-
 
 
 
@@ -377,7 +360,16 @@ URL: https://data.cnra.ca.gov/dataset/dd9b15f5-6d08-4d8c-bace-37dc761a9c08/resou
 
 
 
+https://nwis.waterdata.usgs.gov/nwis/gwlevels?multiple_site_no=423003121152601,430029121552101&format=rdb&date_format=YYYY-MM-DD
 
 
 
 
+Traceback (most recent call last):
+  File "C:\Users\dpolette\klamgw\website\cgi-bin\buildWaterlevelFile.py", line 2957, in <module>
+    owrdRecordsD = processOWRD(siteInfoD, mySiteFields, myGwFields, owrd_gw_file, owrd_rc_file)
+  File "C:\Users\dpolette\klamgw\website\cgi-bin\buildWaterlevelFile.py", line 965, in processOWRD
+    linesL = f.read().splitlines()
+  File "C:\Users\dpolette\Anaconda3\lib\encodings\cp1252.py", line 23, in decode
+    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x9d in position 3816703: character maps to <undefined>
