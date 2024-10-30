@@ -75,8 +75,8 @@ from WebRequest_mod import webRequest
 from WebRequest_mod import buildURL
 
 program         = "USGS Build Collection File Script"
-version         = "2.17"
-version_date    = "Janaury 20, 2024"
+version         = "2.20"
+version_date    = "October 30, 2024"
 usage_message   = """
 Usage: buildCollectionFile.py
                 [--help]
@@ -2310,7 +2310,8 @@ outputL = []
 outputL.append("## U.S. Geological Survey")
 outputL.append("## Groundwater Periodic and Recorder Sites")
 outputL.append("##")
-outputL.append("## %30s" % localDate)
+outputL.append("## Version %-30s" % version)
+outputL.append("## Version_Date on %-30s" % localDate)
 outputL.append("##")
 outputL.append("##==========================================================================================")
    
