@@ -3,8 +3,8 @@
  *
  * About_Content is a JavaScript library to provide instructions and general information.
  *
- * version 2.01
- * December 21, 2023
+ * version 2.02
+ * February 6, 2024
 */
 
 /*
