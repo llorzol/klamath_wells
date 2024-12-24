@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.33
- * October 3, 2024
+ * version 3.34
+ * DEcember 6, 2024
 */
 
 /*
@@ -329,7 +329,7 @@ function setIcon (site_no, site_tp_cd, status)
   {
    var iconType   = [];
 
-   switch(site_tp_cd.substring(0,2))
+   switch(site_tp_cd.substring(0,2).toUpperCase())
      {
        case "ES":
        case "LK":
