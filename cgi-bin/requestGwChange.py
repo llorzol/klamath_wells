@@ -36,7 +36,7 @@ import os, sys, string, re
 
 import datetime
 
-import subprocess
+import csv
 
 import json
 
@@ -57,11 +57,52 @@ screen_logger.setLevel(logging.INFO)
 
 # Import modules for CGI handling
 #
-import cgi
+from urllib.parse import urlparse, parse_qs
 
-# Create instance of FieldStorage
+# Parse the Query String
 #
-params = cgi.FieldStorage()
+params = {}
+
+HardWired = None
+#HardWired = 1
+
+if HardWired is not None:
+   os.environ['QUERY_STRING'] = 'seasonOne=2001,03,04,05,Min&seasonTwo=2024,03,04,05,Min'
+
+if 'QUERY_STRING' in os.environ:
+    #queryString = re.escape(os.environ['QUERY_STRING'])
+    queryString = os.environ['QUERY_STRING']
+
+    queryStringD = parse_qs(queryString, encoding='utf-8')
+
+    myParmsL = [
+        'seasonOne',
+        'seasonTwo'
+    ]
+
+    for key, values in queryStringD.items():
+        if key in myParmsL:
+            params[key] = values[0]
+
+# Check arguements
+#
+if 'seasonOne' in params:
+   seasonOne = params['seasonOne']
+
+else:
+    message = "Provide seasonal one information "
+    print("Content-type:application/json\n\n")
+    print('{ "message": "%s" }' % message)
+    sys.exit()
+
+if 'seasonTwo' in params:
+   seasonTwo = params['seasonTwo']
+
+else:
+    message = "Provide seasonal two information "
+    print("Content-type:application/json\n\n")
+    print('{ "message": "%s" }' % message)
+    sys.exit()
 
 # ------------------------------------------------------------
 # -- Set
@@ -69,150 +110,141 @@ params = cgi.FieldStorage()
 debug           = False
 
 program         = "Groundwater Water-Level Change Of Record Script"
-version         = "2.04"
-version_date    = "February 9, 2024"
+version         = "2.05"
+version_date    = "December 29, 2024"
 
 program_args    = []
 
 # =============================================================================
+def errorMessage(error_message):
 
-def processWls (keyColumn, SeasonOne, SeasonTwo, columnL, linesL):
+   print("Content-type:application/json\n\n")
+   print('{ "message": "%s" }' % message)
+   sys.exit()
 
-   SitesD        = {}
-   season1SitesD = {}
-   season2SitesD = {}
-   message       = ''
+# =============================================================================
 
-   keyColumn     = keyColumn.lower()
+def processWls (waterlevel_file, SeasonOne, SeasonTwo):
 
-   tmpList       = SeasonOne.split(",")
-   BeginYear     = tmpList.pop(0)
-   StatSeasonOne = tmpList.pop(-1)
-   BeginMonths   = list(tmpList)
+    # Set
+    #
+    SitesD        = {}
+    season1SitesD = {}
+    season2SitesD = {}
 
-   tmpList       = SeasonTwo.split(",")
-   EndYear       = tmpList.pop(0)
-   StatSeasonTwo = tmpList.pop(-1)
-   EndMonths     = list(tmpList)
+    tmpList       = SeasonOne.split(",")
+    BeginYear     = tmpList.pop(0)
+    StatSeasonOne = tmpList.pop(-1)
+    BeginMonths   = list(tmpList)
 
-   message = 'Begin %s %s %s' % (BeginYear, StatSeasonOne, " & ".join(BeginMonths))
-   screen_logger.debug(message)
-   #file_logger.info(message)
+    tmpList       = SeasonTwo.split(",")
+    EndYear       = tmpList.pop(0)
+    StatSeasonTwo = tmpList.pop(-1)
+    EndMonths     = list(tmpList)
 
-   # Parse for column names [rdb format]
-   #
-   while 1:
-      if len(linesL) < 1:
-         del linesL[0]
-      elif linesL[0][0] == '#':
-         del linesL[0]
-      else:
-         namesL = linesL[0].lower().split('\t')
-         del linesL[0]
-         break
+    message = 'Begin %s %s %s' % (BeginYear, StatSeasonOne, " & ".join(BeginMonths))
+    screen_logger.debug(message)
 
-   # Format line in header section
-   #
-   #del linesL[0]
+    # Create a CSV reader object and remove comment header lines
+    #
+    try:
+        with open(waterlevel_file, "r") as fh:
+            csv_reader = csv.DictReader(filter(lambda row: row[0]!='#', fh), delimiter='\t')
 
-   # Check column names
-   #
-   if keyColumn not in namesL:
-      message = "Missing index column " + keyColumn
-      print("Content-type:application/json\n\n")
-      print('{ "message": "%s" }' % message)
-      sys.exit()
+            # Loop through file
+            #
+            for tempD in csv_reader:
 
-   # Parse data lines
-   #
-   while len(linesL) > 0:
-      
-      if len(linesL[0]) < 1:
-         del linesL[0]
-         continue
-      
-      if linesL[0][0] == '#':
-         del linesL[0]
-         continue
+                # Set empty value to None
+                #
+                for key, value in tempD.items():
+                    if len(value) < 1:
+                        tempD[key] = None
 
-      Line    = linesL[0]
-      del linesL[0]
+                # Check for valid records
+                #
+                lev_va        = tempD['lev_va']
+                lev_web_cd    = tempD['lev_web_cd']
 
-      valuesL = Line.split('\t')
+                # Check for valid records
+                #
+                if lev_web_cd == 'Y' and lev_va is not None:
 
-      # Check for valid records
-      #
-      lev_va        = valuesL[ namesL.index('lev_va') ]
-      lev_web_cd    = valuesL[ namesL.index('lev_web_cd') ]
-      lev_status_cd = valuesL[ namesL.index('lev_status_cd') ]
-      
-      # Check for valid records
-      #
-      if lev_web_cd == 'Y' and len(lev_va) > 0:
-          
-         # Check for measurement
-         #
-         lev_dtm = str(valuesL[ namesL.index('lev_dtm') ])[:10]
-         lev_str_dt    = str(valuesL[ namesL.index('lev_str_dt') ])
-         lev_dt_acy_cd = str(valuesL[ namesL.index('lev_dt_acy_cd') ])
-   
-         # Partial date YYYY | YYYY-MM
-         #
-         if lev_dt_acy_cd in ['Y','M']:
-            continue
-       
-         # Full date YYYY-MM-DD | MM-DD-YYYY
-         #
-         elif lev_dt_acy_cd == 'D':
-   
-            tempDate = datetime.datetime.strptime(lev_str_dt, '%Y-%m-%d')
-            wlDate   = tempDate.replace(hour=12)
-       
-         # Full date YYYY-MM-DD HH:MM | MM-DD-YYYY HH:MM
-         #
-         else:
-   
-            wlDate = datetime.datetime.strptime(lev_str_dt, '%Y-%m-%d %H:%M')
-   
-         wlMonth  = '%02d' % wlDate.month
-         wlYear   = wlDate.year
+                    # Check for measurement
+                    #
+                    lev_dtm       = str(tempD['lev_dtm'])[:10]
+                    lev_str_dt    = str(tempD['lev_str_dt'])
+                    lev_dt_acy_cd = str(tempD['lev_dt_acy_cd'])
 
-         siteFlag = []
-         
-         # Since Winter Dec, Jan, Feb for year of Dec
-         #
-         if wlMonth in ['01', '02']:
-            wlYear -= 1
-   
-         site_id = str(valuesL[ namesL.index('site_id') ])
+                    # Partial date YYYY | YYYY-MM
+                    #
+                    if lev_dt_acy_cd in ['Y','M']:
+                        continue
 
-         # Check for measurement year in Season 1
-         #
-         if str(wlYear) == BeginYear and wlMonth in BeginMonths:
-            
-            if site_id not in season1SitesD:
-               season1SitesD[site_id] = []
-               
-            season1SitesD[site_id].append(lev_va)
+                    # Full date YYYY-MM-DD | MM-DD-YYYY
+                    #
+                    elif lev_dt_acy_cd == 'D':
 
-            siteFlag.append('Yes Begin')
+                        tempDate = datetime.datetime.strptime(lev_str_dt, '%Y-%m-%d')
+                        wlDate   = tempDate.replace(hour=12)
 
-         # Check for measurement year in Season 2
-         #
-         if str(wlYear) == EndYear and wlMonth in EndMonths:
-           
-            if site_id not in season2SitesD:
-               season2SitesD[site_id] = []
-               
-            season2SitesD[site_id].append(lev_va)
+                        # Full date YYYY-MM-DD HH:MM | MM-DD-YYYY HH:MM
+                        #
+                    else:
 
-            siteFlag.append('Yes End')
+                        wlDate = datetime.datetime.strptime(lev_str_dt, '%Y-%m-%d %H:%M')
 
-         message = 'Site %s %s %s %s' % (site_id, str(wlYear), wlMonth, " & ".join(siteFlag))
-         screen_logger.debug(message)
-         #file_logger.info(message)
-         
-   return season1SitesD, season2SitesD
+                    # Set month and year
+                    #
+                    wlMonth  = '%02d' % wlDate.month
+                    wlYear   = wlDate.year
+
+                    # Since Winter Dec, Jan, Feb for year of Dec
+                    #
+                    if wlMonth in ['01', '02']:
+                        wlYear -= 1
+
+                    siteFlag = []
+
+                    site_id = tempD['site_id']
+
+                    # Check for measurement year in Season 1
+                    #
+                    if str(wlYear) == BeginYear and wlMonth in BeginMonths:
+
+                        if site_id not in season1SitesD:
+                            season1SitesD[site_id] = []
+                            
+                        season1SitesD[site_id].append(lev_va)
+
+                        siteFlag.append('Yes Begin')
+
+                    # Check for measurement year in Season 2
+                    #
+                    if str(wlYear) == EndYear and wlMonth in EndMonths:
+
+                        if site_id not in season2SitesD:
+                            season2SitesD[site_id] = []
+
+                        season2SitesD[site_id].append(lev_va)
+
+                        siteFlag.append('Yes End')
+
+                    message = 'Site %s %s %s %s' % (site_id, str(wlYear), wlMonth, " & ".join(siteFlag))
+                    screen_logger.debug(message)
+                    #file_logger.info(message)
+                     
+    except FileNotFoundError:
+        message = 'File %s not found' % waterlevel_file
+        errorMessage(message)
+    except PermissionError:
+        message = 'No permission to access file %s' % waterlevel_file
+        errorMessage(message)
+    except Exception as e:
+        message = 'An error occurred: %s' % e
+        errorMessage(message)
+        
+    return season1SitesD, season2SitesD
 
 # =============================================================================
 
@@ -221,120 +253,14 @@ def processWls (keyColumn, SeasonOne, SeasonTwo, columnL, linesL):
 # ----------------------------------------------------------------------
 waterlevel_file  = "data/waterlevels.txt"
 siteInfoD        = {}
-message          = ''
-   
-# Set column names
-#
-myGwFields = [
-                "site_id",
-                "site_no",
-                "agency_cd",
-                "coop_site_no",
-                "lev_va",
-                "lev_acy_cd",
-                "lev_dtm",
-                "lev_dt",
-                "lev_tm",
-                "lev_tz_cd",
-                "lev_dt_acy_cd",
-                "lev_str_dt",
-                "lev_status_cd",
-                "lev_meth_cd",
-                "lev_agency_cd",
-                "lev_src_cd",
-                "lev_web_cd",
-                "lev_rmk_tx"
-               ]
-   
-# Set 
-#
-keyColumn = 'site_id'
-
-
-# Check begin and end dates
-#
-# Start Year 1996
-#
-# // Set starting and ending seasons
-# //-----------------------------------------------
-# var SeasonIntervals = { 
-#                         'Spring': ['03-20', '06-20', 'Min'],
-#                         'Summer': ['06-21', '09-21', 'Max'],
-#                         'Fall'  : ['09-22', '12-20', 'Max'],
-#                         'Winter': ['12-21', '03-19', 'Min']
-#                       };
-# var SeasonIntervals = { 
-#                         'Spring': ['03-01', '05-31', 'Min'],
-#                         'Summer': ['06-01', '08-31', 'Max'],
-#                         'Fall'  : ['09-01', '11-30', 'Max'],
-#                         'Winter': ['12-01', '02-28', 'Min']
-#                       };
-
-#
-# https://staging-or.water.usgs.gov/cgi-bin/harney/requestGwChange.py?seasonOne=2001-01-01,20011-03-31,Min&seasonTwo=2020-01-01,20201-03-31,Min
-
-HardWired = None
-#HardWired = 1
-
-# Set input
-#
-if HardWired is not None:
-   params= {}
-   params['seasonOne'] = '2019,12,01,02,Min'
-   params['seasonTwo'] = '2020,12,01,02,Min'
-   params['seasonOne'] = '2022,09,10,11,Max'
-   params['seasonTwo'] = '2023,09,10,11,Max'
-
-# Check arguements
-#
-if 'seasonOne' in params:
-   if HardWired is None:
-      seasonOne      = params.getvalue('seasonOne')
-   else:
-      seasonOne      = params['seasonOne']
-
-if 'seasonTwo' in params:
-   if HardWired is None:
-      seasonTwo      = params.getvalue('seasonTwo')
-   else:
-      seasonTwo      = params['seasonTwo']
-
-if HardWired is not None:
-
-   screen_logger.setLevel(logging.INFO)
-
-   logging_file = "requestGwChange.txt"
-   if os.path.isfile(logging_file):
-      os.remove(logging_file)
-
-   formatter    = logging.Formatter('%(message)s')
-   handler      = logging.FileHandler(logging_file)
-   handler.setFormatter(formatter)
-   file_logger  = logging.getLogger('file_logger')
-   file_logger.setLevel(logging.INFO)
-   file_logger.addHandler(handler)
-   file_logger.propagate = False
 
 # Read
 #
 if os.path.exists(waterlevel_file):
 
-   # Parse entire file
-   #
-   with open(waterlevel_file,'r') as f:
-       linesL = f.read().splitlines()
-
-   # Check for empty file
-   #
-   if len(linesL) < 1:
-      message = "Empty waterlevel file %s" % waterlevel_file
-      print("Content-type:application/json\n\n")
-      print('{ "message": "%s" }' % message)
-      sys.exit( 1 )
-
    # Process file
    #
-   season1SitesD, season2SitesD = processWls(keyColumn, seasonOne, seasonTwo, myGwFields, linesL)
+   season1SitesD, season2SitesD = processWls(waterlevel_file, seasonOne, seasonTwo)
    
 else:
    message = "Require a begining and ending date"
