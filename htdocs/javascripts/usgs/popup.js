@@ -3,8 +3,8 @@
  *
  * Provides set of functions to build a Popup.
  *
- * version 4.08
- * December 22, 2024
+ * version 4.10
+ * January 3, 2025
 */
 
 /*
@@ -242,7 +242,7 @@ function createPopUp(site, siteID) {
     //var myPopup = site.bindPopup(popupContent, popupOptions).openPopup();
     var latlng  = L.latLng(latitude, longitude);
     //var myPopup = L.popup(popupOptions).setLatLng(latlng).setContent(popupContent).openOn(map);
-    var myPopup = new L.responsivePopup({ hasTip: true, autoPan: false, offset: [1, 1]}).setLatLng(latlng).setContent(popupContent).openOn(map);
+    var myPopup = new L.responsivePopup({ hasTip: false, autoPan: false, offset: [30, 30]}).setLatLng(latlng).setContent(popupContent).openOn(map);
 
     $(".leaflet-popup-close-button").before('<div class="leaflet-popup-title">Site Information</div>');
 
