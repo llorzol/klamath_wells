@@ -4,8 +4,8 @@
  * datatablesSupport is a JavaScript library to provide a set of functions to build
  *  a table with buttons to export table content.
  *
- * version 3.06
- * February 12, 2024
+ * version 3.08
+ * February 14, 2024
 */
 
 /*
@@ -102,6 +102,7 @@ var printButton =
 //
 function fpsDataTable (tableSelector, myTitle, excelFileName) 
   {
+     console.log("fpsDataTable");
      console.log("datatablesInit " + jQuery(tableSelector).length);
 
      // TableSorter - New Version with Fixed Headers
@@ -152,8 +153,9 @@ function fpsDataTable (tableSelector, myTitle, excelFileName)
 
 function DataTables (tableSelector) 
   {
+     console.log("DataTables");
      console.log("datatablesInit " + jQuery(tableSelector).length);
-     var myTitle = $('caption#stationsCaption').text();
+     var myTitle = $('#stationsCaption').text();
      //console.log("myTitle " + myTitle);
 
      // TableSorter - New Version with Fixed Headers
@@ -274,7 +276,7 @@ function DataTables (tableSelector)
 function DataTablesSave1 (tableSelector) 
   {
      console.log("datatablesInit " + jQuery(tableSelector).length);
-     var myTitle = $('caption#stationsCaption').text();
+     var myTitle = $('#stationsCaption').text();
      console.log("myTitle " + myTitle);
 
      // TableSorter - New Version with Fixed Headers
@@ -316,7 +318,7 @@ function DataTablesSave1 (tableSelector)
 function DataTablesSave2 (tableSelector) 
   {
      console.log("datatablesInit " + jQuery(tableSelector).length);
-     var myTitle = $('caption#stationsCaption').text();
+     var myTitle = $('#stationsCaption').text();
      console.log("myTitle " + myTitle);
 
      // TableSorter - New Version with Fixed Headers
@@ -364,6 +366,7 @@ function DataTablesSave2 (tableSelector)
 //
 function exportCustomExcel (tableSelector, myTitle) 
   {
+     console.log("exportCustomExcel");
      console.log("datatablesInit " + jQuery(tableSelector).length);
 
      // TableSorter - New Version with Fixed Headers
