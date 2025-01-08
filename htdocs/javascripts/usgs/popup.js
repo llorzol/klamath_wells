@@ -3,7 +3,7 @@
  *
  * Provides set of functions to build a Popup.
  *
- * version 4.10
+ * version 4.11
  * January 3, 2025
 */
 
@@ -224,10 +224,10 @@ function createPopUp(site, siteID) {
     //
     let popMarker = null;
     map.on('popupopen',function(e) {
-           var myTitle      = [];
-           if(site_no)      { myTitle.push("USGS " + site_no); }
-           if(coop_site_no) { myTitle.push("OWRD " + coop_site_no); }
-           if(cdwr_id)      { myTitle.push("CDWR " + cdwr_id); }
+        let myTitle      = [];
+        if(site_no)      { myTitle.push("USGS " + site_no); }
+        if(coop_site_no) { myTitle.push("OWRD " + coop_site_no); }
+        if(cdwr_id)      { myTitle.push("CDWR " + cdwr_id); }
         myIcon = setIcon (site_no, 'GW', 'highlight')
         popMarker = L.marker(e.popup.getLatLng(), { pane: 'customPane', icon: myIcon, title: myTitle.join(" "), siteID: site_id } ).addTo(map);
     });
@@ -242,7 +242,7 @@ function createPopUp(site, siteID) {
     //var myPopup = site.bindPopup(popupContent, popupOptions).openPopup();
     var latlng  = L.latLng(latitude, longitude);
     //var myPopup = L.popup(popupOptions).setLatLng(latlng).setContent(popupContent).openOn(map);
-    var myPopup = new L.responsivePopup({ hasTip: false, autoPan: false, offset: [30, 30]}).setLatLng(latlng).setContent(popupContent).openOn(map);
+    var myPopup = new L.responsivePopup({ hasTip: false, autoPan: false, offset: [20, 20]}).setLatLng(latlng).setContent(popupContent).openOn(map);
 
     $(".leaflet-popup-close-button").before('<div class="leaflet-popup-title">Site Information</div>');
 
