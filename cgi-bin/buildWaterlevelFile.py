@@ -75,8 +75,8 @@ from WebRequest_mod import webRequest
 from WebRequest_mod import buildURL
 
 program         = "USGS OWRD CDWR Waterlevel Measurement Script"
-version         = "2.42"
-version_date    = "October 18, 2024"
+version         = "2.43"
+version_date    = "February 17, 2025"
 usage_message   = """
 Usage: buildWaterlevelFile.py
                 [--help]
@@ -1555,7 +1555,8 @@ def processUSGS (siteInfoD, mySiteFields, myGwFields):
 
       # Web request
       #
-      URL          = 'https://waterservices.usgs.gov/nwis/gwlevels/?format=rdb&sites=%s&startDT=1800-01-01&siteStatus=all' % nList
+      #URL          = 'https://waterservices.usgs.gov/nwis/gwlevels/?format=rdb&sites=%s&startDT=1800-01-01&siteStatus=all' % nList
+      URL          =  'https://nwis.waterdata.usgs.gov/nwis/gwlevels?search_site_no=%s&search_site_no_match_type=exact&group_key=NONE&sitefile_output_format=html_table&column_name=agency_cd&column_name=site_no&column_name=station_nm&format=rdb&date_format=YYYY-MM-DD&rdb_compression=value&list_of_search_criteria=search_site_no' % nList
       noparmsDict  = {}
       contentType  = "text"
       timeOut      = 1000
@@ -3339,7 +3340,7 @@ def processCDWR (siteInfoD, mySiteFields, myGwFields):
                lev_status_cd = "K"
             elif lev_status_cd == "Measurement Discontinued":
                lev_status_cd = "N"
-            elif lev_status_cd == "Can't get tape in casing":
+            elif lev_status_cd in ["Can't get tape in casing", "Tape hung up"]:
                lev_status_cd = "O"
             elif lev_status_cd == "Pumping":
                lev_status_cd = "P"
@@ -3353,13 +3354,15 @@ def processCDWR (siteInfoD, mySiteFields, myGwFields):
                lev_status_cd = "W"
             elif lev_status_cd in ["Temporarily inaccessible",
                                     "Pump house locked",
-                                    "Special/Other",
-                                    "Tape hung up",
+                                    "Special/Other",                                    
                                     "Other",
                                     "Unable to locate well",
                                     "Caved or deepened",
                                     "Acoustical sounder",
-                                    "Unknown Measurement Quality"]:
+                                    "Unknown Measurement Quality",
+                                    "Provisional measurement",
+                                    "Estimated Data"
+                                   ]:
                lev_status_cd = "Z"
             else:
                screen_logger.info('CDWR site %s [on %s]: Measurement status "%s" needs to be assigned (currently set to U for Reported' % (site_id, lev_str_dt, lev_status_cd))
