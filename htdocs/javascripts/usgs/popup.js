@@ -3,8 +3,8 @@
  *
  * Provides set of functions to build a Popup.
  *
- * version 4.11
- * January 3, 2025
+ * version 4.12
+ * February 20, 2025
 */
 
 /*
@@ -148,7 +148,7 @@ function createPopUp(site, siteID) {
         popupContent     += addTableRow('<span class="label">Measured</span>', measuringPOR);
     }
 
-    var gw_url       = gwLink + "site_id=" + site_id;
+    var gw_url       = `${gwLink}siteIdentifier=${site_id}&columnIdentifier=site_id&sourceIdentifier=${projectName}`;
     var gw_link      ='  <a class="popupLink" href="#" onclick="window.open(\'' + gw_url + '\' , \'_blank\'); return;">Link</a>';
     popupContent     += addTableRow('<span class="label">Hydrograph</span>', gw_link);
 
