@@ -4,8 +4,8 @@
  * Main is a JavaScript library to provide a set of functions to manage
  *  the web requests.
  *
- * version 3.18
- * February 20, 2025
+ * version 3.19
+ * February 21, 2025
 */
 
 /*
@@ -47,17 +47,17 @@ var imageSrc             = "images/";
 //
 var projectName          = "klamath_wells";
 
-var gwLink               = 'http://127.0.0.1/gw_hydrograph/index.html?';
+var gwLink               = '/gw_hydrograph/index.html?';
 //var gwLink               = "https://or.water.usgs.gov/projs_dir/discrete_gw/index.html?" + projectName + "&";
 //var gwLink               = "https://staging-or.water.usgs.gov/discrete_gw/index.html?" + projectName + "&";
 
 var nwisLink             = "https://waterdata.usgs.gov/nwis/";
 
-var lithologyLink        = "http://127.0.0.1/lithology/index.html?";
+var lithologyLink        = "/lithology/index.html?";
 //var lithologyLink        = "https://staging-or.water.usgs.gov/lithology/index.html?";
 //var lithologyLink        = "https://or.water.usgs.gov/projs_dir/lithology/index.html?";
 
-var wellconstructionLink = "http://127.0.0.1/well_construction/index.html?";
+var wellconstructionLink = "/well_construction/index.html?";
 //var wellconstructionLink = "https://staging-or.water.usgs.gov/well_construction/index.html?";
 //var wellconstructionLink = "https://or.water.usgs.gov/projs_dir/well_construction/index.html?";
 
