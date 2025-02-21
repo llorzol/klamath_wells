@@ -4,8 +4,8 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- * version 3.34
- * DEcember 6, 2024
+ * version 3.35
+ * February 20, 2025
 */
 
 /*
@@ -602,9 +602,7 @@ function createTable (mySiteSet)
    var summary_table = [];
 
        summary_table.push('<span id="stationsCaption" class="border-bottom border-dark border-2 text-center fs-5 fw-bold">' +  myCaption.join(" ") + '</span>');
-       summary_table.push('<table id="stationsTable" class="stationsTable table table-striped-columns border mt-4">');
-       //summary_table.push('<caption id="stationsCaption" class="text-center fs-5 fw-bold">' +  myCaption.join(" ") + '</caption>');
-       //summary_table.push('<thead class="bottom-border">');
+       summary_table.push('<table id="stationsTable" class="stationsTable table table-striped-columns border mt-4 mb-5">');
        summary_table.push('<thead class="text-start fs-6 fw-bold">');
        summary_table.push('<tr scope="row" class="pe-1 border border-dark border-2">');
        summary_table.push(' <th scope="col">Status</th>');
@@ -708,7 +706,7 @@ function createTable (mySiteSet)
       var myIcon               = site_icon;
       var symbol_img_src       = myIcon.options.iconUrl;
          
-      var gw_url               = gwLink + "site_id=" + site_id;
+      var gw_url               = `${gwLink}siteIdentifier=${site_id}&columnIdentifier=site_id&sourceIdentifier=${projectName}`;
       var gw_link              ='  <a class="popupLink" href="#" onclick="window.open(\'' + gw_url + '\' , \'_blank\'); return;">Link</a>';
          
       var nwis_link = '';
