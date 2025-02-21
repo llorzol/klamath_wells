@@ -4,8 +4,8 @@
  * Main is a JavaScript library to provide a set of functions to manage
  *  the web requests.
  *
- * version 3.17
- * May 30, 2024
+ * version 3.18
+ * February 20, 2025
 */
 
 /*
@@ -45,9 +45,9 @@ var imageSrc             = "images/";
 
 // Link specs for table and popup content
 //
-var projectName          = "project=klamath_wells";
+var projectName          = "klamath_wells";
 
-var gwLink               = "http://127.0.0.1/discrete_gw/index.html?" + projectName + "&";
+var gwLink               = 'http://127.0.0.1/gw_hydrograph/index.html?';
 //var gwLink               = "https://or.water.usgs.gov/projs_dir/discrete_gw/index.html?" + projectName + "&";
 //var gwLink               = "https://staging-or.water.usgs.gov/discrete_gw/index.html?" + projectName + "&";
 
