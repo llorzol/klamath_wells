@@ -4,8 +4,8 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.33
- * February 20, 2024
+ * version 3.34
+ * February 23, 2025
 */
 
 /*
@@ -471,6 +471,11 @@ function makeGwChangeMap(gwChanges)
          return;
      }
 
+   var mapSiteSet =  buildSiteList();
+   var mapSiteIDs =  mapSiteSet.map(item => item.site_id);
+   console.log("mapSiteSet");
+   console.log(mapSiteSet);
+
    // Remove existing custom sites
    //
    if(map.hasLayer(customLevels))
@@ -512,6 +517,10 @@ function makeGwChangeMap(gwChanges)
             var state_well_nmbr   = properties.state_well_nmbr;
             var site_tp_cd        = properties.site_tp_cd;
             var site_status       = 'Active';
+               
+      // Only process sites in mapview
+      //
+      if(mapSiteIDs.includes(site_id)) {
 
             // Set marker
             //                  
@@ -613,6 +622,7 @@ function makeGwChangeMap(gwChanges)
            {
             myTable.cell('#gw_' + site_id).data(table_txt);
            }
+        }
         }
    });
 
