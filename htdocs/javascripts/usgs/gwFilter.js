@@ -4,8 +4,11 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- * version 3.34
- * February 23, 2025
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/gwFilter.js, v 3.36 2026/01/27 20:01:59 llorzol Exp $
+ $Revision: 3.36 $
+ $Date: 2026/01/27 20:01:59 $
+ $Author: llorzol $
+ *
 */
 
 /*
@@ -42,12 +45,6 @@ var startingYear = "2001";
 
 // Set starting and ending seasons
 //-----------------------------------------------
-var SeasonIntervals = { 
-                        'Spring': ['03-01', '05-31', 'Min'],
-                        'Summer': ['06-01', '08-31', 'Max'],
-                        'Fall'  : ['09-01', '11-30', 'Max'],
-                        'Winter': ['12-01', '02-28', 'Min']
-                      };
 var SeasonIntervals = { 
     'Spring': ['03','04','05','Min'],
     'Summer': ['06','07','08','Max'],
@@ -150,7 +147,6 @@ function getColor(val)
 function processGwChange(jsonData)
   {
    console.log("processGwChange ");
-   closeModal();
 
    selectedSeasonIntervals = jsonData;
 
@@ -439,19 +435,27 @@ function requestGwChange(startingSeason, startingYear, endingSeason, endingYear)
    $('.sitesList').hide();
    $('#countsTable').hide();
      
-    // Request for wells
+    // Request for groundwater level changes
     //
-    var request_type = "GET";
-    var script_http  = "/cgi-bin/klamath_wells/requestGwChange.py";
-    var data_http    = "seasonOne=" + seasonOne.join(",");
-    data_http       += "&seasonTwo=" + seasonTwo.join(",");
-          
-    var dataType     = "json";
-          
-    // Web request
-    //
-    webRequest(request_type, script_http, data_http, dataType, makeGwChangeMap);
-   }
+      $.ajax({
+          url: '/cgi-bin/klamath_wells/requestGwChange.py',
+          method: 'GET',
+          dataType: 'json',
+          data: {
+              "seasonOne": `${seasonOne.join(",")}`,
+              "seasonTwo": `${seasonTwo.join(",")}`
+          },  success: function(data) {
+              // Handle successful response
+              console.log('Successful request for groundwater level changes');
+              makeGwChangeMap(data)
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+              // Handle individual request error
+              console.error('AJAX Error: Failed request for groundwater level changes', textStatus, errorThrown, jqXHR);
+              // Display a user-friendly message, log the error, etc.
+          }
+      });
+  }
 
 // Builds selected sites
 //
