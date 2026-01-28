@@ -4,8 +4,11 @@
  * baseMaps is a JavaScript library to set of functions to manage
  *  the base maps layers on the map.
  *
- * version 2.02
- * January 30, 2024
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/baseMaps.js, v 2.06 2026/01/27 20:01:58 llorzol Exp $
+ $Revision: 2.06 $
+ $Date: 2026/01/27 20:01:58 $
+ $Author: llorzol $
+ *
 */
 
 /*
@@ -65,27 +68,19 @@ var ESRItopoBasemap    = L.tileLayer("https://server.arcgisonline.com/ArcGIS/res
 jQuery.each(basemapNameArray, function(i, v) 
    {
      var basemap = '<li class="base_maps noJump" id="' + v[0] + '" >';
-     basemap    += '<a href="#">';
+     basemap    += '<a class="dropdown-item" href="#">';
      basemap    += v[1] + '</a></li>';
      jQuery("#basemapMenu").append(basemap);
-	
-     // Make default layer active
-     //
-     if (v[0] == "ESRItopoBasemap") 
-        {
-	  jQuery("#ESRItopoBasemap").addClass('active');
-	}
-
 });
  
 var basemapObj         = {
-                          "Gray":        ESRIgrayBasemap,
-                          "Streets":     ESRIstreetsBasemap,
-                          "Imagery":     ESRIimageryBasemap,
-                          "Esri Geo":    ESRIusaTopoBasemap,
-                          "Nat Geo":     ESRInatGeoBasemap,
-                          "DOI":         tnmBasemap,
-                          "Topo":        ESRItopoBasemap
+                          "ESRIgrayBasemap":        ESRIgrayBasemap,
+                          "ESRIstreetsBasemap":     ESRIstreetsBasemap,
+                          "ESRIimageryBasemap":     ESRIimageryBasemap,
+                          "ESRIusaTopoBasemap":     ESRIusaTopoBasemap,
+                          "ESRInatGeoBasemap":      ESRInatGeoBasemap,
+                          "tnmBasemap":             tnmBasemap,
+                          "ESRItopoBasemap":        ESRItopoBasemap
                           //"River Miles": RiverMilesBasemap
                          };
 
@@ -126,26 +121,26 @@ var minimapObj = {
 //
 jQuery('#basemapMenu li').click(function(e) {
 
-   console.log('Changed map')
+    let newTileLayer = $(this).prop("id");
     
-   // Dont do anything if the current active layer is clicked
-   //
-   if(!map.hasLayer(window[$(this).prop("id")])) 
-     {			
-       // Remove currently active basemap
-       //
-       jQuery("#basemapMenu li.active").each(function () 
-          {
-            // Console.log("removing ",$(this).attr("id"));
-            //
-            map.removeLayer(window[$(this).prop("id")]);
-            jQuery(this).removeClass("active");
-          });
-			
-       // Make new selection active and add to map
-       //
-       jQuery(this).addClass('active');
-       map.addLayer(window[$(this).prop("id")]);
-       miniMap.changeLayer(minimapObj[$(this).prop("id")]);
-     }
+    // Active base map
+    //
+    let oldTileLayer = $(".base_maps a.active").parent().prop("id");
+    if(newTileLayer == oldTileLayer) {
+        return;
+    }
+    //console.log(basemapObj[newTileLayer])
+    //console.log(minimapObj[newTileLayer])
+    
+    // Remove active class
+    //
+    $(".base_maps a").removeClass("active");
+    
+    // Add active class
+    //
+    $(`#${newTileLayer} a`).addClass("active");
+    map.addLayer(basemapObj[newTileLayer]);
+    miniMap.changeLayer(minimapObj[newTileLayer]);
+
+    return
 });
