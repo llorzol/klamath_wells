@@ -5,8 +5,11 @@
  *  a list of sites in a left panel that is linked to the sites on
  *  on the web map.
  *
- * version 3.16
- * February 11, 2024
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/leftPanel.js, v 3.18 2026/01/27 20:01:59 llorzol Exp $
+ $Revision: 3.18 $
+ $Date: 2026/01/27 20:01:59 $
+ $Author: llorzol $
+ *
 */
 
 /*
