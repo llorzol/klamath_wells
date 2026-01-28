@@ -3,8 +3,11 @@
  *
  * The file leftPanel.css providing the main styling for the left panel. 
  *
- * version 2.06
- * February 20, 2024
+ $Id: /var/www/html/klamath_wells/css/usgs/leftPanel.css, v 2.07 2025/12/24 16:14:58 llorzol Exp $
+ $Revision: 2.07 $
+ $Date: 2025/12/24 16:14:58 $
+ $Author: llorzol $
+ *
 */
 
 /*
@@ -50,15 +53,9 @@
     border-color: #FFFF8F !important;
     color: #000000 !important;
 }
- 
-.active {
-    background-color: #FFFF8F !important;
-    border-color: #FFFF8F !important;
-    color: #000000 !important;
-}
 
 .wellHeader {
-	background: #2e4d61;
+	background: #00264c;
 	color: #FFF;
 	text-transform: uppercase;
 	font-size: 0.8rem;
