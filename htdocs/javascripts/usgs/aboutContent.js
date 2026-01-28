@@ -3,8 +3,11 @@
  *
  * About_Content is a JavaScript library to provide instructions and general information.
  *
- * version 2.02
- * February 6, 2024
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/aboutContent.js, v 2.04 2026/01/27 20:01:48 llorzol Exp $
+ $Revision: 2.04 $
+ $Date: 2026/01/27 20:01:48 $
+ $Author: llorzol $
+ *
 */
 
 /*
