@@ -3,8 +3,11 @@
  *
  * WebRequest is a JavaScript library to make a Ajax request.
  *
- * version 1.09
- * November 15, 2016
+ $Id: /var/www/html/habs/javascripts/gages/webRequest.js, v 1.11 2026/01/27 20:02:16 llorzol Exp $
+ $Revision: 1.11 $
+ $Date: 2026/01/27 20:02:16 $
+ $Author: llorzol $
+ *
 */
 
 /*
@@ -31,57 +34,60 @@
 ###############################################################################
 */
 
-function webRequest(request_type, script_http, data_http, dataType, callFunction)
-  {
-    var myData   = null;
+async function webRequest(urls) {
 
-    $.support.cors = true;
+    const myData = [];
+    for (const url of urls) { // Use for...of for clean iteration
+        try {
+            const response = await fetch(url); // Wait for the fetch
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json(); // Wait for JSON parsing
+            results.push(data);
+            console.log(`Fetched data for ${url}:`, data);
+        } catch (error) {
+            console.error(`Error fetching ${url}:`, error);
+        }
+    }
+    return results; // The function will return a Promise that resolves with the final array
+}
 
-    myPromise = $.ajax({
-                        type: request_type,
-                        url: script_http,
-                        data: data_http,
-                        dataType: dataType
-                      })
-        .done(function(myData) { 
-                                callFunction(myData); 
-                               })
-        .fail(function(jqXHR, textStatus, exception) {
+async function webRequests(urls, responseType, callBack) {
+    // Create an array of Promises
+    //
+    const fetchPromises = urls.map(url => fetch(url));
 
-             var message = "";
+    try {
+        // Wait for all promises to resolve
+        //
+        const responses = await Promise.all(fetchPromises);
 
-             if(jqXHR.status === 0)
-               {
-                 message = "Not connect.n Verify Network.";
-               }
-            else if (jqXHR.status == 404)
-               {
-                 message = "Requested page not found. [404]";
-               }
-            else if (jqXHR.status == 500)
-               {
-                 message = "Internal Server Error [500].";
-               }
-            else if (exception === 'parsererror')
-               {
-                 message = "Requested JSON parse failed.";
-               }
-            else if (exception === 'timeout')
-               {
-                 message = "Time out error.";
-               }
-            else if (exception === 'abort')
-               {
-                 message = "Ajax request aborted.";
-               }
-            else
-               {
-                 message = "Uncaught Error " + exception;
-               }
+        // Map over the responses to parse them as JSON (each is an async operation)
+        //
+        const myPromises = responses.map(response => {
+            if (!response.ok) {
+                // You must handle non-ok statuses here
+                throw new Error(`HTTP error! status: ${response.status} for ${response.url}`);
+            }
+            if (responseType == 'json') return response.json();
+            else if (responseType == 'text') return response.text();
+            else if (responseType == 'blob') return response.blob();
+            else if (responseType == 'bytes') return response.bytes();
+            else return response.text();
+        });
 
-            message    += "<br> please wait while the page is refreshed";
-            openModal(message);
-            return false;
-           });
+        // Wait for all JSON parsing promises to resolve
+        //
+        const dataArray = await Promise.all(myPromises);
+        //console.log("All concurrent fetches complete:", dataArray);
+        //return dataArray;
+        callBack(dataArray)
 
-  }
+    } catch (error) {
+        let message = `An error occurred during concurrent fetches: ${error}`
+        console.error(message)
+        updateModal(message);
+        fadeModal(6000);
+    }
+}
