@@ -3,8 +3,11 @@
  *
  * Provides set of functions to build a Popup.
  *
- * version 4.13
- * February 23, 2025
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/popup.js, v 4.15 2026/01/27 20:02:09 llorzol Exp $
+ $Revision: 4.15 $
+ $Date: 2026/01/27 20:02:09 $
+ $Author: llorzol $
+ *
 */
 
 /*
@@ -165,11 +168,8 @@ function createPopUp(site, siteID) {
         // https://waterdata.usgs.gov/nwis/dv?cb_72019=on&format=gif_mult_parms&site_no=415104121232901&referred_module=sw&period=&begin_date=2018-02-17&end_date=2019-02-17
         //
         if(rc_agency_cd.includes('USGS')) {
-            var dv_url    = dvLink + 'deferred_module=sw&site_no=' + site_no;
-            dv_url       += '&format=gif_mult_parms';
-            dv_url       += '&cb_72019=on'
-            dv_url       += '&begin_date=' + rc_begin_dt + '&end_date=' + rc_end_dt;
-            var dv_link   = '  <a class="popupLink" href="#" onclick="window.open(\'' + dv_url + '\' , \'_blank\'); return;">Link</a>';
+            var dv_url    = `'${dvLink}/USGS-${site_no}/#dataTypeId=daily-72019-0&period=periodOfRecord&showFieldMeasurements=true'`;
+            var dv_link   = `  <a class="popupLink" href="#" onclick="window.open(${dv_url}, \'_blank\'); return;">Link</a>`;
             popupContent += addTableRow('<span class="label">USGS Recorder hydrograph</span>', dv_link);
         }
         // OWRD recorder
