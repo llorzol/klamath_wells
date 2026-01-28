@@ -2,8 +2,11 @@
  *
  * Dialog is a JavaScript library to display modal windows.
  *
- * version 2.04
- * February 18, 2024
+ $Id: /var/www/html/habs/javascripts/gages/modal.js, v 2.07 2026/01/27 20:02:09 llorzol Exp $
+ $Revision: 2.07 $
+ $Date: 2026/01/27 20:02:09 $
+ $Author: llorzol $
+ *
  */
 
 /*
@@ -32,11 +35,11 @@
 var modalDialog = [];
 
 modalDialog.push('<div class="modal fade" id="messageDialog">');
-modalDialog.push('  <div class="modal-dialog" role="document">');
-modalDialog.push('    <div class="modal-content">');
+modalDialog.push('  <div class="modal-dialog modal-lg" role="dialog">');
+modalDialog.push('    <div class="modal-content bg-success">');
 modalDialog.push('      <div class="modal-body border-5 border-dark-subtle shadow-lg rounded-2">');
-modalDialog.push('       <div><img src="images/ajax-loader.gif"></div>');
-modalDialog.push('       <span id="message"</span>');
+modalDialog.push('       <div class="spinner-border text-light" role="status"><span class="visually-hidden">Loading...</span></div>')
+modalDialog.push('       <div><span id="message"class="clear fs-5 fw-bold text-white"></span></div>');
 modalDialog.push('      </div>');
 modalDialog.push('    </div>');
 modalDialog.push('  </div>');
@@ -63,10 +66,12 @@ function fadeModal(fadeTime) {
     // console.log("Fading message");
     setTimeout(function() {
         jQuery("#messageDialog").modal('hide');
-        //jQuery("#messageDialog").remove();
     }, fadeTime);
 }
 
 function updateModal(message) {
+    if (jQuery('#messageDialog').is(':hidden')) {
+        jQuery("#messageDialog").modal('show');
+    }
     jQuery('#message').text(message);
 }
