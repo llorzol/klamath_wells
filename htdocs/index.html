@@ -1,7 +1,11 @@
 <!DOCTYPE html> 
 
-<!-- version 1.02 -->
-<!-- version_date February 20, 2025 -->
+<!-- 
+ $Id: /var/www/html/klamath_wells/index.html, v 1.05 2026/01/27 19:52:56 llorzol Exp $
+ $Revision: 1.05 $
+ $Date: 2026/01/27 19:52:56 $
+ $Author: llorzol $
+-->
 
 <html lang="en">
   <head>
@@ -28,8 +32,12 @@
       <div class="row mt-5">
         <div class="col-sm-12">
           <div class="clear fs-3 fw-bold text-black mt-2" >U.S. Geological Survey</div>
-          <div class="clear fs-4 fw-bold text-black mt-2" >Oregon Science Center</div>
-        </div>
+          <div>
+            <a class="clear fs-4 fw-bold text-black text-decoration-none mt-2" href="https://www.usgs.gov/centers/oregon-water-science-center">
+              <div>Oregon Water Science Center</div>
+            </a>
+          </div>
+         </div>
       </div>
       <!-- End Page Heading/Breadcrumbs -->
 
@@ -40,9 +48,9 @@
             <div class="container-fluid">
               <a class="navbar-brand" href="#">
                 <div class="ps-1">
-                  <img class="logoButton" id="usgsButton" src="logos/usgs4.png" alt="USGS> Geological Survey Logo" title="USGS, Oregon Water Science Center">
-                  <img class="logoButton" id="owrdButton" src="logos/usbr.png" alt="USBR Columbia-Pacific Northwest Region Logo" title="USBR Columbia-Pacific Northwest Region">
-                  <span class="ps-4">Upper Klamath Basin Well Mapper</span>
+                  <img class="pe-2" id="usgsButton" style="height: 2rem;" src="logos/usgs4.png" alt="USGS> Geological Survey Logo" title="USGS, Oregon Water Science Center">
+                  <img id="usbrButton" style="height: 2rem;" src="logos/usbr.png" alt="USBR Columbia-Pacific Northwest Region Logo" title="USBR Columbia-Pacific Northwest Region">
+                  <span class="fs-5 fw-bold ps-4">Upper Klamath Basin Well Mapper</span>
                 </div>
               </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#myNavbar" aria-controls="myNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +60,7 @@
               <ul id="myNavbar" class="nav collapse navbar-collapse navbar-nav me-auto mb-2 ps-2">
 
                 <!--Project Links-->
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown fs-5 fw-bold text-decoration-none text-nowrap">
                   <a class="dropdown-toggle nav-link noJump" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <span id="projectHelp" data-tooltip="on" data-placement="bottom">
                       Project Links
@@ -60,17 +68,17 @@
                   </a>
                   <ul class="dropdown-menu dropdown-menu-dark ProjectLinks p-2">
                     <li>
-                      <a href="https://or.water.usgs.gov/" target="_blank">
+                      <a class="dropdown-item fs-6 fw-bold text-white text-decoration-none mt-2" href="https://or.water.usgs.gov/" target="_blank">
                         USGS Oregon Water Science Center Home
                       </a>
                     </li>
                     <li>
-                      <a href="https://www.usbr.gov/pn/" target="_blank">
+                      <a class="dropdown-item fs-6 fw-bold text-white text-decoration-none mt-2" href="https://www.usbr.gov/pn/" target="_blank">
                         USBR Columbia-Pacific Northwest Region
                       </a>
                     </li>
                     <li>
-                      <a href="https://www.oregon.gov/OWRD/" target="_blank">
+                      <a class="dropdown-item fs-6 fw-bold text-white text-decoration-none mt-2" href="https://www.oregon.gov/OWRD/" target="_blank">
                         Oregon Water Resources Department Home
                       </a>
                     </li>
@@ -78,18 +86,18 @@
                 </li>
 
                 <!--Basemaps-->
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown fs-5 fw-bold">
                   <a class="dropdown-toggle nav-link noJump" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <span id="basemapsHelp" data-tooltip="on" data-placement="bottom">
                       Basemaps
                     </span>
                   </a>
-                  <ul class="dropdown-menu dropdown-menu-dark BaseMaps p-2" id="basemapMenu">
+                  <ul class="dropdown-menu dropdown-menu-dark p-2" id="basemapMenu">
                   </ul>
                 </li>
 
                 <!--About-->
-                <li class="nav-item">
+                <li class="nav-item fs-5 fw-bold">
                   <a class="flex-sm-fill text-sm-center nav-link" href="#" data-bs-toggle="modal" data-bs-target="#aboutModal">
                     <span id="aboutButton" data-tooltip="on" data-placement="right">
                       About
@@ -112,11 +120,11 @@
 
                 <div class="col-sm-3 left_panel">
 
-                  <div class="wellHeader text-start rounded-top ps-1 py-2">DATA EXPLORATION TOOL</div>
+                  <div class="wellHeader fs-6 fw-bold text-start rounded-top ps-1 py-2">DATA EXPLORATION TOOL</div>
 
                   <div class="wellHeader monitoringAgency text-start rounded-top mt-2 ps-1 py-1">Monitoring Agency</div>
                   <div class="monitoringAgency">
-                    <select id="monitoringAgency" class="form-select">
+                    <select id="monitoringAgency" class="form-select fs-8">
                       <option id="all"  value="ALL" selected="selected">All agencies</option>
                       <option id="usgs" value="USGS">USGS</option>
                       <option id="owrd" value="OWRD">OWRD</option>
@@ -155,7 +163,7 @@
                     </div>
                   </div>
 
-                  <div class="wellHeader siteFinder text-start rounded-top mb-2 ps-1 py-1">Site Finder</div>
+                  <div class="wellHeader siteFinder text-start rounded-top mt-2 ps-1 py-1">Site Finder</div>
                   <div class="siteFinder">
                     <select id="finderLinks" class="form-select mb-2">
                       <option id="byStationName" value="byStationName wells" selected="selected">Station Name</option>
@@ -164,10 +172,10 @@
                       <option id="byCdwrId" value="byStateObs wells">CDWR Site Code</option>
                       <option id="byStateObs" value="byStateObs wells">OWRD State Obs Name</option>
                     </select>
-                    <input type="text" id="searchSites" class="mb-2" placeholder="Enter search text">
+                    <input type="text" id="searchSites" class="mt-2" placeholder="Enter search text">
                   </div>
 
-                  <div class="wellHeader sitesList text-start rounded-top mb-2 ps-1 py-1">Sites<span id="siteCount"></span></div>
+                  <div class="wellHeader sitesList text-start rounded-top mt-2 ps-1 py-1">Sites<span id="siteCount"></span></div>
                   <div class="sitesList">
                     <div class="site siteList">
                       <ul id="siteLinks" class="list-group border border-black scrolling"></ul>
@@ -285,23 +293,23 @@
     <!-- Start About Modal -->
     <div id="aboutModal" class="modal fade mx-auto rounded-5">
       <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
+        <div class="modal-content bg-success">
 
           <div class="modal-header">
-            <span class="modal-title">USGS Upper Klamath Basin Well Mapper</span>
+            <span class="modal-title fs-5 fw-bold text-white">USGS Upper Klamath Basin Well Mapper</span>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
 
           <div class="modal-body">
             <div class="btn-group" role="group" aria-label="First group">
-              <button id="welcome" type="button" class="aboutButtons btn btn-secondary">Welcome</button>
-              <button id="mapFeatures" type="button" class="aboutButtons btn btn-secondary">Map Features</button>
-              <button id="dataExploration" type="button" class="aboutButtons btn btn-secondary">Data Exploration</button>
-              <button id="contacts" type="button" class="aboutButtons btn btn-secondary">Contact Us</button>
+              <button id="welcome" type="button" class="aboutButtons fw-bold btn btn-secondary">Welcome</button>
+              <button id="mapFeatures" type="button" class="aboutButtons fw-bold btn btn-secondary">Map Features</button>
+              <button id="dataExploration" type="button" class="aboutButtons fw-bold btn btn-secondary">Data Exploration</button>
+              <button id="contacts" type="button" class="aboutButtons fw-bold btn btn-secondary">Contact Us</button>
             </div>
 
             <!-- /.aboutContent -->
-            <div id="aboutContent" class="aboutContent"></div>
+            <div id="aboutContent" class="aboutContent text-white"></div>
 
           </div><!-- /.modal-body -->
         </div><!-- /.modal-content -->
@@ -309,10 +317,8 @@
     </div><!-- /.modal -->
 
     <!-- Supporting scripts  -->
-    <script src="javascripts/required/jquery.js"></script>
-    <script src="javascripts/required/popper.min.js"></script>
-    <script src="javascripts/required/tether.min.js"></script>
-    <script src="javascripts/required/bootstrap.min.js"></script>
+    <script src="javascripts/required/jquery.min.js"></script>
+    <script src="javascripts/required/bootstrap.bundle.min.js"></script>
     <script src="javascripts/required/leaflet.js"></script>
     <script src="javascripts/required/Control.MiniMap.min.js"></script>
     <!-- For responsive popup -->
