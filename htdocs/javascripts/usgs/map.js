@@ -72,6 +72,7 @@ function buildMap(mySites, myGwData, BasinBoundary)
    //
    message = "Building map";
    openModal(message);
+   fadeModal(3000);
    console.log(message);
    console.log(mySites);
       
