@@ -1,0 +1,810 @@
+
+                 Klamath Wells Website
+=============================================================================
+# $Id: /var/www/cgi-bin/klamath_wells/instructions.txt, v 2.06 2026/02/27 10:29:05 llorzol Exp $
+# $Revision: 2.06 $
+# $Date: 2026/02/27 10:29:05 $
+# $Author: llorzol $
+=============================================================================
+
+Correct indent to 4 spaces
+=============================================================================
+python3 -m reindent requestCollectionFile.py
+python3 -m reindent buildWaterlevelFile.py
+
+python3 -m reindent -r -v /var/www/cgi-bin/klamath_wells
+
+
+Python script to CVS text
+============================================================================================
+setMod2File.py
+
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/buildCollectionFile.py --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/buildWaterlevelFile.py --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/checkCollectionFile.py --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/porGwChange.py --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/requestCollectionFile.py --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/requestGwChange.py --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/WebRequest_mod.py --author llorzol --add
+
+
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/fixCollectionFile.py --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/fixCollectionFile.py --author llorzol --update
+
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/instructions.txt --author llorzol --update
+
+
+
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/buildCollectionFile.py --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/test.js --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/test.html --author llorzol --add
+/run/media/llorzol/CT1000MX500SSD1-Windows/usgs/setMod2File.py --file /var/www/cgi-bin/klamath_wells/test.css --author llorzol --add
+
+
+=============================================================================
+                 Check/Build collection file
+-----------------------------------------------------------------------------
+==============================================================================
+
+Steps
+-------------------------------------
+USGS
+====
+The script retrieves the sites and does a two step process to obtain the information
+
+
+USGS Water Data OGC APIs for a site
+===================================================================================
+site information (by hucs)
+----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?limit=50000&sortby=id&filter-lang=cql-text&filter=hydrologic_unit_code LIKE '18010201%' OR hydrologic_unit_code LIKE '18010202%' OR hydrologic_unit_code LIKE '18010203%' OR hydrologic_unit_code LIKE '18010204%' OR hydrologic_unit_code LIKE '18010205%' OR hydrologic_unit_code LIKE '18010206%' OR hydrologic_unit_code LIKE '18010207%' OR hydrologic_unit_code LIKE '18010208%' OR hydrologic_unit_code LIKE '18010209%' OR hydrologic_unit_code LIKE '18010210%' OR hydrologic_unit_code LIKE '18010211%' OR hydrologic_unit_code LIKE '18010212%' AND site_type IN ('Well')&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?limit=50000&sortby=id&properties=agency_code,monitoring_location_number,monitoring_location_name,county_name,hydrologic_unit_code&filter-lang=cql-text&filter=hydrologic_unit_code LIKE '18010201%' OR hydrologic_unit_code LIKE '18010202%' AND site_type IN ('Well')&skipGeometry=true&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+site information (by site numbers)
+----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items/USGS-425558121490801?f=json&lang=en-US
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?filter-lang=cql-text&filter=id IN ('USGS-413640121124301', 'USGS-413804121581501')&limit=50000&sortby=id&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?filter-lang=cql-text&filter=id IN ('USGS-425821121353601', 'USGS-431331121472001') AND site_type_code LIKE 'GW%'&limit=50000&sortby=id&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+site information (by fips state and county codes)
+----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?limit=50000&sortby=id&properties=agency_code,monitoring_location_number,monitoring_location_name,county_name,hydrologic_unit_code&filter-lang=cql-text&filter=state_code IN ('41') AND county_code IN ('035') AND site_type IN ('Well')&skipGeometry=true&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+fips code information
+----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/counties/items?limit=50000&filter-lang=cql-text&filter=id IN ('US-41-035', 'US-06-093', 'US-06-049')&skipGeometry=true&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/counties/items?limit=50000&filter-lang=cql-text&filter=state_fips_code IN ('41') AND county_fips_code IN ('035')&skipGeometry=true&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+
+USGS site service for periodic sites [retired]
+-------------------------------------
+site information (well/hole depth)
+----------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&countyCd=41035&siteOutput=expanded&siteStatus=all&siteType=GW&hasDataTypeCd=gw
+
+period of record
+----------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&countyCd=41035&siteStatus=all&siteType=GW&hasDataTypeCd=gw&outputDataTypeCd=gw
+
+USGS site service for recorders
+-------------------------------------
+site information (well/hole depth)
+----------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&countyCd=41035&siteOutput=expanded&siteStatus=all&siteType=GW&hasDataTypeCd=iv,dv
+
+period of record
+----------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&countyCd=41035&siteStatus=all&siteType=GW&hasDataTypeCd=iv,dv&outputDataTypeCd=iv,dv
+
+
+
+OWRD
+====
+Retrieve OWRD files (see below for instructions)
+
+   Download site file
+   ------------------
+   1) Open page in browser
+      https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+   2) In "Well Log" dropdown select KLAM
+   3) Click text button in Downloadable Data section
+   4) Click "Site Information"
+   5) Copy file "gw_site.txt" in the klam working directory in owrd data folder
+
+   example request for a single site
+   ------------------------------------
+   https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0050228/gw_site_summary/?public_viewable=
+   
+   Download other ID file
+   ------------------
+   1) Open page in browser
+     https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+   2) In "Well Log" dropdown select KLAM
+   3) Click text button in Downloadable Data section
+   4) Click "Other Identifiers for sites"
+   5) Copy file "gw_other_identity.txt" in the klam working directory
+     
+   example request for a single site
+   ------------------------------------
+   https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0050228/gw_site_summary/?public_viewable=
+
+
+CDWR
+====
+The script retrieves the sites
+
+--------------------------
+CDWR periodic site table
+--------------------------
+https://data.cnra.ca.gov/dataset/periodic-groundwater-level-measurements/resource/af157380-fb42-4abf-b72a-6f9f98868077
+
+retrieve All records in browser
+-------------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=af157380-fb42-4abf-b72a-6f9f98868077
+
+All sites in Klamath (Oregon) and Modoc and Siskiyou counties
+----------------------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "af157380-fb42-4abf-b72a-6f9f98868077" WHERE "county_name" IN ('Modoc','Siskiyou','Klamath, OR')
+
+All sites in Tulelake basin
+---------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "af157380-fb42-4abf-b72a-6f9f98868077" WHERE "BASIN_NAME" IN ('Tulelake')
+
+List of sites
+---------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "af157380-fb42-4abf-b72a-6f9f98868077" WHERE "site_code" IN ('419980N1215455W001', '419978N1214546W001')
+
+Single site
+---------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=af157380-fb42-4abf-b72a-6f9f98868077&q={"site_code":"419980N1215455W001"}
+
+
+--------------------------
+CDWR periodic record table
+--------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT site_code, MAX(msmt_date) from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "county_name" IN ('Modoc','Siskiyou') GROUP BY "site_code" ORDER BY "site_code"
+
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT site_code, COUNT(*) AS count_nu, MAX(msmt_date) from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "county_name" IN ('Modoc','Siskiyou') GROUP BY "site_code" ORDER BY "site_code"
+
+
+
+--------------------------
+CDWR continuous site table
+--------------------------
+view in browser
+---------------
+https://data.cnra.ca.gov/dataset/618c73fe-b28c-4399-a824-43d0278fe974/resource/03967113-1556-4100-af2c-b16a4d41b9d0
+
+retrieve in browser
+---------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=03967113-1556-4100-af2c-b16a4d41b9d0
+
+All sites in Modoc and Siskiyou counties
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "03967113-1556-4100-af2c-b16a4d41b9d0" WHERE "COUNTY_NAME" IN ('Modoc','Siskiyou')
+
+All sites in Tulelake basin
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "03967113-1556-4100-af2c-b16a4d41b9d0" WHERE "BASIN_NAME" IN ('Tulelake')
+
+
+
+
+-------------------------------------
+Build collection periodic sites
+-------------------------------------
+Using the current collection.txt as a seed
+
+Run
+----
+./buildCollectionFile.py -sites data/collection.txt -output allsites.txt --owrdsites data/OWRD/gw_site.txt --owrdwls data/OWRD/gw_measured_water_level.txt --owrdother data/OWRD/gw_other_identity.txt --counties 41035 06093 06049 --count 10
+    41035 - Klamath County Oregon
+    06093 - Siskiyou County California
+    06049 - Modoc County California
+
+Run
+----
+./checkCollectionFile.py -sites allsites.txt -output klamsites.txt -study /var/www/html/klamath_wells/gis/klamath_wells_studyarea.json
+
+./checkCollectionFile.py -sites data/collection.txt -output klamsites.txt -study /var/www/html/klamath_wells/gis/klamath_wells_studyarea.json
+
+
+
+WinMerge
+----
+compare and review changes in the current data/collection.txt with collection.txt
+
+Non-public staging-or.water
+----------------------
+Use AFS
+Copy collection/recorder files to cgi-bin/klamath_wells/data directory
+Review results with web browser
+
+public or.water
+----------------------
+Use AFS
+Copy collection/recorder files to cgi-bin/klamath_wells/data directory
+Review results with web browser
+
+
+
+
+
+
+
+            Some requests to USGS, OWRD, and CDWR web services
+==========================================================================================
+------------------------------------------------------------------------------------------
+
+Census key for Fips Codes
+-------------------------------------
+https://www2.census.gov/geo/docs/reference/codes/files/national_county.txt
+
+
+Thank you for your interest in the Census Data API. Your API key is 2b9ded633989975402c9be034053eed3473b7f2c
+
+
+
+OGCAPI for Fips Codes
+-------------------------------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/counties/items?f=json&lang=en-US&limit=10000&properties=id,country_code,state_fips_code,county_fips_code,county_name&skipGeometry=false&offset=0&country_code=US&state_fips_code=41&county_fips_code=035
+
+
+
+
+
+
+
+                Build waterlevel and site summary file
+-----------------------------------------------------------------------------
+==============================================================================
+
+Steps
+-------------------------------------
+USGS
+====
+The script retrieves the sites and waterlevel measurements with a two step process to obtain the information
+
+OWRD
+====
+Retrieve OWRD files (see below for instructions)
+
+   Download periodic waterlevel file
+   ------------------
+   1) Open page in browser
+      https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+   2) In "Well Log" dropdown select KLAM
+   3) Click text button in Downloadable Data section
+   4) Click "Measured Water Levels"
+   5) Copy file "gw_measured_water_level.txt" in the klam working directory in owrd data folder
+   
+   Download recorder waterlevel file
+   ------------------
+   1) Open page in browser
+     https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+   2) In "Well Log" dropdown select KLAM
+   3) Click text button in Downloadable Data section
+   4) Click "Recorder Water Level Daily - Mean"
+   5) Copy file "gw_recorder_water_level_mean.txt" in the klam working directory
+
+
+	OWRD periodic sites in collection file NOT retrieved from OWRD database
+	------------------------------------------------------------------------------------------------------------------------------------------------------
+	USGS                 OWRD                 CDWR                 Station                            
+	Site Number          Well Log ID          ID                                                      
+	------------------------------------------------------------------------------------------------------------------------------------------------------
+	420956121510101      KLAM0051800                               39.00S/08.00E-23BCA01              
+	425821121353601      KLAM0061463                               30.00S/09.00E-13ACD01              
+	431331121472001      KLAM0061491                               27.00S/08.00E-20AAB02              
+	------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+CDWR
+====
+The script retrieves the sites
+
+Run
+====
+
+./buildWaterlevelFile.py -sites data/collection.txt -output waterlevels.txt --owrd_gw data/OWRD/gw_measured_water_level.txt --owrd_rc data/OWRD/gw_recorder_water_level_mean.txt
+
+
+./buildWaterlevelFile.py -sites data/collection.txt -output waterlevels.txt --usgs
+
+
+------------------------------------------------------------------------------           
+                         USGS OGC API web service
+------------------------------------------------------------------------------           
+==============================================================================
+site
+===================================================================================
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?limit=50000&sortby=id&filter-lang=cql-text&filter=id IN ('USGS-414844121271901', 'USGS-423623121174001', 'USGS-431337121575701', 'USGS-423035121331401', 'USGS-430029121552101')&skipGeometry=true&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+Periodic gw records
+=====================================================
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/field-measurements/items?limit=50000&sortby=monitoring_location_id,time&filter-lang=cql-text&filter=monitoring_location_id IN ('USGS-423623121174001', 'USGS-431337121575701', 'USGS-423035121331401', 'USGS-430029121552101') AND parameter_code = '72019'&skipGeometry=true&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+Periodic gw records -- period of record
+=====================================================
+Last record
+--------------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/field-measurements/items?limit=1&sortby=-time&filter-lang=cql-text&filter=monitoring_location_id IN ('USGS-431337121575701') AND parameter_code = '72019'&skipGeometry=true&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+First record
+--------------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/field-measurements/items?limit=1&sortby=time&filter-lang=cql-text&filter=monitoring_location_id IN ('USGS-431337121575701') AND parameter_code = '72019'&skipGeometry=true&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+
+
+Recorder wells -- period of record for Continuous and Daily records
+=====================================================
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?limit=50000&sortby=monitoring_location_id&filter-lang=cql-text&filter=monitoring_location_id IN ('USGS-423035121331401', 'USGS-430029121552101') AND parameter_code = '72019' AND computation_period_identifier IN ('Points', 'Daily')&skipGeometry=true&f=json
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?limit=50000&sortby=monitoring_location_id&filter-lang=cql-text&filter=monitoring_location_id IN ('USGS-423035121331401', 'USGS-430029121552101') AND parameter_code = '72019'&skipGeometry=true&f=json
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?limit=50000&sortby=monitoring_location_id&filter-lang=cql-text&filter=monitoring_location_id%20IN%20(%27USGS-413640121124301%27,%20%27USGS-413804121581501%27,%20%27USGS-413936121490601%27,%20%27USGS-414043121155501%27,%20%27USGS-414053121104101%27,%20%27USGS-414236121584601%27,%20%27USGS-414300121302401%27,%20%27USGS-414413121100501%27,%20%27USGS-414531120574701%27,%20%27USGS-414844121271901%27)%20AND%20parameter_code%20=%20%2772019%27&skipGeometry=true&f=json
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?limit=50000&sortby=monitoring_location_id&filter-lang=cql-text&filter=monitoring_location_id IN ('USGS-430649121305201') AND parameter_code = '72019'&skipGeometry=true&f=json
+
+
+works all Oregon recorder sites
+------------------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?limit=50000&sortby=monitoring_location_id&filter-lang=cql-text&filter=parameter_code = '72019' AND state_name = 'Oregon'&skipGeometry=true&f=json
+
+
+Recorder well period of record for Instantaneous records
+=====================================================
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?limit=50000&sortby=monitoring_location_id&filter-lang=cql-text&filter=monitoring_location_id IN ('USGS-423035121331401', 'USGS-430029121552101') AND parameter_code = '72019' AND computation_period_identifier = 'Points'&skipGeometry=true&f=json
+
+
+
+Recorder well period of record for daily records
+=====================================================
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?limit=10000&sortby=monitoring_location_id&filter-lang=cql-text&filter=monitoring_location_id IN ('USGS-423035121331401', 'USGS-430029121552101') AND parameter_code = '72019' AND computation_period_identifier = 'Daily'&skipGeometry=true&f=json
+
+
+
+Recorder count records [continuous]
+-----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?resulttype=hits&monitoring_location_id=USGS-430029121552101&parameter_code=72019&skipGeometry=true&limit=50000&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+Recorder count records [daily]
+-----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items?resulttype=hits&monitoring_location_id=USGS-430029121552101&parameter_code=72019&skipGeometry=true&limit=50000&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+
+
+Recorder continuous records
+-----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-415104121232901&parameter_code=72019&skipGeometry=true&limit=50000&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-415104121232901&parameter_code=72019&skipGeometry=true&limit=50000&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-424517122031501&parameter_code=72019&skipGeometry=true&limit=50000&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+
+
+Recorder daily records
+-----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items?monitoring_location_id=USGS-415104121232901&parameter_code=72019&skipGeometry=true&limit=50000&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items?monitoring_location_id=USGS-424517122031501&parameter_code=72019&skipGeometry=true&limit=50000&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+
+Site records by hucs
+-----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?limit=50000&sortby=id&filter-lang=cql-text&filter=hydrologic_unit_code%20LIKE%20%2718010201%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010202%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010203%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010204%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010205%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010206%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010207%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010208%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010209%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010210%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010211%%27%20OR%20hydrologic_unit_code%20LIKE%20%2718010212%%27%20AND%20site_type%20IN%20(%27Well%27)&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+FIPS records by fips state and county
+-----------------
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/counties/items?limit=50000&filter-lang=cql-text&filter=id%20IN%20(%27US-41-035%27,%20%27US-06-093%27,%20%27US-06-049%27)&skipGeometry=true&f=json&api_key=nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV
+
+
+
+------------------------------------------------------------------------------           
+                         USGS web service [retired]
+------------------------------------------------------------------------------           
+==============================================================================
+site [retired]
+-------------------------------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&sites=445620117581501&siteOutput=expanded&siteStatus=all
+https://waterservices.usgs.gov/nwis/site/?format=rdb&countyCd=41035&siteOutput=expanded&siteStatus=all&siteType=GW&hasDataTypeCd=iv,dv
+https://waterservices.usgs.gov/nwis/site/?format=rdb&sites=425821121353601,431331121472001&siteOutput=expanded&siteStatus=all
+https://waterservices.usgs.gov/nwis/site/?format=rdb&sites=413640121124301,413804121581501&siteStatus=all
+
+
+groundwater measurements [retired]
+-------------------------------------
+https://waterservices.usgs.gov/nwis/gwlevels/?format=rdb&sites=421319121472501&startDT=1900-01-01&siteStatus=all
+
+
+period of record [retired]
+-------------------------------------
+https://waterservices.usgs.gov/nwis/site/?format=rdb&sites=430649121305201&seriesCatalogOutput=true&siteStatus=all&outputDataTypeCd=iv,dv
+
+
+
+
+------------------------------------------------------------------------------           
+                         OWRD web service
+------------------------------------------------------------------------------           
+==============================================================================
+site
+-------------------------------------
+https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0000588/gw_site_summary/?public_viewable=
+
+groundwater measurements
+-------------------------------------
+https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0000588/gw_measured_water_level/?start_date=1/1/1905&end_date=1/1/2025&public_viewable=
+
+https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0010174/gw_measured_water_level/?start_date=1/1/1905&end_date=1/1/2025&public_viewable=
+
+hydrograph
+-------------------------------------
+https://apps.wrd.state.or.us/apps/gw/gw_info/gw_hydrograph/Hydrograph.aspx?gw_logid=KLAM0010252
+
+Search page
+-------------------
+https://apps.wrd.state.or.us/apps/gw/gw_info/gw_info_report/gw_search.aspx
+
+Developer page
+-------------------
+https://apps.wrd.state.or.us/apps/gw/gw_data_rws/Index.html#hide1
+
+
+
+------------------------------------------------------------------------------           
+                         CDWR web service
+------------------------------------------------------------------------------
+==============================================================================
+General site search
+------------------------
+https://wdl.water.ca.gov/WaterDataLibrary/GroundWaterLevel.aspx
+
+https://wdl.water.ca.gov/WaterDataLibrary/GroundWaterLevel.aspx?SiteCode=417944N1220350W001
+
+
+CDWR General information for All sites in California
+--------------------------
+https://data.cnra.ca.gov/dataset/periodic-groundwater-level-measurements/resource/af157380-fb42-4abf-b72a-6f9f98868077
+https://data.cnra.ca.gov/dataset/dd9b15f5-6d08-4d8c-bace-37dc761a9c08/resource/af157380-fb42-4abf-b72a-6f9f98868077/download/stations.csv
+
+
+CDWR General information for All sites in Klamath project
+--------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "af157380-fb42-4abf-b72a-6f9f98868077" WHERE "county_name" IN ('Modoc','Siskiyou','Klamath, OR')
+
+CDWR General information for single site in Klamath counties
+--------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "af157380-fb42-4abf-b72a-6f9f98868077" WHERE "site_code" IN ('412157N1211051W001')
+
+
+CDWR periodic waterlevel table
+--------------------------
+https://data.cnra.ca.gov/dataset/periodic-groundwater-level-measurements
+
+resource --> bfa9f262-24a1-45bd-8dc8-138bc8107266
+
+All periodic records in California
+------------------------
+https://data.cnra.ca.gov/dataset/dd9b15f5-6d08-4d8c-bace-37dc761a9c08/resource/bfa9f262-24a1-45bd-8dc8-138bc8107266/download/measurements.csv
+
+
+CDWR periodic records for All sites in Klamath counties [JUST NEED COUNTS)
+--------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT site_code, COUNT(*) AS count_nu from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "county_name" IN ('Modoc','Siskiyou') GROUP BY "site_code" ORDER BY "site_code"
+
+
+CDWR periodic records for All sites in Klamath counties [NOT NEEDED OVER 50,000 LIMIT)
+--------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "county_name" IN ('Modoc','Siskiyou','Klamath, OR')
+
+
+Single well periodic records
+------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=bfa9f262-24a1-45bd-8dc8-138bc8107266&q={"site_code":"420171N1214111W001"}&sort="msmt_date"&limit=50000
+
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=bfa9f262-24a1-45bd-8dc8-138bc8107266&q={"site_code":"413285N1223147W001"}&sort="msmt_date"&limit=50000
+
+Many wells periodic records
+------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "site_code" IN ('420171N1214111W001','417786N1220041W001') ORDER BY "site_code, msmt_date"
+
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "county_name" IN ('Modoc','Siskiyou') ORDER BY "msmt_date"
+
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT site_code, COUNT(*) AS count_nu from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "county_name" IN ('Modoc','Siskiyou') GROUP BY "site_code" ORDER BY "site_code"
+
+
+
+--------------------------
+CDWR continuous waterlevel web page
+--------------------------
+General site search
+------------------------
+https://data.cnra.ca.gov/dataset/618c73fe-b28c-4399-a824-43d0278fe974/resource/03967113-1556-4100-af2c-b16a4d41b9d0/download/gwl-stations.csv
+
+https://data.cnra.ca.gov/dataset/continuous-groundwater-level-measurements
+
+
+CDWR General information for All sites in Klamath counties
+--------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "03967113-1556-4100-af2c-b16a4d41b9d0" WHERE "COUNTY_NAME" IN ('Modoc','Siskiyou','Klamath, OR')
+
+Continuous records using station for single site
+-------------
+https://wdl.water.ca.gov/WaterDataLibrary/StationDetails.aspx?dateFrom2=01%2f01%2f1900&StationTypeCode=&Station=12N04E03N003M&IncludeVarData=False&SelectedAll=False&dateTo2=01%2f01%2f1900&source=search
+
+one site
+-------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=03967113-1556-4100-af2c-b16a4d41b9d0&q={"SITE_CODE":"412157N1211051W001"}
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=03967113-1556-4100-af2c-b16a4d41b9d0&q={"STATION":"044N008W32F001M"}
+
+all sites
+-------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=03967113-1556-4100-af2c-b16a4d41b9d0
+https://data.cnra.ca.gov/dataset/618c73fe-b28c-4399-a824-43d0278fe974/resource/03967113-1556-4100-af2c-b16a4d41b9d0/download/gwl-stations.csv
+
+
+find continuous records using station
+-------------
+https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=84e02633-00ca-47e8-97ec-c0093313ddcd&q=48N04E18J001M&sort="MSMT_DATE"&limit=5000
+
+
+Multiple sites works
+-----------------------------
+https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "84e02633-00ca-47e8-97ec-c0093313ddcd" WHERE "STATION" IN ('46N05E21M001M','46N05E22D001M')&sort="msmt_date"&limit=5000
+
+
+download all continuous measurements
+-----------------------------
+https://data.cnra.ca.gov/dataset/continuous-groundwater-level-measurements
+https://data.cnra.ca.gov/dataset/continuous-groundwater-level-measurements/resource/84e02633-00ca-47e8-97ec-c0093313ddcd
+
+
+help
+-----------------------------
+https://docs.ckan.org/en/2.9/api/#ckan.logic.action.get.current_package_list_with_resources
+
+help for specific resource
+----------------------------
+https://data.cnra.ca.gov/api/1/util/snippet/api_info.html?resource_id=84e02633-00ca-47e8-97ec-c0093313ddcd
+
+
+CDWR periodic hydrograph web page [DOESN'T WORK NEED stationId]
+--------------------------
+https://wdl.water.ca.gov/WaterDataLibrary/GroundwaterBrowseData.aspx?SelectedCounties=&SiteCode=419978N1214931W001&LocalWellNumber=&StationId=38538&SelectedGWBasins=&StateWellNumber=
+
+https://wdl.water.ca.gov/WaterDataLibrary/GroundwaterBrowseData.aspx?SiteCode=419978N1214931W001&StationId=38538
+
+
+
+
+
+=============================================================================
+                 Check waterlevel file for Klamath Wells Website
+-----------------------------------------------------------------------------
+
+./checkPorRecords.py -sites data/collection.txt -waterlevel waterlevel.txt -debug -log
+
+
+
+
+
+URL: https://data.cnra.ca.gov/dataset/dd9b15f5-6d08-4d8c-bace-37dc761a9c08/resource/bfa9f262-24a1-45bd-8dc8-138bc8107266/download/measurements.csv
+
+
+
+
+	USGS recorder sites with USGS measurements in collection file in USGS database
+	------------------------------------------------------------------------------------------------------------------------------------------------------
+	USGS                 OWRD            CDWR                 Station                               Recorder           Begin             End     Active
+	Site Number          Well Log ID     ID                                                           Counts            Date            Date     Status
+	------------------------------------------------------------------------------------------------------------------------------------------------------
+	424517122031501      KLAM0000686                          32.00S/06.00E-36DAA01                        0      2017-07-15      2023-10-06   Inactive
+	430649121305201      KLAM0000562                          28.00S/10.00E-27DBD01                        0      2001-10-10      2024-09-22   Inactive
+
+https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?limit=50000&sortby=monitoring_location_id&filter-lang=cql-text&filter=monitoring_location_id%20IN%20(%27USGS-430649121305201%27, %27USGS-424517122031501%27)%20AND%20parameter_code%20=%20%2772019%27&skipGeometry=true&f=json
+
+result below
+{
+
+      "type": "FeatureCollection",
+      "features": [
+            {
+                  "type": "Feature",
+                  "properties": {
+                        "end": "2023-10-06T08:00:00.000001",
+                        "monitoring_location_id": "USGS-424517122031501",
+                        "parameter_name": "Water level, depth LSD",
+                        "begin_utc": "2017-07-15T14:00:00+00:00",
+                        "parameter_code": "72019",
+                        "end_utc": "2023-10-06T15:00:00+00:00",
+                        "web_description": null,
+                        "statistic_id": "00011",
+                        "computation_period_identifier": "Points",
+                        "parameter_description": "Depth to water level, feet below land surface",
+                        "hydrologic_unit_code": "180102030105",
+                        "computation_identifier": "Instantaneous",
+                        "parent_time_series_id": null,
+                        "state_name": "Oregon",
+                        "thresholds": [
+                              {
+                                    "Name": "LOW",
+                                    "Type": "ThresholdBelow",
+                                    "Periods": [
+                                          {
+                                                "EndTime": "9999-12-31T23:59:59.9999999+00:00",
+                                                "StartTime": "0001-01-01T00:00:00.0000000+00:00",
+                                                "AppliedTime": "2019-05-07T17:54:20.8278955Z",
+                                                "SuppressData": false,
+                                                "ReferenceValue": 22
+                                          }
+                                    ],
+                                    "Severity": 0,
+                                    "Description": "Unspecified threshold value",
+                                    "DisplayColor": "#990600",
+                                    "ReferenceCode": "AQUARIUS only",
+                                    "ProcessingOrder": "Suppression"
+                              },
+                              {
+                                    "Name": "HIGH",
+                                    "Type": "ThresholdAbove",
+                                    "Periods": [
+                                          {
+                                                "EndTime": "9999-12-31T23:59:59.9999999+00:00",
+                                                "StartTime": "0001-01-01T00:00:00.0000000+00:00",
+                                                "AppliedTime": "2019-05-07T17:53:32.0531022Z",
+                                                "SuppressData": false,
+                                                "ReferenceValue": 36
+                                          }
+                                    ],
+                                    "Severity": 0,
+                                    "Description": "Unspecified threshold value",
+                                    "DisplayColor": "#990600",
+                                    "ReferenceCode": "AQUARIUS only",
+                                    "ProcessingOrder": "Suppression"
+                              },
+                              {
+                                    "Name": "VERY LOW",
+                                    "Type": "ThresholdBelow",
+                                    "Periods": [
+                                          {
+                                                "EndTime": "9999-12-31T23:59:59.9999999+00:00",
+                                                "StartTime": "0001-01-01T00:00:00.0000000+00:00",
+                                                "AppliedTime": "2019-05-07T17:50:23.6179835Z",
+                                                "SuppressData": true,
+                                                "ReferenceValue": 0
+                                          }
+                                    ],
+                                    "Severity": 0,
+                                    "Description": "Unspecified threshold value",
+                                    "DisplayColor": "#990600",
+                                    "ReferenceCode": "AQUARIUS only",
+                                    "ProcessingOrder": "Suppression"
+                              },
+                              {
+                                    "Name": "VERY HIGH",
+                                    "Type": "ThresholdAbove",
+                                    "Periods": [
+                                          {
+                                                "EndTime": "9999-12-31T23:59:59.9999999+00:00",
+                                                "StartTime": "0001-01-01T00:00:00.0000000+00:00",
+                                                "AppliedTime": "2019-05-07T17:49:52.5785304Z",
+                                                "SuppressData": true,
+                                                "ReferenceValue": 92
+                                          }
+                                    ],
+                                    "Severity": 0,
+                                    "Description": "Unspecified threshold value",
+                                    "DisplayColor": "#990600",
+                                    "ReferenceCode": "AQUARIUS only",
+                                    "ProcessingOrder": "Suppression"
+                              }
+                        ],
+                        "last_modified": "2024-03-12T20:21:37.034624",
+                        "sublocation_identifier": null,
+                        "unit_of_measure": "ft",
+                        "begin": "2017-07-15T07:00:00.000001",
+                        "primary": "Primary"
+                  },
+                  "id": "e25f53715b724d5e90ca4c16f569f7bf",
+                  "geometry": null
+            },
+            {
+                  "type": "Feature",
+                  "properties": {
+                        "end": "2023-10-05T00:00:00.000001",
+                        "monitoring_location_id": "USGS-424517122031501",
+                        "parameter_name": "Water level, depth LSD",
+                        "begin_utc": "2017-07-14T07:00:00+00:00",
+                        "parameter_code": "72019",
+                        "end_utc": "2023-10-05T07:00:00+00:00",
+                        "web_description": null,
+                        "statistic_id": "00003",
+                        "computation_period_identifier": "Daily",
+                        "parameter_description": "Depth to water level, feet below land surface",
+                        "hydrologic_unit_code": "180102030105",
+                        "computation_identifier": "Mean",
+                        "parent_time_series_id": "e25f53715b724d5e90ca4c16f569f7bf",
+                        "state_name": "Oregon",
+                        "thresholds": [ ],
+                        "last_modified": "2024-03-12T20:21:13.456695",
+                        "sublocation_identifier": null,
+                        "unit_of_measure": "ft",
+                        "begin": "2017-07-14T00:00:00.000001",
+                        "primary": "Primary"
+                  },
+                  "id": "62f3ade8962349808e79322eb89a43d4",
+                  "geometry": null
+            },
+            {
+                  "type": "Feature",
+                  "properties": {
+                        "end": "2024-09-21T00:00:00.000001",
+                        "monitoring_location_id": "USGS-430649121305201",
+                        "parameter_name": "Water level, depth LSD",
+                        "begin_utc": "2001-10-10T07:00:00+00:00",
+                        "parameter_code": "72019",
+                        "end_utc": "2024-09-21T07:00:00+00:00",
+                        "web_description": null,
+                        "statistic_id": "00003",
+                        "computation_period_identifier": "Daily",
+                        "parameter_description": "Depth to water level, feet below land surface",
+                        "hydrologic_unit_code": "180102010403",
+                        "computation_identifier": "Mean",
+                        "parent_time_series_id": "e68d7aa2482f42f9b060b4f383691325",
+                        "state_name": "Oregon",
+                        "thresholds": [ ],
+                        "last_modified": "2025-03-10T15:11:16.687462",
+                        "sublocation_identifier": null,
+                        "unit_of_measure": "ft",
+                        "begin": "2001-10-10T00:00:00.000001",
+                        "primary": "Primary"
+                  },
+                  "id": "3f0ad78aca8e4fee815348d531a788b0",
+                  "geometry": null
+            },
+            {
+                  "type": "Feature",
+                  "properties": {
+                        "end": "2024-09-22T10:00:00.000001",
+                        "monitoring_location_id": "USGS-430649121305201",
+                        "parameter_name": "Water level, depth LSD",
+                        "begin_utc": "2001-10-11T07:00:00+00:00",
+                        "parameter_code": "72019",
+                        "end_utc": "2024-09-22T17:00:00+00:00",
+                        "web_description": null,
+                        "statistic_id": "00011",
+                        "computation_period_identifier": "Points",
+                        "parameter_description": "Depth to water level, feet below land surface",
+                        "hydrologic_unit_code": "180102010403",
+                        "computation_identifier": "Instantaneous",
+                        "parent_time_series_id": null,
+                        "state_name": "Oregon",
+                        "thresholds": [ ],
+                        "last_modified": "2025-07-27T18:28:51.474386",
+                        "sublocation_identifier": null,
+                        "unit_of_measure": "ft",
+                        "begin": "2001-10-11T00:00:00.000001",
+                        "primary": "Primary"
+                  },
+                  "id": "e68d7aa2482f42f9b060b4f383691325",
+                  "geometry": null
+            }
+      ],
+      "numberReturned": 4
