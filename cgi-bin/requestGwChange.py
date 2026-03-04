@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 #
 ###############################################################################
-# $Id: requestGwChange.py
+# $Id: /var/www/cgi-bin/klamath_wells/requestGwChange.py, v 2.06 2026/02/27 10:29:05 llorzol Exp $
+# $Revision: 2.06 $
+# $Date: 2026/02/27 10:29:05 $
+# $Author: llorzol $
 #
 # Project:  requestGwChange
 # Purpose:  Script processes groundwater measurements to determine a value of
 #           water-level change between a user specified begin and end
 #           dates.
-# 
+#
 # Author:   Leonard Orzol <llorzol@usgs.gov>
 #
 ###############################################################################
 # Copyright (c) Leonard Orzol <llorzol@usgs.gov>
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -67,7 +70,7 @@ HardWired = None
 #HardWired = 1
 
 if HardWired is not None:
-   os.environ['QUERY_STRING'] = 'seasonOne=2001,03,04,05,Min&seasonTwo=2024,03,04,05,Min'
+    os.environ['QUERY_STRING'] = 'seasonOne=2001,03,04,05,Min&seasonTwo=2024,03,04,05,Min'
 
 if 'QUERY_STRING' in os.environ:
     #queryString = re.escape(os.environ['QUERY_STRING'])
@@ -87,7 +90,7 @@ if 'QUERY_STRING' in os.environ:
 # Check arguements
 #
 if 'seasonOne' in params:
-   seasonOne = params['seasonOne']
+    seasonOne = params['seasonOne']
 
 else:
     message = "Provide seasonal one information "
@@ -96,7 +99,7 @@ else:
     sys.exit()
 
 if 'seasonTwo' in params:
-   seasonTwo = params['seasonTwo']
+    seasonTwo = params['seasonTwo']
 
 else:
     message = "Provide seasonal two information "
@@ -110,17 +113,17 @@ else:
 debug           = False
 
 program         = "Groundwater Water-Level Change Of Record Script"
-version         = "2.05"
-version_date    = "December 29, 2024"
+version         = "2.06"
+version_date    = "February 27, 2026"
 
 program_args    = []
 
 # =============================================================================
 def errorMessage(error_message):
 
-   print("Content-type:application/json\n\n")
-   print('{ "message": "%s" }' % message)
-   sys.exit()
+    print("Content-type:application/json\n\n")
+    print('{ "message": "%s" }' % message)
+    sys.exit()
 
 # =============================================================================
 
@@ -214,7 +217,7 @@ def processWls (waterlevel_file, SeasonOne, SeasonTwo):
 
                         if site_id not in season1SitesD:
                             season1SitesD[site_id] = []
-                            
+
                         season1SitesD[site_id].append(lev_va)
 
                         siteFlag.append('Yes Begin')
@@ -233,7 +236,7 @@ def processWls (waterlevel_file, SeasonOne, SeasonTwo):
                     message = 'Site %s %s %s %s' % (site_id, str(wlYear), wlMonth, " & ".join(siteFlag))
                     screen_logger.debug(message)
                     #file_logger.info(message)
-                     
+
     except FileNotFoundError:
         message = 'File %s not found' % waterlevel_file
         errorMessage(message)
@@ -243,7 +246,7 @@ def processWls (waterlevel_file, SeasonOne, SeasonTwo):
     except Exception as e:
         message = 'An error occurred: %s' % e
         errorMessage(message)
-        
+
     return season1SitesD, season2SitesD
 
 # =============================================================================
@@ -258,15 +261,15 @@ siteInfoD        = {}
 #
 if os.path.exists(waterlevel_file):
 
-   # Process file
-   #
-   season1SitesD, season2SitesD = processWls(waterlevel_file, seasonOne, seasonTwo)
-   
+    # Process file
+    #
+    season1SitesD, season2SitesD = processWls(waterlevel_file, seasonOne, seasonTwo)
+
 else:
-   message = "Require a begining and ending date"
-   print("Content-type:application/json\n\n")
-   print('{ "message": "%s" }' % message)
-   sys.exit()
+    message = "Require a begining and ending date"
+    print("Content-type:application/json\n\n")
+    print('{ "message": "%s" }' % message)
+    sys.exit()
 
 # No sites for user specified interval
 # -------------------------------------------------
@@ -292,51 +295,51 @@ Sites1L       = list(season1SitesL.intersection(season2SitesL))
 
 for site_id in sorted(Sites1L):
 
-   countSites += 1
+    countSites += 1
 
-   if site_id in ['425804121344701', '430649121305201', '430029121552101']:
-      screen_logger.info("Site %s one -> %s two -> %s" % (site_id, (",").join(season1SitesD[site_id]), (",").join(season2SitesD[site_id])))
-   screen_logger.debug("Site %s one -> %s two -> %s" % (site_id, (",").join(season1SitesD[site_id]), (",").join(season2SitesD[site_id])))
-      
-   valueSeasonOne = None
-      
-   lev_vas = season1SitesD[site_id]
+    if site_id in ['425804121344701', '430649121305201', '430029121552101']:
+        screen_logger.info("Site %s one -> %s two -> %s" % (site_id, (",").join(season1SitesD[site_id]), (",").join(season2SitesD[site_id])))
+    screen_logger.debug("Site %s one -> %s two -> %s" % (site_id, (",").join(season1SitesD[site_id]), (",").join(season2SitesD[site_id])))
 
-   # Default behavior of Python is to sort ascending, that is, smallest to largest.
-   # Reverse sort (reverse=True) sorts in descending order (largest to smallest).
-   # If the 2nd element of the seasonOne object = 'Min', the lev_vas object is sorted in descending order and the value for that season (valueSeasonOne[0]) will be the largest value in the list.
-   # If the 2nd element of the seasonOne object = 'Max', the lev_vas object is sorted in ascending order and the value for that season (valueSeasonOne[0]) will be the smallest value in the list.
+    valueSeasonOne = None
 
-   if seasonOne[-1] == 'Min':
-      lev_vas.sort(reverse=True)
-   else:
-      lev_vas.sort()
+    lev_vas = season1SitesD[site_id]
 
-   valueSeasonOne = lev_vas[0]
+    # Default behavior of Python is to sort ascending, that is, smallest to largest.
+    # Reverse sort (reverse=True) sorts in descending order (largest to smallest).
+    # If the 2nd element of the seasonOne object = 'Min', the lev_vas object is sorted in descending order and the value for that season (valueSeasonOne[0]) will be the largest value in the list.
+    # If the 2nd element of the seasonOne object = 'Max', the lev_vas object is sorted in ascending order and the value for that season (valueSeasonOne[0]) will be the smallest value in the list.
 
-   ##print "\tone -> %s" % str(valueSeasonOne)
-      
-   lev_vas = season2SitesD[site_id]
+    if seasonOne[-1] == 'Min':
+        lev_vas.sort(reverse=True)
+    else:
+        lev_vas.sort()
 
-   if seasonTwo[-1] == 'Min':
-      lev_vas.sort(reverse=True)
-   else:
-      lev_vas.sort()
+    valueSeasonOne = lev_vas[0]
 
-   valueSeasonTwo = lev_vas[0]
+    ##print "\tone -> %s" % str(valueSeasonOne)
 
-   ##print "\ttwo -> %s" % str(valueSeasonTwo)
+    lev_vas = season2SitesD[site_id]
 
-   if valueSeasonOne is not None and valueSeasonTwo is not None:
-      deltaGw = float(valueSeasonOne) - float(valueSeasonTwo)
-      ##print "\t\tdeltaGw -> %s" % str(deltaGw)
-         
-      recordString = '"%s": %.2f' % (site_id, deltaGw)
-      recordsL.append(recordString.replace("\'","\""))
+    if seasonTwo[-1] == 'Min':
+        lev_vas.sort(reverse=True)
+    else:
+        lev_vas.sort()
 
-      if site_id in ['425804121344701', '430649121305201', '430029121552101']:
-         message = "Site %s one -> %s two -> %s = %s" % (site_id, str(valueSeasonOne),  str(valueSeasonTwo), str(deltaGw))
-         screen_logger.info(message)
+    valueSeasonTwo = lev_vas[0]
+
+    ##print "\ttwo -> %s" % str(valueSeasonTwo)
+
+    if valueSeasonOne is not None and valueSeasonTwo is not None:
+        deltaGw = float(valueSeasonOne) - float(valueSeasonTwo)
+        ##print "\t\tdeltaGw -> %s" % str(deltaGw)
+
+        recordString = '"%s": %.2f' % (site_id, deltaGw)
+        recordsL.append(recordString.replace("\'","\""))
+
+        if site_id in ['425804121344701', '430649121305201', '430029121552101']:
+            message = "Site %s one -> %s two -> %s = %s" % (site_id, str(valueSeasonOne),  str(valueSeasonTwo), str(deltaGw))
+            screen_logger.info(message)
 
 # No sites for user specified interval
 # -------------------------------------------------
@@ -367,4 +370,3 @@ print('\n'.join(jsonL))
 
 
 sys.exit()
-
