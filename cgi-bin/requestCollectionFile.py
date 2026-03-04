@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 #
 ###############################################################################
-# $Id: requestCollectionFile.py
+# $Id: /var/www/cgi-bin/klamath_wells/requestCollectionFile.py, v 3.02 2026/02/27 10:29:05 llorzol Exp $
+# $Revision: 3.02 $
+# $Date: 2026/02/27 10:29:05 $
+# $Author: llorzol $
 #
 # Project:  requestCollectionFile.py
 # Purpose:  Script reads an tab-limited collection text file for USGS and OWRD
 #           sites.
-# 
+#
 # Author:   Leonard Orzol <llorzol@usgs.gov>
 #
 ###############################################################################
 # Copyright (c) Leonard Orzol <llorzol@usgs.gov>
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -32,6 +35,8 @@
 ###############################################################################
 
 import os, sys, string, re
+
+import csv
 
 import datetime
 
@@ -58,171 +63,92 @@ screen_logger.setLevel(logging.INFO)
 debug           = False
 
 program         = "USGS OWRD CDWR Site Loading Script"
-version         = "2.06"
-version_date    = "January 21, 2023"
+version         = "3.02"
+version_date    = "February 27, 2026"
 
 program_args    = []
 
 # =============================================================================
 def errorMessage(error_message):
 
-   print("Content-type:application/json\n\n")
-   print('{ "message": "%s" }' % message)
-   sys.exit()
+    print("Content-type:application/json\n\n")
+    print('{ "message": "%s" }' % error_message)
+    sys.exit()
 
 # =============================================================================
-def processCollectionSites (collection_file, mySiteFields):
+def processCollectionSites (collection_file):
 
-   siteInfoD   = {}
-   siteCount   = 0
+    siteInfoD   = {}
 
-   keyColumn   = 'site_id'
-   
-   # Read collection or recorder file
-   # -------------------------------------------------
-   #
-   with open(collection_file,'r') as f:
-       linesL = f.read().splitlines()
+    # Read collection file
+    # -------------------------------------------------
+    #
+    try:
+        with open(collection_file, newline='', encoding='utf-8') as fh:
 
-   # Parse for column names [rdb format]
-   #
-   while 1:
-      if len(linesL) < 1:
-         del linesL[0]
-      elif linesL[0][0] == '#':
-         del linesL[0]
-      else:
-         namesL = linesL[0].lower().split('\t')
-         del linesL[0]
-         break
+            # Create a reader object, specifying the tab delimiter
+            #
+            collectionSitesL = list(csv.DictReader(filter(lambda row: row[0]!='#' and len(row) > 0, fh), delimiter='\t'))
 
-   # Format line in header section
-   #
-   del linesL[0]
+    except FileNotFoundError:
+        message = f"Error: The file '{collection_file}' was not found."
+        screen_logger.info(message)
+        errorMessage(message)
+    except Exception as e:
+        message = f"An error occurred: {e}"
+        screen_logger.info(message)
+        errorMessage(message)
 
-   # Check column names
-   #
-   if keyColumn not in namesL: 
-      message = "Missing index column " + keyColumn
-      errorMessage(message)
 
-   # Parse data lines
-   #
-   while len(linesL) > 0:
-      
-      if len(linesL[0]) < 1:
-         del linesL[0]
-         continue
-      
-      if linesL[0][0] == '#':
-         del linesL[0]
-         continue
+    # Process list from collection file to dictionary
+    #
+    siteInfoD = dict({x['site_id']:x for x in collectionSitesL})
 
-      Line    = linesL[0]
-      del linesL[0]
-      
-      valuesL = Line.split('\t')
-      site_id = str(valuesL[ namesL.index(keyColumn) ])
-   
-      if site_id not in siteInfoD:
-         siteInfoD[site_id] = {}
-   
-      for myColumn in mySiteFields:
-         if myColumn in namesL:
-            if str(valuesL[ namesL.index(myColumn) ]) == 'None':
-               myValue = ''
-            else:
-               myValue = str(valuesL[ namesL.index(myColumn) ])
+    message = "Processed %d sites" % len(siteInfoD)
+    screen_logger.info(message)
 
-            siteInfoD[site_id][myColumn] = myValue
-         else:
-            siteInfoD[site_id][myColumn] = None
-
-   message = "Processed %d sites" % len(siteInfoD)
-   screen_logger.info(message)
-   
-   return siteInfoD
+    return siteInfoD
 # =============================================================================
 
-def processSummarySites (file, mySiteFields):
+def processSummarySites (summary_file):
 
-   siteInfoD   = {}
+    siteInfoD   = {}
 
-   keyColumn   = 'site_id'
-   
-   # Read file
-   # -------------------------------------------------
-   #
-   with open(file,'r') as f:
-       linesL = f.read().splitlines()
-   
-   # Check for empty file
-   #
-   if len(linesL) < 1:
-      message = "Empty file %s" % file
-      errorMessage(message)
+    keyColumn   = 'site_id'
 
-   # Parse for column names [rdb format]
-   #
-   while 1:
-      if len(linesL) < 1:
-         del linesL[0]
-      elif linesL[0][0] == '#':
-         del linesL[0]
-      else:
-         namesL = linesL[0].lower().split('\t')
-         del linesL[0]
-         break
+    # Read summary file
+    # -------------------------------------------------
+    #
+    try:
+        with open(summary_file, newline='', encoding='utf-8') as fh:
 
-   # Format line in header section
-   #
-   del linesL[0]
+            # Create a reader object, specifying the tab delimiter
+            #
+            collectionSitesL = list(csv.DictReader(filter(lambda row: row[0]!='#' and len(row) > 0, fh), delimiter='\t'))
 
-   # Check column names
-   #
-   if keyColumn not in namesL: 
-      message = "Missing index column %s in %s file" % (keyColumn, file)
-      errorMessage(message)
+    except FileNotFoundError:
+        message = f"Error: The file '{summary_file}' was not found."
+        screen_logger.info(message)
+        errorMessage(message)
+    except Exception as e:
+        message = f"An error occurred: {e}"
+        screen_logger.info(message)
+        errorMessage(message)
 
-   # Parse data lines
-   #
-   while len(linesL) > 0:
-      
-      if len(linesL[0]) < 1:
-         del linesL[0]
-         continue
-      
-      if linesL[0][0] == '#':
-         del linesL[0]
-         continue
 
-      Line    = linesL[0]
-      del linesL[0]
-      
-      valuesL = Line.split('\t')
-      site_id = str(valuesL[ namesL.index(keyColumn) ])
-   
-      if site_id not in siteInfoD:
-         siteInfoD[site_id] = {}
-   
-      for myColumn in mySiteFields:
-         if myColumn in namesL:
-            if str(valuesL[ namesL.index(myColumn) ]) == 'None':
-               myValue = ''
-            else:
-               myValue = str(valuesL[ namesL.index(myColumn) ])
+    # Process list from collection file to dictionary
+    #
+    siteInfoD = dict({x['site_id']:x for x in collectionSitesL})
 
-            siteInfoD[site_id][myColumn] = myValue
-            
-         if myColumn in ['gw_agency_cd', 'rc_agency_cd']:
+    for site_id in sorted(siteInfoD.keys()):
+        for myColumn in ['gw_agency_cd', 'rc_agency_cd']:
             if len(siteInfoD[site_id][myColumn]) > 0:
-               siteInfoD[site_id][myColumn] = siteInfoD[site_id][myColumn].split(',')
-            
+                siteInfoD[site_id][myColumn] = siteInfoD[site_id][myColumn].split(',')
 
-   message = "Processed %d sites" % len(siteInfoD)
-   screen_logger.info(message)
-   
-   return siteInfoD
+    message = "Processed %d sites from summary file" % len(siteInfoD)
+    screen_logger.info(message)
+
+    return siteInfoD
 # =============================================================================
 
 # ----------------------------------------------------------------------
@@ -233,7 +159,7 @@ site_summary_file = "data/site_summary.txt"
 
 siteInfoD         = {}
 summaryInfoD      = {}
-   
+
 # Set column names
 #
 mySiteFields = [
@@ -292,13 +218,13 @@ mySiteFields = [
 #
 if os.path.exists(collection_file):
 
-   # Process file
-   #
-   siteInfoD = processCollectionSites(collection_file, mySiteFields)
-   
+    # Process file
+    #
+    siteInfoD = processCollectionSites(collection_file)
+
 else:
-   message = "Require the path to the file with the list of sites"
-   errorMessage(message)
+    message = "Require the path to the file with the list of sites"
+    errorMessage(message)
 
 #print(siteInfoD)
 
@@ -306,13 +232,13 @@ else:
 #
 if os.path.exists(site_summary_file):
 
-   # Process file
-   #
-   summaryInfoD = processSummarySites(site_summary_file, mySiteFields)
-   
+    # Process file
+    #
+    summaryInfoD = processSummarySites(site_summary_file)
+
 else:
-   message = "Require the path to the summary file with the list of sites"
-   errorMessage(message)
+    message = "Require the path to the summary file with the list of sites"
+    errorMessage(message)
 
 #print(summaryInfoD)
 
@@ -341,33 +267,33 @@ features        = []
 # Loop through site information
 #
 for site_id in sorted(siteInfoD.keys()):
-   
-   x_pt     = siteInfoD[site_id]['dec_long_va']
-   y_pt     = siteInfoD[site_id]['dec_lat_va']
-   
-   feature  = '                {'
-   feature += '"type": "Feature", '
-   feature += '"geometry": {"type": "Point", "coordinates": [%s, %s]}, ' % (str(x_pt), str(y_pt))
-   feature += '"properties": { '
-   recordL = []
-   recordL.append('"%s" : %s' % ('site_id', json.dumps(site_id)))
-   for column in mySiteFields:
-      myValue = None
-      if column in siteInfoD[site_id]:
-         if siteInfoD[site_id][column] is not None:
-            myValue = json.dumps(siteInfoD[site_id][column])
-      if column in summaryInfoD[site_id]:
-         if summaryInfoD[site_id][column] is not None:
-            myValue = json.dumps(summaryInfoD[site_id][column])
 
-      if myValue is not None:
-         recordL.append('"%s" : %s' % (column, myValue))
-      else:
-         recordL.append('"%s" : %s' % (column, "null"))
+    x_pt     = siteInfoD[site_id]['dec_long_va']
+    y_pt     = siteInfoD[site_id]['dec_lat_va']
 
-   feature += ", ".join(recordL)
-   feature += '} }'
-   features.append(feature)
+    feature  = '                {'
+    feature += '"type": "Feature", '
+    feature += '"geometry": {"type": "Point", "coordinates": [%s, %s]}, ' % (str(x_pt), str(y_pt))
+    feature += '"properties": { '
+    recordL = []
+    recordL.append('"%s" : %s' % ('site_id', json.dumps(site_id)))
+    for column in mySiteFields:
+        myValue = None
+        if column in siteInfoD[site_id]:
+            if siteInfoD[site_id][column] is not None:
+                myValue = json.dumps(siteInfoD[site_id][column])
+        if column in summaryInfoD[site_id]:
+            if summaryInfoD[site_id][column] is not None:
+                myValue = json.dumps(summaryInfoD[site_id][column])
+
+        if myValue is not None:
+            recordL.append('"%s" : %s' % (column, myValue))
+        else:
+            recordL.append('"%s" : %s' % (column, "null"))
+
+    feature += ", ".join(recordL)
+    feature += '} }'
+    features.append(feature)
 
 jsonL.append('%s' % ",\n".join(features))
 jsonL.append('               ]')
@@ -385,4 +311,3 @@ print('\n'.join(jsonL))
 
 
 sys.exit()
-
