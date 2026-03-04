@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 #
 ###############################################################################
-# $Id: WebRequest_mod.py
+# $Id: /var/www/cgi-bin/klamath_wells/WebRequest_mod.py, v 2.02 2026/02/27 10:29:05 llorzol Exp $
+# $Revision: 2.02 $
+# $Date: 2026/02/27 10:29:05 $
+# $Author: llorzol $
 #
 # Project:  WebRequest_mod.py
 # Purpose:  Script manages the web requests to NwisWeb and other sources.
-# 
+#
 # Author:   Leonard Orzol <llorzol@usgs.gov>
 #
 ###############################################################################
 # Copyright (c) Leonard Orzol <llorzol@usgs.gov>
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -54,126 +57,127 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 # -- Program
 # ------------------------------------------------------------
 program        = "USGS Web Requests Module Script"
-version        = "2.01"
-version_date   = "May 22, 2024"
+version        = "2.02"
+version_date   = "February 27, 2026"
 
-# --------------------------------------------------------                
+# --------------------------------------------------------
 # -- Format URL string for screen display
 # --------------------------------------------------------
 def buildURL(parmsDict):
 
-   urlArgs = []
-   for key,value in parmsDict.items():
-      urlArgs.append("%s=%s" % (key, value))
+    urlArgs = []
+    for key,value in parmsDict.items():
+        urlArgs.append("%s=%s" % (key, value))
 
-   return "&".join(urlArgs)
- 
+    return "&".join(urlArgs)
+
 # ------------------------------------------------------------
 # -- Web request
 # ------------------------------------------------------------
 
 def webRequest(url_request, parmsDict, contentType, timeout, cookie, screen_logger):
 
-   pattern    = re.compile(contentType)
+    pattern    = re.compile(contentType)
 
-   # Set timer
-   #
-   start_ts   = time.time()
-   
-   # Set return content
-   #
-   content    = None
-      
-   # Print url
-   #
-   screen_logger.debug("Url request: " + url_request)
+    # Set timer
+    #
+    start_ts   = time.time()
 
-   # Send url request
-   #
-   try:
-      agent      = requests.get(url_request, params=parmsDict, cookies=cookie, timeout = timeout)
+    # Set return content
+    #
+    content    = None
 
-      # -- Debug message
-      #
-      elapsed  = time.time() - start_ts
-      screen_logger.debug('Web request completed in %.3f seconds' % elapsed)
+    # Print url
+    #
+    #screen_logger.debug("Url request: " + url_request)
 
-      # Status code 200
-      #
-      if agent.status_code == requests.codes.ok:
-   
-         content_type = agent.headers.get('content-type')
-   
-         # Content type matches type requested
-         #
-         if pattern.match(content_type):
-   
-            content = agent.text
-   
-         # Content type other than type requested
-         #
-         else:
+    # Send url request
+    #
+    try:
+        agent      = requests.get(url_request, params=parmsDict, cookies=cookie, timeout = timeout)
+        #screen_logger.info('Web request %s' % agent.url)
+
+        # -- Debug message
+        #
+        elapsed  = time.time() - start_ts
+        screen_logger.debug('Web request completed in %.3f seconds' % elapsed)
+
+        # Status code 200
+        #
+        if agent.status_code == requests.codes.ok:
+
+            content_type = agent.headers.get('content-type')
+
+            # Content type matches type requested
+            #
+            if pattern.match(content_type):
+
+                content = agent.text
+
+            # Content type other than type requested
+            #
+            else:
+                content = None
+
+                message  = "Web request failed: " + agent.url + "\n"
+                message += "Content type should be text returned content type " + content_type
+                screen_logger.info(message)
+
+        # Error status code != 200
+        #
+        else:
             content = None
-   
-            message  = "Web request failed: " + url_request + "\n"
-            message += "Content type should be text returned content type " + content_type
+
+            message  = "Web request failed: " + agent.url + "\n"
+            message += "Status code %d" % agent.status_code
             screen_logger.info(message)
-      
-      # Error status code != 200
-      #
-      else:
-         content = None
-   
-         message  = "Web request failed: " + url_request + "\n"
-         message += "Status code %d" % agent.status_code
-         screen_logger.info(message)
 
-   # Response code
-   #
-   except requests.exceptions.HTTPError as errh:
-      message  = "Web request failed: " + url_request + "\n"
-      message += errh.args[0]
-      screen_logger.info(message)
+    # Response code
+    #
+    except requests.exceptions.HTTPError as errh:
+        message  = "Web request failed: " + agent.url + "\n"
+        message += errh.args[0]
+        screen_logger.info(message)
 
-   # Request timeout
-   #
-   except requests.exceptions.Timeout as errrt:
-      message  = "Web request failed: " + url_request + "\n"
-      message += "Time out encountered"
-      screen_logger.info(message)
+    # Request timeout
+    #
+    except requests.exceptions.Timeout as errrt:
+        message  = "Web request failed: " + agent.url + "\n"
+        message += "Time out encountered"
+        screen_logger.info(message)
 
-   # Connection error
-   #
-   except requests.exceptions.ConnectionError as conerr:
-      message  = "Web request failed: " + url_request + "\n"
-      message += "Connection error encountered"
-      screen_logger.info(message)
+    # Connection error
+    #
+    except requests.exceptions.ConnectionError as conerr:
+        message  = "Web request failed: " + agent.url + "\n"
+        message += "Connection error encountered"
+        screen_logger.info(message)
 
-   # Too many redirects
-   #
-   except requests.exceptions.TooManyRedirects:
-      message  = "Web request failed: " + url_request + "\n"
-      message += "Too many redirects"
-      screen_logger.info(message)
+    # Too many redirects
+    #
+    except requests.exceptions.TooManyRedirects:
+        message  = "Web request failed: " + agent.url + "\n"
+        message += "Too many redirects"
+        screen_logger.info(message)
 
-   # Exception request
-   #
-   except requests.exceptions.RequestException as e:
-      message  = "Web request failed: " + url_request + "\n"
-      message += e
-      screen_logger.info(message)
+    # Exception request
+    #
+    except requests.exceptions.RequestException as e:
+        message  = "Web request failed: " + agent.url + "\n"
+        message += e
+        screen_logger.info(message)
 
-   # Other
-   #
-   except:
-      message  = "Web request failed: " + url_request + "\n"
-      screen_logger.info(message)
-      
-   # - Record message
-   # -----------------------------------------------------------
-   elapsed = time.time() - start_ts
-   message = "Web request finished in %.2f seconds" % elapsed
-   screen_logger.debug(message)
+    # Other
+    #
+    except:
+        message  = "Web request failed: " + agent.url + "\n"
+        screen_logger.info(message)
 
-   return message, content
+    # - Record message
+    # -----------------------------------------------------------
+    elapsed = time.time() - start_ts
+    message = "Web request finished in %.2f seconds" % elapsed
+    screen_logger.debug(message)
+
+    return message, content
 # =============================================================================
