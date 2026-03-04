@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 #
 ###############################################################################
-# $Id: porGwChange.py
+# $Id: /var/www/cgi-bin/klamath_wells/porGwChange.py, v 2.06 2026/02/27 10:29:05 llorzol Exp $
+# $Revision: 2.06 $
+# $Date: 2026/02/27 10:29:05 $
+# $Author: llorzol $
 #
 # Project:  porGwChange
-# Purpose:  Script processes groundwater measurements to determine a list of 
+# Purpose:  Script processes groundwater measurements to determine a list of
 #           seasonal interval available for a gw change map.
-# 
+#
 # Author:   Leonard Orzol <llorzol@usgs.gov>
 #
 ###############################################################################
 # Copyright (c) Leonard Orzol <llorzol@usgs.gov>
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -66,7 +69,7 @@ HardWired = None
 #HardWired = 1
 
 if HardWired is not None:
-   os.environ['QUERY_STRING'] = 'SeasonalIntervals=Spring,02,03,04,Min Summer,05,06,07,Max Fall,08,09,10,Max Winter,12,01,02,Min&startingYear=1996'
+    os.environ['QUERY_STRING'] = 'SeasonalIntervals=Spring,02,03,04,Min Summer,05,06,07,Max Fall,08,09,10,Max Winter,12,01,02,Min&startingYear=1996'
 
 if 'QUERY_STRING' in os.environ:
     #queryString = re.escape(os.environ['QUERY_STRING'])
@@ -123,7 +126,7 @@ else:
 # Check starting year
 #
 if 'startingYear' in params:
-      startingYear = params['startingYear']
+    startingYear = params['startingYear']
 else:
     message = "Provide starting waterlevel year "
     print("Content-type:application/json\n\n")
@@ -137,17 +140,17 @@ quiet           = False
 debug           = False
 
 program         = "USGS OWRD Seasonal Interval Script"
-version         = "2.05"
-version_date    = "December 29, 2024"
+version         = "2.06"
+version_date    = "February 27, 2026"
 
 program_args    = []
 
 # =============================================================================
 def errorMessage(error_message):
 
-   print("Content-type:application/json\n\n")
-   print('{ "message": "%s" }' % message)
-   sys.exit()
+    print("Content-type:application/json\n\n")
+    print('{ "message": "%s" }' % message)
+    sys.exit()
 
 # =============================================================================
 
@@ -253,7 +256,7 @@ def processSeasons (waterlevel_file, SeasonsL, SeasonIntervals, startingYear):
                                 seasonsD[wlYear][Season] = 1
 
                             break
-                    
+
     except FileNotFoundError:
         message = 'File %s not found' % waterlevel_file
         errorMessage(message)
@@ -276,20 +279,20 @@ json_file        = "data/porGwChange.json"
 siteInfoD        = {}
 message          = ''
 
-   
+
 # Read
 #
 if os.path.exists(waterlevel_file):
 
-   # Process file
-   #
-   seasonsD = processSeasons(waterlevel_file, SeasonsL, SeasonalIntervals, startingYear)
-   
+    # Process file
+    #
+    seasonsD = processSeasons(waterlevel_file, SeasonsL, SeasonalIntervals, startingYear)
+
 else:
-   message = "Require a water-level file"
-   print ("Content-type:application/json\n\n")
-   print ('{ "message": "%s" }' % message)
-   sys.exit()
+    message = "Require a water-level file"
+    print ("Content-type:application/json\n\n")
+    print ('{ "message": "%s" }' % message)
+    sys.exit()
 
 # Prepare JSON output
 # -------------------------------------------------
@@ -302,19 +305,19 @@ jsonL.append('{')
 recordsL = []
 for year in sorted(seasonsD.keys()):
 
-   myList   = []
+    myList   = []
 
-   seasonsL = seasonsD[year].keys()
+    seasonsL = seasonsD[year].keys()
 
-   if len(seasonsL) > 0:
+    if len(seasonsL) > 0:
 
-       for mySeason in ['Spring', 'Summer', 'Fall', 'Winter']:
-    
-          if mySeason in seasonsL:
-             myList.append(mySeason)   
-    
-       recordsL.append( '"%s": [ %s ]' % (year, ",".join('"{0}"'.format(w) for w in myList)))
-   
+        for mySeason in ['Spring', 'Summer', 'Fall', 'Winter']:
+
+            if mySeason in seasonsL:
+                myList.append(mySeason)
+
+        recordsL.append( '"%s": [ %s ]' % (year, ",".join('"{0}"'.format(w) for w in myList)))
+
 jsonL.append("%s" % ",\n".join(recordsL))
 
 
@@ -349,4 +352,3 @@ print ('\n'.join(jsonL))
 
 
 sys.exit()
-
