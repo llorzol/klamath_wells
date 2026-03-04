@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 #
 ###############################################################################
-# $Id: buildWaterlevelFile.py
+# $Id: /var/www/cgi-bin/klamath_wells/buildWaterlevelFile.py, v 2.44 2026/02/27 10:29:05 llorzol Exp $
+# $Revision: 2.44 $
+# $Date: 2026/02/27 10:29:05 $
+# $Author: llorzol $
+# $Revision: 4.02 $
+# $Date: 2025/10/07 19:09:09 $
+# $Author: llorzol $
 #
 # Project:  buildWaterlevelFile.py
 # Purpose:  Script builds a tab-limited text file of waterlevel measurements
 #           from USGS, OWRD, and CWDR sources for the Upper Klamath Basin.
-# 
-# Author:   Leonard Orzol <llorzol@usgs.gov>
 #
 ###############################################################################
 # Copyright (c) Oregon Water Science Center
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -32,6 +36,8 @@
 ###############################################################################
 
 import os, sys, string, re
+
+import csv
 
 import datetime
 
@@ -59,7 +65,7 @@ screen_logger.propagate = False
 #
 logging_file = "buildWaterlevelFile.txt"
 if os.path.isfile(logging_file):
-   os.remove(logging_file)
+    os.remove(logging_file)
 
 file_logger  = logging.getLogger('file_logger')
 formatter    = logging.Formatter('%(message)s')
@@ -75,8 +81,8 @@ from WebRequest_mod import webRequest
 from WebRequest_mod import buildURL
 
 program         = "USGS OWRD CDWR Waterlevel Measurement Script"
-version         = "2.43"
-version_date    = "February 17, 2025"
+version         = "2.44"
+version_date    = "February 27, 2026"
 usage_message   = """
 Usage: buildWaterlevelFile.py
                 [--help]
@@ -91,7 +97,7 @@ Usage: buildWaterlevelFile.py
                 [--keepOWRD    Keep OWRD records over USGS matching records [default keep USGS skip OWRD]]
                 [--debug       Enable debug operational output to the screen]
 """
-      
+
 # Print information
 #
 messages   = []
@@ -125,1332 +131,891 @@ file_logger.info('\n'.join(messages))
 # =============================================================================
 def errorMessage(error_message):
 
-   screen_logger.info(message)
+    screen_logger.info(message)
 
-   sys.exit( 1 )
+    sys.exit( 1 )
 
 # =============================================================================
 def processCollectionSites (file, mySiteFields):
 
-   siteInfoD      = {}
-   siteCount      = 0
-   countUSGS      = 0
-   countOWRD      = 0
-   countCDWR      = 0
+    siteInfoD      = {}
+    siteCount      = 0
+    countUSGS      = 0
+    countOWRD      = 0
+    countCDWR      = 0
 
-   agencyL        = []
+    agencyL        = []
 
-   periodicSitesL = []
-   recorderSitesL = []
+    periodicSitesL = []
+    recorderSitesL = []
 
-   keyColumn      = 'site_id'
-   
-   # Read file
-   # -------------------------------------------------
-   #
-   with open(file,'r') as f:
-       linesL = f.read().splitlines()
-   
-   # Check for empty file
-   #
-   if len(linesL) < 1:
-      message = "Empty file %s" % file
-      errorMessage(message)
+    keyColumn      = 'site_id'
 
-   # Parse for column names [rdb format]
-   #
-   while 1:
-      if len(linesL) < 1:
-         del linesL[0]
-      elif linesL[0][0] == '#':
-         del linesL[0]
-      else:
-         namesL = linesL[0].lower().split('\t')
-         del linesL[0]
-         break
+    # Read collection file
+    # -------------------------------------------------
+    #
+    try:
+        with open(collection_file, newline='', encoding='utf-8') as fh:
 
-   # Format line in header section
-   #
-   del linesL[0]
+            # Create a reader object, specifying the tab delimiter
+            #
+            collectionSitesL = list(csv.DictReader(filter(lambda row: row[0]!='#' and len(row) > 0, fh), delimiter='\t'))
 
-   # Check column names
-   #
-   if keyColumn not in namesL: 
-      message = "Missing index column %s in %s file" % (keyColumn, file)
-      errorMessage(message)
+    except FileNotFoundError:
+        message = f"Error: The file '{collection_file}' was not found."
+        screen_logger.info(message)
+        errorMessage(message)
+    except Exception as e:
+        message = f"An error occurred: {e}"
+        screen_logger.info(message)
+        errorMessage(message)
 
-   # Parse data lines
-   #
-   while len(linesL) > 0:
-      
-      if len(linesL[0]) < 1:
-         del linesL[0]
-         continue
-      
-      if linesL[0][0] == '#':
-         del linesL[0]
-         continue
 
-      Line    = linesL[0]
-      del linesL[0]
-      
-      valuesL = Line.split('\t')
+    # Process list from collection file to dictionary
+    #
+    siteInfoD = dict({x['site_id']:x for x in collectionSitesL})
+    namesL    = list({x for x in collectionSitesL[0]})
 
-      site_id = str(valuesL[ namesL.index(keyColumn) ])
-   
-      if site_id not in siteInfoD:
-         siteInfoD[site_id] = {}
+    # Loop through sites from collection file
+    #
+    for site_id in sorted(siteInfoD.keys()):
 
-      recordD = {}
-   
-      for myColumn in namesL:
-         myValue = ''
-         if len(str(valuesL[ namesL.index(myColumn) ])) > 0:
-            myValue = str(valuesL[ namesL.index(myColumn) ])
-         recordD[myColumn] = myValue
-   
-      for myColumn in mySiteFields:
-         if myColumn in recordD:
-            siteInfoD[site_id][myColumn] = recordD[myColumn]
-      
-      siteInfoD[site_id]['periodic']           = recordD['periodic']
-      siteInfoD[site_id]['gw_agency_cd']       = ''
-      siteInfoD[site_id]['gw_status']          = None
-      siteInfoD[site_id]['gw_begin_date']      = None
-      siteInfoD[site_id]['gw_end_date']        = None
-      siteInfoD[site_id]['gw_count']           = 0
+        recordD = siteInfoD[site_id]
 
-      siteInfoD[site_id]['recorder']           = recordD['recorder']
-      siteInfoD[site_id]['rc_agency_cd']       = recordD['recorder']
-      siteInfoD[site_id]['rc_status']          = None
-      siteInfoD[site_id]['rc_begin_date']      = None
-      siteInfoD[site_id]['rc_end_date']        = None
-      siteInfoD[site_id]['rc_count']           = 0
-      
-      siteInfoD[site_id]['usgs_begin_date']    = None
-      siteInfoD[site_id]['usgs_end_date']      = None
-      siteInfoD[site_id]['usgs_status']        = None
-      siteInfoD[site_id]['usgs_count']         = 0
-      
-      siteInfoD[site_id]['usgs_rc_begin_date'] = None
-      siteInfoD[site_id]['usgs_rc_end_date']   = None
-      siteInfoD[site_id]['usgs_rc_status']     = None
-      siteInfoD[site_id]['usgs_rc_count']      = 0
-      
-      siteInfoD[site_id]['owrd_begin_date']    = None
-      siteInfoD[site_id]['owrd_end_date']      = None
-      siteInfoD[site_id]['owrd_status']        = None
-      siteInfoD[site_id]['owrd_count']         = 0
-      
-      siteInfoD[site_id]['owrd_rc_begin_date'] = None
-      siteInfoD[site_id]['owrd_rc_end_date']   = None
-      siteInfoD[site_id]['owrd_rc_status']     = None
-      siteInfoD[site_id]['owrd_rc_count']      = 0
-      
-      siteInfoD[site_id]['cdwr_begin_date']    = None
-      siteInfoD[site_id]['cdwr_end_date']      = None
-      siteInfoD[site_id]['cdwr_status']        = None
-      siteInfoD[site_id]['cdwr_count']         = 0
-      
-      siteInfoD[site_id]['cdwr_rc_begin_date'] = None
-      siteInfoD[site_id]['cdwr_rc_end_date']   = None
-      siteInfoD[site_id]['cdwr_rc_status']     = None
-      siteInfoD[site_id]['cdwr_rc_count']      = 0
+        for myColumn in namesL:
+            myValue = ''
+            if len(str(recordD[myColumn])) > 0:
+                myValue = str(recordD[myColumn])
+            recordD[myColumn] = myValue
 
-   # Count sites
-   # -------------------------------------------------
-   #
-   usgsSitesL = list({siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
-   owrdSitesL = list({siteInfoD[x]['coop_site_no'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
-   cdwrSitesL = list({siteInfoD[x]['cdwr_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
+        for myColumn in mySiteFields:
+            if myColumn in recordD:
+                siteInfoD[site_id][myColumn] = recordD[myColumn]
 
-   agencyL    = []
-   if len(usgsSitesL) > 0:
-      agencyL.append('USGS')
-   if len(owrdSitesL) > 0:
-      agencyL.append('OWRD')
-   if len(cdwrSitesL) > 0:
-      agencyL.append('CDWR')
-  
-   periodicSitesL = list({siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['periodic']) > 0})
-   recorderSitesL = list({siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['recorder']) > 0})
+        siteInfoD[site_id]['periodic']           = recordD['periodic']
+        siteInfoD[site_id]['gw_agency_cd']       = ''
+        siteInfoD[site_id]['gw_status']          = None
+        siteInfoD[site_id]['gw_begin_date']      = None
+        siteInfoD[site_id]['gw_end_date']        = None
+        siteInfoD[site_id]['gw_count']           = 0
 
-   usgsRecordersL = list({siteInfoD[x]['site_no'] for x in siteInfoD if siteInfoD[x]['recorder'].find('USGS') > -1})
-   owrdRecordersL = list({siteInfoD[x]['site_no'] for x in siteInfoD if siteInfoD[x]['recorder'].find('OWRD') > -1})
-   cdwrRecordersL = list({siteInfoD[x]['site_no'] for x in siteInfoD if siteInfoD[x]['recorder'].find('CDWR') > -1})
-   
-   # Print information
-   #
-   ncols    = 90
-   messages = []
-   messages.append('\n\tProcessed site information in %s file' % file)
-   messages.append('\t%s' % (ncols * '-'))
-   messages.append('\t%-40s %49s' % ('Monitoring agencies in collection file', ', '.join(agencyL)))
-   messages.append('\t%-79s %10d' % ('Number of sites in collection file', len(siteInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of periodic sites in collection file', len(periodicSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file', len(recorderSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of sites correlated to a site in USGS datbase', len(usgsSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file in the USGS datbase', len(usgsRecordersL)))
-   messages.append('\t%-79s %10d' % ('Number of sites correlated to a site in OWRD datbase', len(owrdSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file in the OWRD datbase', len(owrdRecordersL)))
-   messages.append('\t%-79s %10d' % ('Number of sites correlated to a site in CDWR datbase', len(cdwrSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file in the CDWR datbase', len(cdwrRecordersL)))
-   messages.append('\t%s' % (ncols * '-'))
-   messages.append('\n')
-   messages.append('\n')
+        siteInfoD[site_id]['recorder']           = recordD['recorder']
+        siteInfoD[site_id]['rc_agency_cd']       = recordD['recorder']
+        siteInfoD[site_id]['rc_status']          = None
+        siteInfoD[site_id]['rc_begin_date']      = None
+        siteInfoD[site_id]['rc_end_date']        = None
+        siteInfoD[site_id]['rc_count']           = 0
 
-   screen_logger.info('\n'.join(messages))
-   file_logger.info('\n'.join(messages))
-   
-   return siteInfoD
+        siteInfoD[site_id]['usgs_begin_date']    = None
+        siteInfoD[site_id]['usgs_end_date']      = None
+        siteInfoD[site_id]['usgs_status']        = None
+        siteInfoD[site_id]['usgs_count']         = 0
+
+        siteInfoD[site_id]['usgs_rc_begin_date'] = None
+        siteInfoD[site_id]['usgs_rc_end_date']   = None
+        siteInfoD[site_id]['usgs_rc_status']     = None
+        siteInfoD[site_id]['usgs_rc_count']      = 0
+
+        siteInfoD[site_id]['owrd_begin_date']    = None
+        siteInfoD[site_id]['owrd_end_date']      = None
+        siteInfoD[site_id]['owrd_status']        = None
+        siteInfoD[site_id]['owrd_count']         = 0
+
+        siteInfoD[site_id]['owrd_rc_begin_date'] = None
+        siteInfoD[site_id]['owrd_rc_end_date']   = None
+        siteInfoD[site_id]['owrd_rc_status']     = None
+        siteInfoD[site_id]['owrd_rc_count']      = 0
+
+        siteInfoD[site_id]['cdwr_begin_date']    = None
+        siteInfoD[site_id]['cdwr_end_date']      = None
+        siteInfoD[site_id]['cdwr_status']        = None
+        siteInfoD[site_id]['cdwr_count']         = 0
+
+        siteInfoD[site_id]['cdwr_rc_begin_date'] = None
+        siteInfoD[site_id]['cdwr_rc_end_date']   = None
+        siteInfoD[site_id]['cdwr_rc_status']     = None
+        siteInfoD[site_id]['cdwr_rc_count']      = 0
+
+    # Count sites
+    # -------------------------------------------------
+    #
+    usgsSitesL = list({siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
+    owrdSitesL = list({siteInfoD[x]['coop_site_no'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
+    cdwrSitesL = list({siteInfoD[x]['cdwr_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
+
+    agencyL    = []
+    if len(usgsSitesL) > 0:
+        agencyL.append('USGS')
+    if len(owrdSitesL) > 0:
+        agencyL.append('OWRD')
+    if len(cdwrSitesL) > 0:
+        agencyL.append('CDWR')
+
+    periodicSitesL = list({siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['periodic']) > 0})
+    recorderSitesL = list({siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['recorder']) > 0})
+
+    usgsRecordersL = list({siteInfoD[x]['site_no'] for x in siteInfoD if siteInfoD[x]['recorder'].find('USGS') > -1})
+    owrdRecordersL = list({siteInfoD[x]['site_no'] for x in siteInfoD if siteInfoD[x]['recorder'].find('OWRD') > -1})
+    cdwrRecordersL = list({siteInfoD[x]['site_no'] for x in siteInfoD if siteInfoD[x]['recorder'].find('CDWR') > -1})
+
+    # Print information
+    #
+    ncols    = 90
+    messages = []
+    messages.append('\n\tProcessed site information in %s file' % file)
+    messages.append('\t%s' % (ncols * '-'))
+    messages.append('\t%-40s %49s' % ('Monitoring agencies in collection file', ', '.join(agencyL)))
+    messages.append('\t%-79s %10d' % ('Number of sites in collection file', len(siteInfoD)))
+    messages.append('\t%-79s %10d' % ('Number of periodic sites in collection file', len(periodicSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file', len(recorderSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of sites correlated to a site in USGS datbase', len(usgsSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file in the USGS datbase', len(usgsRecordersL)))
+    messages.append('\t%-79s %10d' % ('Number of sites correlated to a site in OWRD datbase', len(owrdSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file in the OWRD datbase', len(owrdRecordersL)))
+    messages.append('\t%-79s %10d' % ('Number of sites correlated to a site in CDWR datbase', len(cdwrSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file in the CDWR datbase', len(cdwrRecordersL)))
+    messages.append('\t%s' % (ncols * '-'))
+    messages.append('\n')
+    messages.append('\n')
+
+    screen_logger.info('\n'.join(messages))
+    file_logger.info('\n'.join(messages))
+
+    return siteInfoD
 # =============================================================================
 
-def jsonUSGS (siteInfoD, mySiteFields, myGwFields):
+def ogcapiUSGS (siteInfoD, mySiteFields, myGwFields):
 
-   gwInfoD      = {}
-   rcInfoD      = {}
-   
-   usgsRecords  = 0
-   owrdRecords  = 0
-   cdwrRecords  = 0
-   othrRecords  = 0
-   totalRecords = 0
-   rcRecords    = 0
+    gwInfoD      = {}
+    rcInfoD      = {}
 
-   numYRecords  = 0
-   numNRecords  = 0
+    usgsRecords  = 0
+    owrdRecords  = 0
+    cdwrRecords  = 0
+    othrRecords  = 0
+    totalRecords = 0
+    rcRecords    = 0
 
-   gwCodesD     = {}
+    numYRecords  = 0
+    numNRecords  = 0
 
-   pst_offset   = -8
-   days_offset  = 365
-   activeDate   = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_offset)
+    gwCodesD     = {}
+    usgsCounts   = {}
 
-   # Prepare list of site numbers
-   # -------------------------------------------------
-   #
-   usgsSitesD     = dict({siteInfoD[x]['site_no']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
-   usgsSitesL     = list({siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
-   owrdSitesL     = list({siteInfoD[x]['coop_site_no'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
-   cdwrSitesL     = list({siteInfoD[x]['cdwr_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
+    pst_offset   = -8
+    days_offset  = 365
+    activeDate   = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_offset)
 
-   missSitesL = list(usgsSitesL)
+    # Prepare list of site numbers
+    # -------------------------------------------------
+    #
+    usgsSitesD     = dict({siteInfoD[x]['site_no']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
+    usgsSitesL     = list({siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
+    owrdSitesL     = list({siteInfoD[x]['coop_site_no'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
+    cdwrSitesL     = list({siteInfoD[x]['cdwr_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
 
-   # NwisWeb groundwater service
-   # -------------------------------------------------
-   #
-   tempL  = list(usgsSitesL)
-   nsites = 2
-   linesL = []
+    missSitesL = list(usgsSitesL)
 
-   while len(tempL) > 0:
+    # OGCAPI field-measurements service [groundwater]
+    # -------------------------------------------------
+    #
+    tempL  = sorted(usgsSitesL)
+    nsites = 10
 
-      nList = ",".join(tempL[:nsites])
-      del tempL[:nsites]
+    screen_logger.info("Process field-measurements for groundwater %d sites" % len(tempL))
 
-      # Web request
-      #
-      URL          = 'https://waterservices.usgs.gov/nwis/gwlevels/?format=json&sites=%s&startDT=1800-01-01&siteStatus=all' % nList
-      noparmsDict  = {}
-      contentType  = "application/json"
-      timeOut      = 1000
+    while len(tempL) > 0:
 
-      #screen_logger.info("Url %s" % URL)
-                 
-      message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
-     
-      if webContent is not None:
+        nList = list(tempL[:nsites])
+        del tempL[:nsites]
 
-         # Check for empty file
-         #
-         if len(webContent) < 1:
-            message = "Empty content return from web request %s" % URL
-            errorMessage(message)
+        # Web request
+        #
+        URL          = 'https://api.waterdata.usgs.gov/ogcapi/v0/collections/field-measurements/items'
+        noparmsDict  = {
+            'filter-lang' : 'cql-text',
+            'filter' : " AND ".join([
+                "monitoring_location_id IN (%s)" % ", ".join(f"'USGS-{item}'" for item in nList),
+                "parameter_code = '72019'"
+            ]),
+            'sortby' : 'monitoring_location_id,time',
+            #'properties' : 'parameter_code,monitoring_location_id,observing_procedure,observing_procedure_code,value,unit_of_measure,time,qualifier,vertical_datum,approval_status,measuring_agency',
+            'skipGeometry' : 'true',
+            'limit' : 50000,
+            'f' : 'json',
+            'api_key' : 'nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV'
+        }
+        contentType  = "application/json"
+        timeOut      = 1000
 
-         #screen_logger.info("Groundwater records /n%s" % webContent)
-         gwJson = json.loads(webContent)
-         if 'value' in gwJson:
-            if 'timeSeries' in gwJson['value']:
-               gwRecords = gwJson['value']['timeSeries']
-               for gwRecord in gwRecords:
-                  site_no      = gwRecord['sourceInfo']['siteCode'][0]['value']
-                  agency_cd    = gwRecord['sourceInfo']['siteCode'][0]['agencyCode']
-                  timeZone     = gwRecord['sourceInfo']['timeZoneInfo']['defaultTimeZone']
-                  variableName = gwRecord['variable']['variableName']
-                  if variableName == 'Depth to water level, ft below land surface':
-                     gwValues = gwRecord['values'][0]['value']
-                     screen_logger.info("Process %d groundwater measurements for site %s" % (len(gwValues), site_no))
+        screen_logger.info("\tRequesting period of record for groundwater recorder sites %s" % ", ".join(nList))
+        message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
 
-                     # Process groundwater measurements
-                     # -------------------------------------------------
-                     #
-                     for myRecord in gwValues:
+        if webContent is not None:
 
-                        # Set record
-                        #
-                        gwRecord = {}
+                # Check for empty file
+                #
+            if len(webContent) < 1:
+                message = "Empty content return from web request %s" % URL
+                errorMessage(message)
 
-                        for myColumn in myGwFields:
-                           gwRecord[myColumn] = 'null'
+            # Process groundwater measurements
+            # -------------------------------------------------
+            #
+            #screen_logger.info("Groundwater records /n%s" % webContent)
+            gwJson = json.loads(webContent)
+            numRecords = gwJson['numberReturned']
+            screen_logger.debug("Process %d groundwater measurements for %d sites" % (numRecords, len(nList)))
+            if numRecords > 0:
 
-                        lev_va  = myRecord['value']
-                        lev_dtm = myRecord['dateTime']
-                        lev_tm  = myRecord['dateTime'][11:16]
+                gwRecords = gwJson['features']
 
-                        # Set site ID
-                        #
-                        gwRecord['site_no']   = site_no
-                        gwRecord['agency_cd'] = agency_cd
-                        if site_no in usgsSitesD:
-                           site_id = usgsSitesD[site_no]
-                           
-                        gwRecord['site_id'] = site_no
+                # Loop through records
+                #
+                for myRecord in gwRecords:
 
-                        # Remove site number
-                        #
-                        if site_no in missSitesL:
-                           missSitesL.remove(site_no)
+                    gwRecord = {}
 
-                        # Set waterlevel
-                        #
-                        lev_va        = str(gwRecord['lev_va'])
-                        if lev_va == 'None':
-                           lev_va = ''
+                    for myColumn in myGwFields:
+                        gwRecord[myColumn] = 'null'
 
-                        # Set water-level date information
-                        #
-                        lev_dt        = str(myRecord['dateTime'][:10])
-                        lev_tm        = str(myRecord['dateTime'][11:16])
-                        lev_tz_cd     = 'UTC'
-                        lev_dt_acy_cd = 'm'
+                    # Set site ID
+                    #
+                    agency_cd, site_no = myRecord['properties']['monitoring_location_id'].split('-')
+                    if site_no in usgsSitesD:
+                        site_id = usgsSitesD[site_no]
 
-                        # Partial date time = 12:00
-                        #
-                        if lev_tm == '12:00':
-                           lev_dt_acy_cd = 'D'
+                    gwRecord['site_id'] = site_no
+                    gwRecord['agency_cd'] = agency_cd
+                    gwRecord['site_no'] = site_no
 
-                        # Partial date YYYY
-                        #
-                        if lev_dt_acy_cd == 'Y':
-                           tempDate   = datetime.datetime.strptime(lev_dt, '%Y')
-                           wlDate     = tempDate.replace(month=7,day=16,hour=12)
+                    # Remove site number
+                    #
+                    if site_no in missSitesL:
+                        missSitesL.remove(site_no)
 
-                        # Partial date YYYY-MM
-                        #
-                        elif lev_dt_acy_cd == 'M':
-                           tempDate   = datetime.datetime.strptime(lev_dt, '%Y-%m')
-                           wlDate     = tempDate.replace(day=16,hour=12)
-                           if wlDate.month == 2:
-                              wlDate = tempDate.replace(day=15,hour=12)
+                    # Set water-level date information
+                    #
+                    tmp_dt        = str(myRecord['properties']['time'][:16])
+                    lev_dt        = str(myRecord['properties']['time'][:10])
+                    lev_tm        = str(myRecord['properties']['time'][11:16])
+                    lev_tz_cd     = 'UTC'
+                    lev_dt_acy_cd = 'm'
 
-                        # Full date YYYY-MM-DD
-                        #
-                        elif lev_dt_acy_cd == 'D':
-                           tempDate   = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
-                           wlDate     = tempDate.replace(hour=12)
+                    # Partial date time = 12:00
+                    #
+                    if str(myRecord['properties']['time'][11:19]) == '12:00:00':
+                        lev_dt_acy_cd = 'D'
 
-                        # Full date YYYY-MM-DD HH:MM
-                        #
-                        elif lev_dt_acy_cd == 'm':
-                           tmp_dt = '%s %s' % (lev_dt, lev_tm)
-                           wlDate = datetime.datetime.strptime(tmp_dt, '%Y-%m-%d %H:%M')
+                    # Partial date YYYY
+                    #
+                    if lev_dt_acy_cd == 'Y':
+                        tempDate   = datetime.datetime.strptime(lev_dt, '%Y')
+                        wlDate     = tempDate.replace(month=7,day=16,hour=12)
 
-                        # Set dtm
-                        #
-                        wlDate     = wlDate.replace(tzinfo=datetime.timezone.utc)
-                        lev_dtm    = wlDate.strftime("%Y-%m-%d %H:%M %Z")
+                    # Partial date YYYY-MM
+                    #
+                    elif lev_dt_acy_cd == 'M':
+                        tempDate   = datetime.datetime.strptime(lev_dt, '%Y-%m')
+                        wlDate     = tempDate.replace(day=16,hour=12)
+                        if wlDate.month == 2:
+                            wlDate = tempDate.replace(day=15,hour=12)
 
-                        gwRecord['lev_dtm'] = lev_dtm
+                    # Full date YYYY-MM-DD
+                    #
+                    elif lev_dt_acy_cd == 'D':
+                        tempDate   = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
+                        wlDate     = tempDate.replace(hour=12)
 
-                        # Partial dates YYYY | YYYY-MM | YYYY-MM-DD
-                        #
-                        if lev_dt_acy_cd in ['Y', 'M', 'D']:
-                           lev_str_dt = lev_dt
-                           lev_tm     = ''
-                           lev_tz_cd  = ''
+                    # Full date YYYY-MM-DD HH:MM
+                    #
+                    elif lev_dt_acy_cd == 'm':
+                        tmp_dt = '%s %s' % (lev_dt, lev_tm)
+                        wlDate = datetime.datetime.strptime(tmp_dt, '%Y-%m-%d %H:%M')
 
-                        # Full date YYYY-MM-DD HH:MM [Convert to PST time zone]
-                        #
-                        elif lev_dt_acy_cd == 'm':
-                           tmpDate    = wlDate + datetime.timedelta(hours=pst_offset)
-                           lev_dt     = tmpDate.strftime("%Y-%m-%d")
-                           lev_tm     = tmpDate.strftime("%H:%M")
-                           lev_tz_cd  = "PST"
-                           lev_str_dt = tmpDate.strftime("%Y-%m-%d %H:%M")
+                    # Set dtm
+                    #
+                    wlDate     = wlDate.replace(tzinfo=datetime.timezone.utc)
+                    lev_dtm    = wlDate.strftime("%Y-%m-%d %H:%M %Z")
 
-                        # Set lev_mst to YYYY-MM-DD to identify duplicate measurements
-                        #
-                        lev_mst = lev_str_dt[:10]
+                    gwRecord['lev_dtm'] = lev_dtm
 
-                        # Set date/time/time zone
-                        #
-                        gwRecord['lev_dt']     = lev_dt
-                        gwRecord['lev_tm']     = lev_tm
-                        gwRecord['lev_tz_cd']  = lev_tz_cd
-                        gwRecord['lev_str_dt'] = lev_str_dt
+                    # Partial dates YYYY | YYYY-MM | YYYY-MM-DD
+                    #
+                    if lev_dt_acy_cd in ['Y', 'M', 'D']:
+                        lev_str_dt = lev_dt
+                        lev_tm     = ''
+                        lev_tz_cd  = ''
 
-                        # Parse qualifiers for status
-                        #
-                        lev_status_cd = '9'
-                        if len(myRecord['qualifiers']) > 1:
-                           lev_status_cd = myRecord['qualifiers'][1]
+                    # Full date YYYY-MM-DD HH:MM [Convert to PST time zone]
+                    #
+                    elif lev_dt_acy_cd == 'm':
+                        tmpDate    = wlDate + datetime.timedelta(hours=pst_offset)
+                        lev_dt     = tmpDate.strftime("%Y-%m-%d")
+                        lev_tm     = tmpDate.strftime("%H:%M")
+                        lev_tz_cd  = "PST"
+                        lev_str_dt = tmpDate.strftime("%Y-%m-%d %H:%M")
+
+                    # Set lev_mst to YYYY-MM-DD to identify duplicate measurements
+                    #
+                    lev_mst = lev_dtm[:10]
+
+                    # Set date/time/time zone
+                    #
+                    gwRecord['lev_dt']     = lev_dt
+                    gwRecord['lev_tm']     = lev_tm
+                    gwRecord['lev_tz_cd']  = lev_tz_cd
+                    gwRecord['lev_str_dt'] = lev_str_dt
+                    gwRecord['lev_dt_acy_cd'] = lev_dt_acy_cd
+
+                    # Parse qualifiers for status
+                    #
+                    lev_status_cd = '9'
+                    if myRecord['properties']['qualifier'] is None:
+                        lev_status_cd = ' '
+                        screen_logger.info("\tSite %s null qualifier %s date %s" % (site_no, str(myRecord['properties']['qualifier']), lev_dt))
+                    elif 'Static' in myRecord['properties']['qualifier']:
+                        lev_status_cd = 'Z'
+                    elif 'Flowing' in myRecord['properties']['qualifier']:
+                        lev_status_cd = 'F'
+                    elif 'Dry' in myRecord['properties']['qualifier']:
+                        lev_status_cd = 'D'
+                    elif 'Above' in myRecord['properties']['qualifier'] and 'Pumping' in myRecord['properties']['qualifier']:
+                        lev_status_cd = 'R'
+                    elif 'Above' in myRecord['properties']['qualifier']:
+                        lev_status_cd = '3'
+                    elif 'Below' in myRecord['properties']['qualifier']:
+                        lev_status_cd = '2'
+                    elif 'Pumping' in myRecord['properties']['qualifier']:
+                        lev_status_cd = 'P'
+                    else:
+                        screen_logger.info("\tSite %s missing qualifier %s date %s" % (site_no, str(myRecord['properties']['qualifier']), lev_dt))
+
+                    myColumn   = 'lev_status_cd'
+                    if myColumn not in gwCodesD:
+                        gwCodesD[myColumn] = []
+                    if str(lev_status_cd) not in gwCodesD[myColumn]:
+                        gwCodesD[myColumn].append(str(lev_status_cd))
+
+                    gwRecord['lev_status_cd'] = lev_status_cd
+
+                    # Set waterlevel
+                    #
+                    lev_va = str(myRecord['properties']['value'])
+                    if lev_va == 'None':
+                        lev_va = ''
+                    gwRecord['lev_va'] = lev_va
+
+                    # Set measuring method and waterlevel accuracy
+                    #
+                    lev_meth_cd   = str(myRecord['properties']['observing_procedure_code'])
+                    lev_acy_cd    = '0'
+                    myColumn   = 'lev_meth_cd'
+                    if myColumn not in gwCodesD:
+                        gwCodesD[myColumn] = []
+                    if str(lev_meth_cd) not in gwCodesD[myColumn]:
+                        gwCodesD[myColumn].append(str(lev_meth_cd))
+
+                    if len(lev_meth_cd) > 0:
+                        if lev_meth_cd in ["A","E","D","G","M","N","O","R","U","X","Z"]:
+                            lev_acy_cd = '0';
+                        elif lev_meth_cd in ["B","C","F","H","L","P","T"]:
+                            lev_acy_cd = '1';
+                        elif lev_meth_cd in ["S","V","W","H"]:
+                            lev_acy_cd = '2';
+
+                    if len(lev_va) < 1:
+                        lev_acy_cd = '';
+
+                    gwRecord['lev_meth_cd'] = lev_meth_cd
+                    gwRecord['lev_acy_cd'] = lev_acy_cd
+
+                    # Set measuring agency
+                    #
+                    lev_agency_cd = myRecord['properties']['measuring_agency']
+                    myColumn      = 'lev_agency_cd'
+                    if myColumn not in gwCodesD:
+                        gwCodesD[myColumn] = []
+                    if str(lev_agency_cd) not in gwCodesD[myColumn]:
+                        gwCodesD[myColumn].append(str(lev_agency_cd))
+
+                    if lev_agency_cd is None:
+                        lev_agency_cd = "USGS"
+                    elif len(lev_agency_cd) > 0 and lev_agency_cd == "OR004":
+                        lev_agency_cd = "OWRD"
+                    elif len(lev_agency_cd) < 1:
+                        lev_agency_cd = "USGS"
+
+                    gwRecord['lev_agency_cd'] = lev_agency_cd
+
+                    # Set measuring source
+                    #
+                    lev_src_cd = ''
+                    if lev_agency_cd == "USGS":
+                        lev_src_cd = "S"
+                    if lev_agency_cd != "USGS":
+                        lev_src_cd = "A"
+
+                    myColumn   = 'lev_src_cd'
+                    if myColumn not in gwCodesD:
+                        gwCodesD[myColumn] = []
+                    if str(lev_src_cd) not in gwCodesD[myColumn]:
+                        gwCodesD[myColumn].append(str(lev_src_cd))
+
+                    gwRecord['lev_src_cd'] = lev_src_cd
+
+                    # Set lev_web_cd
+                    #
+                    lev_web_cd    = 'N'
+                    if len(lev_va) > 0 and lev_status_cd == 'Z':
+                        lev_web_cd    = 'Y'
+
+                    gwRecord['lev_web_cd'] = lev_web_cd
+
+                    # New site
+                    #
+                    if site_id not in gwInfoD:
+                        gwInfoD[site_id] = {}
+
+                    # New waterlevel record for site
+                    #
+                    if lev_mst not in gwInfoD[site_id].keys():
+                        gwInfoD[site_id][lev_mst] = {}
+
+                    # Prepare values
+                    #
+                    for myColumn in myGwFields:
+                        if myColumn in mySiteFields:
+                            gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
                         else:
-                           screen_logger.info("\tProcess qualifiers %s date %s" % (str(myRecord['qualifiers']), lev_dt))
+                            gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
 
-                        myColumn   = 'lev_status_cd'
-                        if myColumn not in gwCodesD:
-                           gwCodesD[myColumn] = []
-                        if str(lev_status_cd) not in gwCodesD[myColumn]:
-                           gwCodesD[myColumn].append(str(lev_status_cd))
+                    #screen_logger.info("Groundwater measurements for site %s %s" % (site_no, myRecord))
+                    #screen_logger.info("Groundwater measurements %s" % gwInfoD[site_id][lev_mst])
 
-                        if len(lev_status_cd) < 1:
-                           lev_status_cd = ''
-                        elif lev_status_cd == '1':
-                           lev_status_cd = ''
-                        elif lev_status_cd == '2':
-                           lev_status_cd = 'Z'
-                        elif lev_status_cd == '3':
-                           lev_status_cd = 'Z'
-                        elif lev_status_cd == '4':
-                           lev_status_cd = 'B'
-                        elif lev_status_cd == '5':
-                           lev_status_cd = 'X'
-                        elif lev_status_cd == '6':
-                           lev_status_cd = 'Z'
-                        elif lev_status_cd == '7':
-                           lev_status_cd = 'L'
-                        elif lev_status_cd == '8':
-                           lev_status_cd = 'V'
-                        elif lev_status_cd == '9':
-                           lev_status_cd = 'Z'
 
-                        gwRecord['lev_status_cd'] = lev_status_cd
+    # OGCAPI Period of record for Continuous/Daily with Time series metadata service
+    # -------------------------------------------------
+    #
+    tempL  = sorted(usgsSitesL)
+    nsites = 30
+    continuousL = []
+    dailyL      = []
 
-                        # Set measuring method and waterlevel accuracy
-                        #
-                        lev_meth_cd   = str(gwRecord['lev_meth_cd'])
-                        lev_acy_cd    = str(gwRecord['lev_acy_cd'])
-                        myColumn   = 'lev_meth_cd'
-                        if myColumn not in gwCodesD:
-                           gwCodesD[myColumn] = []
-                        if str(lev_meth_cd) not in gwCodesD[myColumn]:
-                           gwCodesD[myColumn].append(str(lev_meth_cd))
+    screen_logger.info("Process period of record for Continuous/Daily groundwater recorder sites")
 
-                        if len(lev_meth_cd) > 0:
-                           if lev_meth_cd in ["A","E","D","G","M","N","O","R","U","X","Z"]:
-                              lev_acy_cd = '0';
-                           elif lev_meth_cd in ["B","C","F","H","L","P","T"]:
-                              lev_acy_cd = '1';
-                           elif lev_meth_cd in ["S","V","W","H"]:
-                              lev_acy_cd = '2';
+    while len(tempL) > 0:
 
-                        if len(lev_va) < 1:
-                           lev_acy_cd = '';
+        nList = list(tempL[:nsites])
+        del tempL[:nsites]
 
-                        gwRecord['lev_acy_cd'] = lev_acy_cd
+        # Web request for period of record for USGS recorder sites
+        #
+        URL          = 'https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items'
+        noparmsDict  = {
+            'filter-lang' : 'cql-text',
+            'filter' : " AND ".join([
+                "monitoring_location_id IN (%s)" % ", ".join(f"'USGS-{item}'" for item in nList),
+                "parameter_code = '72019'"
+            ]),
+            'sortby' : 'monitoring_location_id,computation_period_identifier',
+            #'properties' : 'monitoring_location_id,computation_identifier,unit_of_measure,begin,end,begin_utc,end_utc,parameter_code,thresholds,sublocation_identifier,web_description,parameter_description',
+            'skipGeometry' : 'true',
+            'limit' : 50000,
+            'f' : 'json',
+            'api_key' : 'nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV'
+        }
+        contentType  = "application/json"
+        timeOut      = 1000
 
-                        # Set measuring agency
-                        #
-                        lev_agency_cd = str(gwRecord['lev_agency_cd']).strip()
-                        myColumn      = 'lev_agency_cd'
-                        if myColumn not in gwCodesD:
-                           gwCodesD[myColumn] = []
-                        if str(lev_agency_cd) not in gwCodesD[myColumn]:
-                           gwCodesD[myColumn].append(str(lev_agency_cd))
+        screen_logger.info("\tRequesting period of record for groundwater recorder sites %s" % ", ".join(nList))
+        message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
 
-                        if len(lev_agency_cd) > 0 and lev_agency_cd == "OR004":
-                           lev_agency_cd = "OWRD"
-                        if len(lev_agency_cd) < 1:
-                           lev_agency_cd = "USGS"
+        if webContent is not None:
 
-                        gwRecord['lev_agency_cd'] = lev_agency_cd
-
-                        # Set measuring source
-                        #
-                        lev_src_cd = str(gwRecord['lev_src_cd'])
-                        myColumn   = 'lev_src_cd'
-                        if myColumn not in gwCodesD:
-                           gwCodesD[myColumn] = []
-                        if str(lev_src_cd) not in gwCodesD[myColumn]:
-                           gwCodesD[myColumn].append(str(lev_src_cd))
-
-                        if lev_agency_cd == "USGS":
-                           lev_src_cd = "S"
-                        if lev_agency_cd != "USGS":
-                           lev_src_cd = "A"
-
-                        gwRecord['lev_src_cd'] = lev_src_cd
-
-                        # Set lev_web_cd
-                        #
-                        lev_web_cd    = 'N'
-                        if len(lev_va) > 0 and lev_status_cd == '':
-                           lev_web_cd    = 'Y'
-
-                        gwRecord['lev_web_cd'] = lev_web_cd
-
-                        # New site
-                        #
-                        if site_id not in gwInfoD:
-                           gwInfoD[site_id] = {}
-
-                        # New waterlevel record for site
-                        #
-                        if lev_mst not in gwInfoD[site_id].keys():
-                           gwInfoD[site_id][lev_mst] = {}
-
-                        # Prepare values
-                        #
-                        for myColumn in myGwFields:
-                           if myColumn in mySiteFields:
-                              gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
-                           else:
-                              gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
-                                 
-      
-   # Period of record for USGS recorder sites
-   # ----------------------------------------------------------------------
-   #
-   tempL  = list(usgsSitesL)
-   nsites = 50
-   linesL = []
-
-   while len(tempL) > 0:
-
-      nList = ",".join(tempL[:nsites])
-      del tempL[:nsites]
-
-      # Web request
-      #
-      URL          = 'https://waterservices.usgs.gov/nwis/site/?format=rdb&sites=%s&seriesCatalogOutput=true&siteStatus=all&siteType=GW&hasDataTypeCd=dv,iv&outputDataTypeCd=dv,iv' % nList
-      noparmsDict  = {}
-      contentType  = "text"
-      timeOut      = 1000
-
-      #screen_logger.info("Url %s" % URL)
-                 
-      message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
-     
-      if webContent is not None:
-
-         # Check for empty file
-         #
-         if len(webContent) < 1:
-            message = "Empty content return from web request %s" % URL
-            errorMessage(message)
-
-         newList = list(webContent.splitlines())
-         linesL.extend(newList)
-   
-   # Process site records
-   # -------------------------------------------------
-   #
-   if len(linesL) > 0:
-      while len(linesL) > 0:
-    
-         # Parse for column names [rdb format]
-         #
-         if len(linesL) < 1:
-            del linesL[0]
-         elif linesL[0][0] == '#':
-            del linesL[0]
-         else:
-            namesL = linesL[0].lower().split('\t')
-            del linesL[0]
-            break
-   
-      # Format line in header section
-      #
-      del linesL[0]
-   
-      # Parse for data
-      #
-      while len(linesL) > 0:
-         
-         if len(linesL[0]) < 1:
-            del linesL[0]
-            continue
-         
-         if linesL[0][0] == '#':
-            
-            while len(linesL) > 0:
-   
-               if linesL[0][0] == '#':
-                  del linesL[0]
-                  continue
-   
-               else:
-                  del linesL[0]
-                  del linesL[0]
-                  break
-   
-         valuesL = linesL[0].split('\t')
-         
-         # Set record
-         #
-         gwRecord = {}
-         
-         for i in range(len(namesL)):
-            gwRecord[namesL[i]] = valuesL[namesL.index(namesL[i])]
-         
-         # Accept only groundwater parameters
-         #
-         if gwRecord['parm_cd'] in ['62610', '62611', '72019']:
-            
-            # Set site ID
+            # Check for empty file
             #
-            site_no   = gwRecord['site_no']
-            if site_no in usgsSitesD:
-               site_id = usgsSitesD[site_no]
-            
-            # Set recorder site
+            if len(webContent) < 1:
+                message = "Empty content return from web request %s" % URL
+                errorMessage(message)
+
+            # Process period of record measurements
+            # -------------------------------------------------
             #
-            if site_id not in rcInfoD:
-               rcInfoD[site_id] = {}
-                  
-            # New recorder record for site
+            #screen_logger.info("Groundwater records /n%s" % webContent)
+            gwJson = json.loads(webContent)
+            numRecords = gwJson['numberReturned']
+            screen_logger.debug("Process %d period of record for groundwater recorder sites %s" % (numRecords, ", ".join(nList)))
+            if numRecords > 0:
+
+                gwRecords = gwJson['features']
+
+                # Loop through records
+                #
+                for myRecord in gwRecords:
+
+                    # Set site ID
+                    #
+                    agency_cd, site_no = myRecord['properties']['monitoring_location_id'].split('-')
+                    if site_no in usgsSitesD:
+                        site_id = usgsSitesD[site_no]
+
+                    # Set data type
+                    #
+                    data_type = 'iv'
+                    if myRecord['properties']['computation_period_identifier'] == 'Points':
+                        data_type = 'iv'
+                        continuousL.append(site_no)
+                    elif myRecord['properties']['computation_period_identifier']  == 'Daily':
+                        data_type = 'dv'
+                        dailyL.append(site_no)
+
+                    # Set date information
+                    #
+                    tmp_dt = str(myRecord['properties']['begin_utc'][:16])
+                    wlDate = datetime.datetime.strptime(tmp_dt, '%Y-%m-%dT%H:%M')
+                    wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+                    tmpDate = wlDate + datetime.timedelta(hours=pst_offset)
+                    begin_date = tmpDate.strftime("%Y-%m-%d")
+
+                    tmp_dt = str(myRecord['properties']['end_utc'][:16])
+                    wlDate = datetime.datetime.strptime(tmp_dt, '%Y-%m-%dT%H:%M')
+                    wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+                    tmpDate = wlDate + datetime.timedelta(hours=pst_offset)
+                    end_date = tmpDate.strftime("%Y-%m-%d")
+
+                    status = 'Inactive'
+                    if wlDate >= activeDate:
+                        status  = 'Active'
+
+                    # Set record
+                    #
+                    gwRecord = {}
+                    gwRecord[data_type + '_begin_date'] = begin_date
+                    gwRecord[data_type + '_end_date'] = end_date
+                    gwRecord[data_type + '_status'] = status
+                    gwRecord[data_type + '_count_nu'] = 0
+
+                    # Set recorder site
+                    #
+                    if site_id not in rcInfoD:
+                        rcInfoD[site_id] = {}
+
+                    # Recorder record for site
+                    #
+                    for myColumn in gwRecord.keys():
+                        rcInfoD[site_id][myColumn] = gwRecord[myColumn]
+
+
+    # Loop through USGS recorder sites for Continuous
+    # ----------------------------------------------------------------------
+    #
+    RecorderL  = list(continuousL)
+    screen_logger.info("Process continuous records for groundwater recorder %d sites" % len(RecorderL))
+
+    while len(RecorderL) > 0:
+
+        site_no = RecorderL[0]
+        del RecorderL[0]
+
+        # Web request for continuous
+        #
+        URL          = 'https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items'
+        noparmsDict  = {
+            'filter-lang' : 'cql-text',
+            'filter' : " AND ".join([
+                "monitoring_location_id = 'USGS-%s'" % site_no,
+                "parameter_code = '72019'"
+            ]),
+            'sortby' : 'time',
+            #'properties' : 'monitoring_location_id,computation_identifier,unit_of_measure,begin,end,begin_utc,end_utc,parameter_code,thresholds,sublocation_identifier,web_description,parameter_description',
+            'skipGeometry' : 'true',
+            'limit' : 50000,
+            'f' : 'json',
+            'api_key' : 'nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV'
+        }
+        contentType  = "application/json"
+        timeOut      = 1000
+
+        screen_logger.info("\tRequesting continuous records for groundwater recorder sites %s" % site_no)
+        message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
+
+        if webContent is not None:
+
+            # Check for empty file
             #
-            begin_date = str(valuesL[ namesL.index('begin_date') ])
-            if begin_date not in rcInfoD[site_id]:
-               rcInfoD[site_id][begin_date] = {}
-      
-            end_date   = str(valuesL[ namesL.index('end_date') ])
-            if end_date not in rcInfoD[site_id]:
-               rcInfoD[site_id][end_date] = {}
-      
-            # Prepare values
+            if len(webContent) < 1:
+                message = "Empty content return from web request %s" % URL
+                errorMessage(message)
+
+            # Process measurements
+            # -------------------------------------------------
             #
-            for myColumn in gwRecord.keys():
-               rcInfoD[site_id][begin_date][myColumn] = gwRecord[myColumn]
-               rcInfoD[site_id][end_date][myColumn]   = gwRecord[myColumn]
-   
-                     
-         del linesL[0]
-   
-               
-   # Prepare set of sites
-   #
-   usgsSet        = set(usgsSitesL)
-   missingSet     = set(missSitesL)
-   matchSitesL    = list(usgsSet.difference(missingSet))
-   
-   # Period of record of all measurements for each site and counts
-   #
-   for site_id in sorted(matchSitesL):
+            #screen_logger.info("Groundwater continuous records /n%s" % webContent)
+            gwJson = json.loads(webContent)
+            numRecords = gwJson['numberReturned']
+            screen_logger.debug("Process %d continuous records for groundwater recorder sites %s" % (numRecords, site_no))
+            if numRecords > 0:
 
-      if site_id in gwInfoD:
-         totalRecords += len(gwInfoD[site_id])
-         usgsRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
-         owrdRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
-         cdwrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
-         othrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']}))
-               
-         # Static and Non-static measurements
-         #
-         numYRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] == 'Y'}))
-         numNRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] != 'Y'}))
-         
-         # Assign other measurements to USGS
-         #
-         othrDatesL    = list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']})
-         for gwDate in sorted(othrDatesL):
-            gwInfoD[site_id][gwDate]['lev_agency_cd'] = 'USGS'
-         
-         # USGS period of record of periodic measurements for each site
-         #
-         siteRecordsL  = sorted(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
-         BeginDate     = ''
-         EndDate       = ''
-         status        = 'Inactive'
-         if len(siteRecordsL) > 0:
-            BeginDate     = gwInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
-            EndDate       = gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
-            lev_dt_acy_cd = gwInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
-            dateFmt = '%Y-%m-%d'
-            if lev_dt_acy_cd == 'Y':
-               dateFmt = '%Y'
-            elif lev_dt_acy_cd == 'M':
-               dateFmt = '%Y-%m'
-            wlDate = datetime.datetime.strptime(gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
-            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-            status = 'Inactive'
-            if wlDate >= activeDate:
-               status  = 'Active'
-         else:
-            screen_logger.debug('Site %s has no USGS periodic or recorder groundwater measurements' % site_id)
-   
-         siteInfoD[site_id]['usgs_begin_date']      = BeginDate
-         siteInfoD[site_id]['usgs_end_date']        = EndDate
-         siteInfoD[site_id]['usgs_status']          = status
-         siteInfoD[site_id]['usgs_count']           = len(siteRecordsL)      
-         
-      # Overall period of record of recorder measurements for each site
-      #
-      if site_id in rcInfoD:
-         siteRecordsL  = sorted(list(rcInfoD[site_id].keys()))
-         BeginDate     = rcInfoD[site_id][siteRecordsL[0]]['begin_date']
-         EndDate       = rcInfoD[site_id][siteRecordsL[-1]]['end_date']
-         wlDate        = datetime.datetime.strptime(EndDate, '%Y-%m-%d')
-         wlDate        = wlDate.replace(tzinfo=datetime.timezone.utc)
-         status        = 'Inactive'
-         if wlDate >= activeDate:
-            status  = 'Active'
+                gwRecords = gwJson['features']
 
-         siteInfoD[site_id]['usgs_rc_status']     = status
-         siteInfoD[site_id]['usgs_rc_begin_date'] = BeginDate
-         siteInfoD[site_id]['usgs_rc_end_date']   = EndDate
-         siteInfoD[site_id]['usgs_rc_count']      = rcInfoD[site_id][EndDate]['count_nu']
+                # First record
+                #
+                myRecord = gwRecords[0]
 
-         if rcInfoD[site_id][EndDate]['data_type_cd'] == 'dv':
-            rcRecords += int(rcInfoD[site_id][EndDate]['count_nu'])
-         
-   activeSitesL     = list({x for x in siteInfoD if siteInfoD[x]['usgs_status'] == 'Active'})
-   activeRecordersL = list({x for x in siteInfoD if siteInfoD[x]['usgs_rc_status'] == 'Active'})
+                # Set begin date information
+                #
+                tmp_dt = str(myRecord['properties']['time'][:16])
+                wlDate = datetime.datetime.strptime(tmp_dt, '%Y-%m-%dT%H:%M')
+                wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+                tmpDate = wlDate + datetime.timedelta(hours=pst_offset)
+                begin_date = tmpDate.strftime("%Y-%m-%d")
 
-   # Print information
-   #
-   ncols    = 150
-   messages = []
-   messages.append('\n\tProcessed USGS periodic and recorder measurements')
-   messages.append('\t%s' % (ncols * '-'))
-   messages.append('\t%-79s %10d' % ('Number of sites with periodic measurements', len(siteInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of USGS sites in collection file', len(usgsSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of USGS sites in collection file NOT retrieved from USGS database', len(missSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of Active periodic sites in collection file measured by the USGS', len(activeSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of USGS sites with periodic measurements', len(gwInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of of static periodic measurements', numYRecords))
-   messages.append('\t%-79s %10d' % ('Number of of non-static periodic measurements', numNRecords))
-   messages.append('\t%-79s %10d' % ('Number of USGS periodic measurements', usgsRecords))
-   messages.append('\t%-79s %10d' % ('Number of OWRD periodic measurements', owrdRecords))
-   messages.append('\t%-79s %10d' % ('Number of CDWR periodic measurements', cdwrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements made by other agencies', othrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements', totalRecords))
-   messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file from USGS database', len(rcInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of Active recorder sites in collection file measured by the USGS', len(activeRecordersL)))
-   messages.append('\t%-79s %10d' % ('Number of recorder measurements', rcRecords))
-   messages.append('\t%s' % (ncols * '-'))
-   if len(matchSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'USGS periodic sites with USGS measurements in collection file in USGS database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Periodic', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_no in sorted(matchSitesL):
-         site_id = usgsSitesD[site_no]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35],
-                                siteInfoD[site_id]['usgs_count'],
-                                siteInfoD[site_id]['usgs_begin_date'],
-                                siteInfoD[site_id]['usgs_end_date'],
-                                siteInfoD[site_id]['usgs_status']
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(rcInfoD.keys()) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'USGS recorder sites with USGS measurements in collection file in USGS database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Recorder', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_id in sorted(rcInfoD.keys()):
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35],
-                                siteInfoD[site_id]['usgs_rc_count'],
-                                siteInfoD[site_id]['usgs_rc_begin_date'],
-                                siteInfoD[site_id]['usgs_rc_end_date'],
-                                siteInfoD[site_id]['usgs_rc_status']
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(missSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'USGS periodic sites in collection file NOT retrieved from USGS database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-20s %-20s %-35s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' '))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_no in sorted(missSitesL):
-         site_id = usgsSitesD[site_no]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35]
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   for myCode in sorted(gwCodesD.keys()):
-      messages.append('')
-      messages.append('\tCode %-70s' % myCode)
-      messages.append('\t%s' % (ncols * '-'))
-      messages.append('\t%s' % '\n\t'.join(gwCodesD[myCode]))
-      messages.append('\t%s' % (ncols * '-'))
-   messages.append('\n')
+                # Last record
+                #
+                myRecord = gwRecords[-1]
 
-   screen_logger.info('\n'.join(messages))
-   file_logger.info('\n'.join(messages))
+                # Set end date information
+                #
+                tmp_dt = str(myRecord['properties']['time'][:16])
+                wlDate = datetime.datetime.strptime(tmp_dt, '%Y-%m-%dT%H:%M')
+                wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+                tmpDate = wlDate + datetime.timedelta(hours=pst_offset)
+                end_date = tmpDate.strftime("%Y-%m-%d")
 
-   return gwInfoD
+                # Set record
+                #
+                gwRecord = {}
+                gwRecord['iv_begin_date'] = begin_date
+                gwRecord['iv_end_date'] = end_date
+                gwRecord['iv_count_nu'] = numRecords
 
-# =============================================================================
+                # Set site ID
+                #
+                if site_no in usgsSitesD:
+                    site_id = usgsSitesD[site_no]
 
-def rdbUSGS (siteInfoD, mySiteFields, myGwFields):
+                # Set recorder site
+                #
+                if site_id not in rcInfoD:
+                    rcInfoD[site_id] = {}
 
-   gwInfoD      = {}
-   rcInfoD      = {}
-   
-   usgsRecords  = 0
-   owrdRecords  = 0
-   cdwrRecords  = 0
-   othrRecords  = 0
-   totalRecords = 0
-   rcRecords    = 0
+                # Recorder record for site
+                #
+                for myColumn in gwRecord.keys():
+                    rcInfoD[site_id][myColumn] = gwRecord[myColumn]
 
-   numYRecords  = 0
-   numNRecords  = 0
 
-   gwCodesD     = {}
+    # Loop through USGS recorder sites for Daily
+    # ----------------------------------------------------------------------
+    #
+    RecorderL  = list(dailyL)
+    screen_logger.info("Process daily records for groundwater recorder %d sites" % len(RecorderL))
 
-   pst_offset   = -8
-   days_offset  = 365
-   activeDate   = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_offset)
+    while len(RecorderL) > 0:
 
-   # Prepare list of site numbers
-   # -------------------------------------------------
-   #
-   usgsSitesD     = dict({siteInfoD[x]['site_no']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
-   usgsSitesL     = list({siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
-   owrdSitesL     = list({siteInfoD[x]['coop_site_no'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
-   cdwrSitesL     = list({siteInfoD[x]['cdwr_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
+        site_no = RecorderL[0]
+        del RecorderL[0]
 
-   missSitesL = list(usgsSitesL)
+        # Web request for continuous
+        #
+        URL          = 'https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items'
+        noparmsDict  = {
+            'filter-lang' : 'cql-text',
+            'filter' : " AND ".join([
+                "monitoring_location_id = 'USGS-%s'" % site_no,
+                "parameter_code = '72019'"
+            ]),
+            'sortby' : 'time',
+            #'properties' : 'monitoring_location_id,computation_identifier,unit_of_measure,begin,end,begin_utc,end_utc,parameter_code,thresholds,sublocation_identifier,web_description,parameter_description',
+            'skipGeometry' : 'true',
+            'limit' : 50000,
+            'f' : 'json',
+            'api_key' : 'nTsVxhFct7I3vFQgl2ANx3wphLyvDrmrjy5JIsSV'
+        }
+        contentType  = "application/json"
+        timeOut      = 1000
 
-   # NwisWeb groundwater service
-   # -------------------------------------------------
-   #
-   tempL  = list(usgsSitesL)
-   nsites = 50
-   linesL = []
+        screen_logger.info("\tRequesting daily records for groundwater recorder sites %s" % site_no)
+        message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
 
-   while len(tempL) > 0:
+        if webContent is not None:
 
-      nList = ",".join(tempL[:nsites])
-      del tempL[:nsites]
+            # Check for empty file
+            #
+            if len(webContent) < 1:
+                message = "Empty content return from web request %s" % URL
+                errorMessage(message)
 
-      # Web request
-      #
-      #URL          = 'https://waterservices.usgs.gov/nwis/gwlevels/?format=rdb&sites=%s&startDT=1800-01-01&siteStatus=all' % nList
-      URL          = 'https://nwis.waterdata.usgs.gov/nwis/gwlevels?multiple_site_no=%s&search_site_no_match_type=exact&format=rdb&date_format=YYYY-MM-DD' % nList
-      #URL          = 'https://nwis.waterdata.usgs.gov/nwis/gwlevels?multiple_site_no=%s&search_site_no_match_type=exact&group_key=NONE&sitefile_output_format=html_table&column_name=agency_cd&column_name=site_no&column_name=station_nm&format=rdb&date_format=YYYY-MM-DD&rdb_compression=value&list_of_search_criteria=search_site_no' % nList
-      noparmsDict  = {}
-      contentType  = "text"
-      timeOut      = 1000
+            # Process measurements
+            # -------------------------------------------------
+            #
+            #screen_logger.debug("Groundwater continuous records /n%s" % webContent)
+            gwJson = json.loads(webContent)
+            numRecords = gwJson['numberReturned']
+            screen_logger.debug("Process %d continuous records for groundwater recorder sites %s" % (numRecords, site_no))
+            if numRecords > 0:
 
-      #screen_logger.info("Url %s" % URL)
-                 
-      message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
-     
-      if webContent is not None:
+                gwRecords = gwJson['features']
 
-         # Check for empty file
-         #
-         if len(webContent) < 1:
-            message = "Empty content return from web request %s" % URL
-            errorMessage(message)
+                # First record
+                #
+                myRecord = gwRecords[0]
 
-         newList = list(webContent.splitlines())
-         linesL.extend(newList)
-   
-   # Process groundwater measurements
-   # -------------------------------------------------
-   #
-   while len(linesL) > 0:
+                # Set begin date information
+                #
+                begin_date = str(myRecord['properties']['time'])
 
-      # Parse for column names [rdb format]
-      #
-      if len(linesL) < 1:
-         del linesL[0]
-      elif linesL[0][0] == '#':
-         del linesL[0]
-      else:
-         namesL = linesL[0].lower().split('\t')
-         del linesL[0]
-         break
+                # Last record
+                #
+                myRecord = gwRecords[-1]
 
-   # Format line in header section
-   #
-   del linesL[0]
+                # Set end date information
+                #
+                end_date = str(myRecord['properties']['time'])
 
-   # Parse for data
-   #
-   while len(linesL) > 0:
-      
-      if len(linesL[0]) < 1:
-         del linesL[0]
-         continue
-      
-      if linesL[0][0] == '#':
-         
-         while len(linesL) > 0:
+                # Set record
+                #
+                gwRecord = {}
+                gwRecord['dv_begin_date'] = begin_date
+                gwRecord['dv_end_date'] = end_date
+                gwRecord['dv_count_nu'] = numRecords
 
-            if linesL[0][0] == '#':
-               del linesL[0]
-               continue
+                # Set site ID
+                #
+                if site_no in usgsSitesD:
+                    site_id = usgsSitesD[site_no]
 
+                # Set recorder site
+                #
+                if site_id not in rcInfoD:
+                    rcInfoD[site_id] = {}
+
+                # Recorder record for site
+                #
+                for myColumn in gwRecord.keys():
+                    rcInfoD[site_id][myColumn] = gwRecord[myColumn]
+
+
+
+    # Prepare set of sites
+    #
+    usgsSet        = set(usgsSitesL)
+    missingSet     = set(missSitesL)
+    matchSitesL    = list(usgsSet.difference(missingSet))
+
+    # Period of record of all measurements for each site and counts
+    #
+    for site_id in sorted(matchSitesL):
+
+        if site_id in gwInfoD:
+            totalRecords += len(gwInfoD[site_id])
+            usgsRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
+            owrdRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
+            cdwrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
+            othrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']}))
+
+            # Static and Non-static measurements
+            #
+            numYRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] == 'Y'}))
+            numNRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] != 'Y'}))
+
+            # Assign other measurements to USGS
+            #
+            othrDatesL    = list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']})
+            for gwDate in sorted(othrDatesL):
+                gwInfoD[site_id][gwDate]['lev_agency_cd'] = 'USGS'
+
+            # USGS period of record of periodic measurements for each site
+            #
+            siteRecordsL  = sorted(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
+            BeginDate     = ''
+            EndDate       = ''
+            status        = 'Inactive'
+            if len(siteRecordsL) > 0:
+                BeginDate     = gwInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
+                EndDate       = gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
+                lev_dt_acy_cd = gwInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
+                dateFmt = '%Y-%m-%d'
+                if lev_dt_acy_cd == 'Y':
+                    dateFmt = '%Y'
+                elif lev_dt_acy_cd == 'M':
+                    dateFmt = '%Y-%m'
+                wlDate = datetime.datetime.strptime(gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
+                wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+                status = 'Inactive'
+                if wlDate >= activeDate:
+                    status  = 'Active'
             else:
-               del linesL[0]
-               del linesL[0]
-               break
+                screen_logger.debug('Site %s has no USGS periodic or recorder groundwater measurements' % site_id)
 
-      valuesL = linesL[0].split('\t')
-      
-      # Set record
-      #
-      gwRecord = {}
-      
-      for i in range(len(namesL)):
-         gwRecord[namesL[i]] = valuesL[namesL.index(namesL[i])]
-      
-      # Set site ID
-      #
-      site_no   = gwRecord['site_no']
-      if site_no in usgsSitesD:
-         site_id = usgsSitesD[site_no]
-      
-      # Remove site number
-      #
-      if site_no in missSitesL:
-         missSitesL.remove(site_no)
+            siteInfoD[site_id]['usgs_begin_date']      = BeginDate
+            siteInfoD[site_id]['usgs_end_date']        = EndDate
+            siteInfoD[site_id]['usgs_status']          = status
+            siteInfoD[site_id]['usgs_count']           = len(siteRecordsL)
 
-      # Set waterlevel
-      #
-      lev_va        = str(gwRecord['lev_va'])
-      if lev_va == 'None':
-         lev_va = ''
+        # Overall period of record of recorder measurements for each site
+        #
+        if site_id in rcInfoD:
+            siteRecordsL  = sorted(list(rcInfoD[site_id].keys()))
 
-      # Set water-level date information
-      #
-      lev_dt        = str(gwRecord['lev_dt'])
-      lev_tm        = str(gwRecord['lev_tm'])
-      lev_tz_cd     = str(gwRecord['lev_tz_cd'])
-      lev_dt_acy_cd = str(gwRecord['lev_dt_acy_cd'])
-    
-      # Partial date YYYY
-      #
-      if lev_dt_acy_cd == 'Y':
-         tempDate   = datetime.datetime.strptime(lev_dt, '%Y')
-         wlDate     = tempDate.replace(month=7,day=16,hour=12)
-   
-      # Partial date YYYY-MM
-      #
-      elif lev_dt_acy_cd == 'M':
-         tempDate   = datetime.datetime.strptime(lev_dt, '%Y-%m')
-         wlDate     = tempDate.replace(day=16,hour=12)
-         if wlDate.month == 2:
-             wlDate = tempDate.replace(day=15,hour=12)
-    
-      # Full date YYYY-MM-DD
-      #
-      elif lev_dt_acy_cd == 'D':
-         tempDate   = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
-         wlDate     = tempDate.replace(hour=12)
-    
-      # Full date YYYY-MM-DD HH:MM
-      #
-      elif lev_dt_acy_cd == 'm':
-         tmp_dt = '%s %s' % (lev_dt, lev_tm)
-         wlDate = datetime.datetime.strptime(tmp_dt, '%Y-%m-%d %H:%M')
+            if 'iv_begin_date' in siteRecordsL:
+                usgs_rc_status     = rcInfoD[site_id]['iv_status']
+                usgs_rc_begin_date = rcInfoD[site_id]['iv_begin_date']
+                usgs_rc_end_date   = rcInfoD[site_id]['iv_end_date']
+            elif 'dv_begin_date' in siteRecordsL:
+                usgs_rc_status     = rcInfoD[site_id]['dv_status']
+                usgs_rc_begin_date = rcInfoD[site_id]['dv_begin_date']
+                usgs_rc_end_date   = rcInfoD[site_id]['dv_end_date']
+                usgs_rc_count      = rcInfoD[site_id]['dv_count_nu']
 
-      # Set dtm
-      #
-      wlDate     = wlDate.replace(tzinfo=datetime.timezone.utc)
-      lev_dtm    = wlDate.strftime("%Y-%m-%d %H:%M %Z")
+            if 'iv_begin_date' in siteRecordsL and rcInfoD[site_id]['iv_count_nu'] > 0:
+                usgs_rc_count      = rcInfoD[site_id]['iv_count_nu']
+            elif 'dv_begin_date' in siteRecordsL and rcInfoD[site_id]['dv_count_nu'] > 0:
+                usgs_rc_count      = rcInfoD[site_id]['dv_count_nu']
 
-      gwRecord['lev_dtm'] = lev_dtm
-      
-      # Partial dates YYYY | YYYY-MM | YYYY-MM-DD
-      #
-      if lev_dt_acy_cd in ['Y', 'M', 'D']:
-         lev_str_dt = lev_dt
-         lev_tm     = ''
-         lev_tz_cd  = ''    
-    
-      # Full date YYYY-MM-DD HH:MM [Convert to PST time zone]
-      #
-      elif lev_dt_acy_cd == 'm':
-         tmpDate    = wlDate + datetime.timedelta(hours=pst_offset)
-         lev_dt     = tmpDate.strftime("%Y-%m-%d")
-         lev_tm     = tmpDate.strftime("%H:%M")
-         lev_tz_cd  = "PST"
-         lev_str_dt = tmpDate.strftime("%Y-%m-%d %H:%M")
-    
-      # Set lev_mst to YYYY-MM-DD to identify duplicate measurements
-      #
-      lev_mst = lev_str_dt[:10]
-      
-      # Set date/time/time zone
-      #
-      gwRecord['lev_dt']     = lev_dt
-      gwRecord['lev_tm']     = lev_tm
-      gwRecord['lev_tz_cd']  = lev_tz_cd
-      gwRecord['lev_str_dt'] = lev_str_dt
-            
-      # Set measurement status
-      #
-      lev_status_cd = str(gwRecord['lev_status_cd'])
-      myColumn   = 'lev_status_cd'
-      if myColumn not in gwCodesD:
-         gwCodesD[myColumn] = []
-      if str(lev_status_cd) not in gwCodesD[myColumn]:
-         gwCodesD[myColumn].append(str(lev_status_cd))
-         
-      if len(lev_status_cd) < 1:
-         lev_status_cd = ''
-      elif lev_status_cd == '1':
-         lev_status_cd = ''
-      elif lev_status_cd == '2':
-         lev_status_cd = 'Z'
-      elif lev_status_cd == '3':
-         lev_status_cd = 'Z'
-      elif lev_status_cd == '4':
-         lev_status_cd = 'B'
-      elif lev_status_cd == '5':
-         lev_status_cd = 'X'
-      elif lev_status_cd == '6':
-         lev_status_cd = 'Z'
-      elif lev_status_cd == '7':
-         lev_status_cd = 'L'
-      elif lev_status_cd == '8':
-         lev_status_cd = 'V'
-      elif lev_status_cd == '9':
-         lev_status_cd = 'Z'
- 
-      gwRecord['lev_status_cd'] = lev_status_cd
 
-      # Set measuring method and waterlevel accuracy
-      #
-      lev_meth_cd   = str(gwRecord['lev_meth_cd'])
-      lev_acy_cd    = str(gwRecord['lev_acy_cd'])
-      myColumn   = 'lev_meth_cd'
-      if myColumn not in gwCodesD:
-         gwCodesD[myColumn] = []
-      if str(lev_meth_cd) not in gwCodesD[myColumn]:
-         gwCodesD[myColumn].append(str(lev_meth_cd))            
-      
-      if len(lev_meth_cd) > 0:
-         if lev_meth_cd in ["A","E","D","G","M","N","O","R","U","X","Z"]:
-            lev_acy_cd = '0';
-         elif lev_meth_cd in ["B","C","F","H","L","P","T"]:
-            lev_acy_cd = '1';
-         elif lev_meth_cd in ["S","V","W","H"]:
-            lev_acy_cd = '2';
+            siteInfoD[site_id]['usgs_rc_status']     = usgs_rc_status
+            siteInfoD[site_id]['usgs_rc_begin_date'] = usgs_rc_begin_date
+            siteInfoD[site_id]['usgs_rc_end_date']   = usgs_rc_end_date
+            siteInfoD[site_id]['usgs_rc_count']      = usgs_rc_count
 
-      if len(lev_va) < 1:
-         lev_acy_cd = '';
+    activeSitesL     = list({x for x in siteInfoD if siteInfoD[x]['usgs_status'] == 'Active'})
+    activeRecordersL = list({x for x in siteInfoD if siteInfoD[x]['usgs_rc_status'] == 'Active'})
 
-      gwRecord['lev_acy_cd'] = lev_acy_cd
-            
-      # Set measuring agency
-      #
-      lev_agency_cd = str(gwRecord['lev_agency_cd']).strip()
-      myColumn      = 'lev_agency_cd'
-      if myColumn not in gwCodesD:
-         gwCodesD[myColumn] = []
-      if str(lev_agency_cd) not in gwCodesD[myColumn]:
-         gwCodesD[myColumn].append(str(lev_agency_cd))
-            
-      if len(lev_agency_cd) > 0 and lev_agency_cd == "OR004":
-         lev_agency_cd = "OWRD"         
-      if len(lev_agency_cd) < 1:
-         lev_agency_cd = "USGS"
-
-      gwRecord['lev_agency_cd'] = lev_agency_cd
-            
-      # Set measuring source
-      #
-      lev_src_cd = str(gwRecord['lev_src_cd'])
-      myColumn   = 'lev_src_cd'
-      if myColumn not in gwCodesD:
-         gwCodesD[myColumn] = []
-      if str(lev_src_cd) not in gwCodesD[myColumn]:
-         gwCodesD[myColumn].append(str(lev_src_cd))
-      
-      if lev_agency_cd == "USGS":
-         lev_src_cd = "S"         
-      if lev_agency_cd != "USGS":
-         lev_src_cd = "A"         
-
-      gwRecord['lev_src_cd'] = lev_src_cd
-          
-      # Set lev_web_cd
-      #
-      lev_web_cd    = 'N'
-      if len(lev_va) > 0 and lev_status_cd == '':
-         lev_web_cd    = 'Y'
-
-      gwRecord['lev_web_cd'] = lev_web_cd
-
-      # New site
-      #
-      if site_id not in gwInfoD:
-         
-         gwInfoD[site_id] = {}
-
-      # New waterlevel record for site
-      #
-      if lev_mst not in gwInfoD[site_id].keys():
-
-         gwInfoD[site_id][lev_mst] = {}
-
-      # Prepare values
-      #
-      for myColumn in myGwFields:
-         if myColumn in mySiteFields:
-            gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
-         else:
-            gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
-         
-
-      del linesL[0]
-
-      
-   # Period of record for USGS recorder sites
-   # ----------------------------------------------------------------------
-   #
-   tempL  = list(usgsSitesL)
-   nsites = 50
-   linesL = []
-
-   while len(tempL) > 0:
-
-      nList = ",".join(tempL[:nsites])
-      del tempL[:nsites]
-
-      # Web request
-      #
-      URL          = 'https://waterservices.usgs.gov/nwis/site/?format=rdb&sites=%s&seriesCatalogOutput=true&siteStatus=all&siteType=GW&hasDataTypeCd=dv,iv&outputDataTypeCd=dv,iv' % nList
-      noparmsDict  = {}
-      contentType  = "text"
-      timeOut      = 1000
-
-      #screen_logger.info("Url %s" % URL)
-                 
-      message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
-     
-      if webContent is not None:
-
-         # Check for empty file
-         #
-         if len(webContent) < 1:
-            message = "Empty content return from web request %s" % URL
-            errorMessage(message)
-
-         newList = list(webContent.splitlines())
-         linesL.extend(newList)
-   
-   # Process site records
-   # -------------------------------------------------
-   #
-   if len(linesL) > 0:
-      while len(linesL) > 0:
-    
-         # Parse for column names [rdb format]
-         #
-         if len(linesL) < 1:
-            del linesL[0]
-         elif linesL[0][0] == '#':
-            del linesL[0]
-         else:
-            namesL = linesL[0].lower().split('\t')
-            del linesL[0]
-            break
-   
-      # Format line in header section
-      #
-      del linesL[0]
-   
-      # Parse for data
-      #
-      while len(linesL) > 0:
-         
-         if len(linesL[0]) < 1:
-            del linesL[0]
-            continue
-         
-         if linesL[0][0] == '#':
-            
-            while len(linesL) > 0:
-   
-               if linesL[0][0] == '#':
-                  del linesL[0]
-                  continue
-   
-               else:
-                  del linesL[0]
-                  del linesL[0]
-                  break
-   
-         valuesL = linesL[0].split('\t')
-         
-         # Set record
-         #
-         gwRecord = {}
-         
-         for i in range(len(namesL)):
-            gwRecord[namesL[i]] = valuesL[namesL.index(namesL[i])]
-         
-         # Accept only groundwater parameters
-         #
-         if gwRecord['parm_cd'] in ['62610', '62611', '72019']:
-            
-            # Set site ID
-            #
-            site_no   = gwRecord['site_no']
-            if site_no in usgsSitesD:
-               site_id = usgsSitesD[site_no]
-            
-            # Set recorder site
-            #
-            if site_id not in rcInfoD:
-               rcInfoD[site_id] = {}
-                  
-            # New recorder record for site
-            #
-            begin_date = str(valuesL[ namesL.index('begin_date') ])
-            if begin_date not in rcInfoD[site_id]:
-               rcInfoD[site_id][begin_date] = {}
-      
-            end_date   = str(valuesL[ namesL.index('end_date') ])
-            if end_date not in rcInfoD[site_id]:
-               rcInfoD[site_id][end_date] = {}
-      
-            # Prepare values
-            #
-            for myColumn in gwRecord.keys():
-               rcInfoD[site_id][begin_date][myColumn] = gwRecord[myColumn]
-               rcInfoD[site_id][end_date][myColumn]   = gwRecord[myColumn]
-   
-                     
-         del linesL[0]
-   
-               
-   # Prepare set of sites
-   #
-   usgsSet        = set(usgsSitesL)
-   missingSet     = set(missSitesL)
-   matchSitesL    = list(usgsSet.difference(missingSet))
-   
-   # Period of record of all measurements for each site and counts
-   #
-   for site_id in sorted(matchSitesL):
-
-      if site_id in gwInfoD:
-         totalRecords += len(gwInfoD[site_id])
-         usgsRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
-         owrdRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
-         cdwrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
-         othrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']}))
-               
-         # Static and Non-static measurements
-         #
-         numYRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] == 'Y'}))
-         numNRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] != 'Y'}))
-         
-         # Assign other measurements to USGS
-         #
-         othrDatesL    = list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']})
-         for gwDate in sorted(othrDatesL):
-            gwInfoD[site_id][gwDate]['lev_agency_cd'] = 'USGS'
-         
-         # USGS period of record of periodic measurements for each site
-         #
-         siteRecordsL  = sorted(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
-         BeginDate     = ''
-         EndDate       = ''
-         status        = 'Inactive'
-         if len(siteRecordsL) > 0:
-            BeginDate     = gwInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
-            EndDate       = gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
-            lev_dt_acy_cd = gwInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
-            dateFmt = '%Y-%m-%d'
-            if lev_dt_acy_cd == 'Y':
-               dateFmt = '%Y'
-            elif lev_dt_acy_cd == 'M':
-               dateFmt = '%Y-%m'
-            wlDate = datetime.datetime.strptime(gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
-            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-            status = 'Inactive'
-            if wlDate >= activeDate:
-               status  = 'Active'
-         else:
-            screen_logger.debug('Site %s has no USGS periodic or recorder groundwater measurements' % site_id)
-   
-         siteInfoD[site_id]['usgs_begin_date']      = BeginDate
-         siteInfoD[site_id]['usgs_end_date']        = EndDate
-         siteInfoD[site_id]['usgs_status']          = status
-         siteInfoD[site_id]['usgs_count']           = len(siteRecordsL)      
-         
-      # Overall period of record of recorder measurements for each site
-      #
-      if site_id in rcInfoD:
-         siteRecordsL  = sorted(list(rcInfoD[site_id].keys()))
-         BeginDate     = rcInfoD[site_id][siteRecordsL[0]]['begin_date']
-         EndDate       = rcInfoD[site_id][siteRecordsL[-1]]['end_date']
-         wlDate        = datetime.datetime.strptime(EndDate, '%Y-%m-%d')
-         wlDate        = wlDate.replace(tzinfo=datetime.timezone.utc)
-         status        = 'Inactive'
-         if wlDate >= activeDate:
-            status  = 'Active'
-
-         siteInfoD[site_id]['usgs_rc_status']     = status
-         siteInfoD[site_id]['usgs_rc_begin_date'] = BeginDate
-         siteInfoD[site_id]['usgs_rc_end_date']   = EndDate
-         siteInfoD[site_id]['usgs_rc_count']      = rcInfoD[site_id][EndDate]['count_nu']
-
-         if rcInfoD[site_id][EndDate]['data_type_cd'] == 'dv':
-            rcRecords += int(rcInfoD[site_id][EndDate]['count_nu'])
-         
-   activeSitesL     = list({x for x in siteInfoD if siteInfoD[x]['usgs_status'] == 'Active'})
-   activeRecordersL = list({x for x in siteInfoD if siteInfoD[x]['usgs_rc_status'] == 'Active'})
-
-   # Print information
-   #
-   ncols    = 150
-   messages = []
-   messages.append('\n\tProcessed USGS periodic and recorder measurements')
-   messages.append('\t%s' % (ncols * '-'))
-   messages.append('\t%-79s %10d' % ('Number of sites with periodic measurements', len(siteInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of USGS sites in collection file', len(usgsSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of USGS sites in collection file NOT retrieved from USGS database', len(missSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of Active periodic sites in collection file measured by the USGS', len(activeSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of USGS sites with periodic measurements', len(gwInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of of static periodic measurements', numYRecords))
-   messages.append('\t%-79s %10d' % ('Number of of non-static periodic measurements', numNRecords))
-   messages.append('\t%-79s %10d' % ('Number of USGS periodic measurements', usgsRecords))
-   messages.append('\t%-79s %10d' % ('Number of OWRD periodic measurements', owrdRecords))
-   messages.append('\t%-79s %10d' % ('Number of CDWR periodic measurements', cdwrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements made by other agencies', othrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements', totalRecords))
-   messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file from USGS database', len(rcInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of Active recorder sites in collection file measured by the USGS', len(activeRecordersL)))
-   messages.append('\t%-79s %10d' % ('Number of recorder measurements', rcRecords))
-   messages.append('\t%s' % (ncols * '-'))
-   if len(matchSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'USGS periodic sites with USGS measurements in collection file in USGS database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Periodic', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_no in sorted(matchSitesL):
-         site_id = usgsSitesD[site_no]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
+    # Print information
+    #
+    ncols    = 150
+    messages = []
+    messages.append('\n\tProcessed USGS periodic and recorder measurements')
+    messages.append('\t%s' % (ncols * '-'))
+    messages.append('\t%-79s %10d' % ('Number of sites with periodic measurements', len(siteInfoD)))
+    messages.append('\t%-79s %10d' % ('Number of USGS sites in collection file', len(usgsSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of USGS sites in collection file NOT retrieved from USGS database', len(missSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of Active periodic sites in collection file measured by the USGS', len(activeSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of USGS sites with periodic measurements', len(gwInfoD)))
+    messages.append('\t%-79s %10d' % ('Number of of static periodic measurements', numYRecords))
+    messages.append('\t%-79s %10d' % ('Number of of non-static periodic measurements', numNRecords))
+    messages.append('\t%-79s %10d' % ('Number of USGS periodic measurements', usgsRecords))
+    messages.append('\t%-79s %10d' % ('Number of OWRD periodic measurements', owrdRecords))
+    messages.append('\t%-79s %10d' % ('Number of CDWR periodic measurements', cdwrRecords))
+    messages.append('\t%-79s %10d' % ('Number of periodic measurements made by other agencies', othrRecords))
+    messages.append('\t%-79s %10d' % ('Number of periodic measurements', totalRecords))
+    messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file from USGS database', len(rcInfoD)))
+    messages.append('\t%-79s %10d' % ('Number of Active recorder sites in collection file measured by the USGS', len(activeRecordersL)))
+    messages.append('\t%-79s %10d' % ('Number of recorder measurements', rcRecords))
+    messages.append('\t%s' % (ncols * '-'))
+    if len(matchSitesL) > 0:
+        messages.append('')
+        messages.append('\t%s' % 'USGS periodic sites with USGS measurements in collection file in USGS database')
+        messages.append('\t%s' % (ncols * '-'))
+        fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
+        messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Periodic', 'Begin', 'End',  'Active'))
+        messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
+        messages.append('\t%s' % (ncols * '-'))
+        for site_no in sorted(matchSitesL):
+            site_id = usgsSitesD[site_no]
+            messages.append(fmt % (siteInfoD[site_id]['site_no'],
                                 siteInfoD[site_id]['coop_site_no'],
                                 siteInfoD[site_id]['cdwr_id'],
                                 siteInfoD[site_id]['station_nm'][:35],
@@ -1459,2143 +1024,769 @@ def rdbUSGS (siteInfoD, mySiteFields, myGwFields):
                                 siteInfoD[site_id]['usgs_end_date'],
                                 siteInfoD[site_id]['usgs_status']
                                 ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(rcInfoD.keys()) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'USGS recorder sites with USGS measurements in collection file in USGS database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Recorder', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_id in sorted(rcInfoD.keys()):
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35],
-                                siteInfoD[site_id]['usgs_rc_count'],
-                                siteInfoD[site_id]['usgs_rc_begin_date'],
-                                siteInfoD[site_id]['usgs_rc_end_date'],
-                                siteInfoD[site_id]['usgs_rc_status']
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(missSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'USGS periodic sites in collection file NOT retrieved from USGS database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-20s %-20s %-35s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' '))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_no in sorted(missSitesL):
-         site_id = usgsSitesD[site_no]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35]
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   for myCode in sorted(gwCodesD.keys()):
-      messages.append('')
-      messages.append('\tCode %-70s' % myCode)
-      messages.append('\t%s' % (ncols * '-'))
-      messages.append('\t%s' % '\n\t'.join(gwCodesD[myCode]))
-      messages.append('\t%s' % (ncols * '-'))
-   messages.append('\n')
+        messages.append('\t%s' % (ncols * '-'))
+        if len(rcInfoD.keys()) > 0:
+            messages.append('')
+            messages.append('\t%s' % 'USGS recorder sites with USGS measurements in collection file in USGS database')
+            messages.append('\t%s' % (ncols * '-'))
+            fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
+            messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Recorder', 'Begin', 'End',  'Active'))
+            messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
+            messages.append('\t%s' % (ncols * '-'))
+        for site_id in sorted(rcInfoD.keys()):
+            messages.append(fmt % (siteInfoD[site_id]['site_no'],
+                                   siteInfoD[site_id]['coop_site_no'],
+                                   siteInfoD[site_id]['cdwr_id'],
+                                   siteInfoD[site_id]['station_nm'][:35],
+                                   siteInfoD[site_id]['usgs_rc_count'],
+                                   siteInfoD[site_id]['usgs_rc_begin_date'],
+                                   siteInfoD[site_id]['usgs_rc_end_date'],
+                                   siteInfoD[site_id]['usgs_rc_status']
+                                   ))
+        messages.append('\t%s' % (ncols * '-'))
+    if len(missSitesL) > 0:
+        messages.append('')
+        messages.append('\t%s' % 'USGS periodic sites in collection file NOT retrieved from USGS database')
+        messages.append('\t%s' % (ncols * '-'))
+        fmt = '\t%-20s %-20s %-20s %-35s'
+        messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station'))
+        messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' '))
+        messages.append('\t%s' % (ncols * '-'))
+        for site_no in sorted(missSitesL):
+            site_id = usgsSitesD[site_no]
+            messages.append(fmt % (siteInfoD[site_id]['site_no'],
+                                   siteInfoD[site_id]['coop_site_no'],
+                                   siteInfoD[site_id]['cdwr_id'],
+                                   siteInfoD[site_id]['station_nm'][:35]
+                                   ))
+        messages.append('\t%s' % (ncols * '-'))
+    for myCode in sorted(gwCodesD.keys()):
+        messages.append('')
+        messages.append('\tCode %-70s' % myCode)
+        messages.append('\t%s' % (ncols * '-'))
+        messages.append('\t%s' % '\n\t'.join(gwCodesD[myCode]))
+        messages.append('\t%s' % (ncols * '-'))
+    messages.append('\n')
 
-   screen_logger.info('\n'.join(messages))
-   file_logger.info('\n'.join(messages))
+    screen_logger.info('\n'.join(messages))
+    file_logger.info('\n'.join(messages))
 
-   return gwInfoD
-
-# =============================================================================
-
-def processUSGS (siteInfoD, mySiteFields, myGwFields):
-
-   gwInfoD      = {}
-   rcInfoD      = {}
-   
-   usgsRecords  = 0
-   owrdRecords  = 0
-   cdwrRecords  = 0
-   othrRecords  = 0
-   totalRecords = 0
-   rcRecords    = 0
-
-   numYRecords  = 0
-   numNRecords  = 0
-
-   gwCodesD     = {}
-
-   pst_offset   = -8
-   days_offset  = 365
-   activeDate   = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_offset)
-
-   # Prepare list of site numbers
-   # -------------------------------------------------
-   #
-   usgsSitesD     = dict({siteInfoD[x]['site_no']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
-   usgsSitesL     = list({siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
-   owrdSitesL     = list({siteInfoD[x]['coop_site_no'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
-   cdwrSitesL     = list({siteInfoD[x]['cdwr_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
-
-   missSitesL = list(usgsSitesL)
-
-   # NwisWeb groundwater service
-   # -------------------------------------------------
-   #
-   tempL  = list(usgsSitesL)
-   nsites = 50
-   linesL = []
-
-   while len(tempL) > 0:
-
-      nList = ",".join(tempL[:nsites])
-      del tempL[:nsites]
-
-      # Web request
-      #
-      #URL          = 'https://waterservices.usgs.gov/nwis/gwlevels/?format=rdb&sites=%s&startDT=1800-01-01&siteStatus=all' % nList
-      URL          =  'https://nwis.waterdata.usgs.gov/nwis/gwlevels?search_site_no=%s&search_site_no_match_type=exact&group_key=NONE&sitefile_output_format=html_table&column_name=agency_cd&column_name=site_no&column_name=station_nm&format=rdb&date_format=YYYY-MM-DD&rdb_compression=value&list_of_search_criteria=search_site_no' % nList
-      noparmsDict  = {}
-      contentType  = "text"
-      timeOut      = 1000
-
-      #screen_logger.info("Url %s" % URL)
-                 
-      message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
-     
-      if webContent is not None:
-
-         # Check for empty file
-         #
-         if len(webContent) < 1:
-            message = "Empty content return from web request %s" % URL
-            errorMessage(message)
-
-         newList = list(webContent.splitlines())
-         linesL.extend(newList)
-   
-   # Process groundwater measurements
-   # -------------------------------------------------
-   #
-   while len(linesL) > 0:
-
-      # Parse for column names [rdb format]
-      #
-      if len(linesL) < 1:
-         del linesL[0]
-      elif linesL[0][0] == '#':
-         del linesL[0]
-      else:
-         namesL = linesL[0].lower().split('\t')
-         del linesL[0]
-         break
-
-   # Format line in header section
-   #
-   del linesL[0]
-
-   # Parse for data
-   #
-   while len(linesL) > 0:
-      
-      if len(linesL[0]) < 1:
-         del linesL[0]
-         continue
-      
-      if linesL[0][0] == '#':
-         
-         while len(linesL) > 0:
-
-            if linesL[0][0] == '#':
-               del linesL[0]
-               continue
-
-            else:
-               del linesL[0]
-               del linesL[0]
-               break
-
-      valuesL = linesL[0].split('\t')
-      
-      # Set record
-      #
-      gwRecord = {}
-      
-      for i in range(len(namesL)):
-         gwRecord[namesL[i]] = valuesL[namesL.index(namesL[i])]
-      
-      # Set site ID
-      #
-      site_no   = gwRecord['site_no']
-      if site_no in usgsSitesD:
-         site_id = usgsSitesD[site_no]
-      
-      # Remove site number
-      #
-      if site_no in missSitesL:
-         missSitesL.remove(site_no)
-
-      # Set waterlevel
-      #
-      lev_va        = str(gwRecord['lev_va'])
-      if lev_va == 'None':
-         lev_va = ''
-
-      # Set water-level date information
-      #
-      lev_dt        = str(gwRecord['lev_dt'])
-      lev_tm        = str(gwRecord['lev_tm'])
-      lev_tz_cd     = str(gwRecord['lev_tz_cd'])
-      lev_dt_acy_cd = str(gwRecord['lev_dt_acy_cd'])
-    
-      # Partial date YYYY
-      #
-      if lev_dt_acy_cd == 'Y':
-         tempDate   = datetime.datetime.strptime(lev_dt, '%Y')
-         wlDate     = tempDate.replace(month=7,day=16,hour=12)
-   
-      # Partial date YYYY-MM
-      #
-      elif lev_dt_acy_cd == 'M':
-         tempDate   = datetime.datetime.strptime(lev_dt, '%Y-%m')
-         wlDate     = tempDate.replace(day=16,hour=12)
-         if wlDate.month == 2:
-             wlDate = tempDate.replace(day=15,hour=12)
-    
-      # Full date YYYY-MM-DD
-      #
-      elif lev_dt_acy_cd == 'D':
-         tempDate   = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
-         wlDate     = tempDate.replace(hour=12)
-    
-      # Full date YYYY-MM-DD HH:MM
-      #
-      elif lev_dt_acy_cd == 'm':
-         tmp_dt = '%s %s' % (lev_dt, lev_tm)
-         wlDate = datetime.datetime.strptime(tmp_dt, '%Y-%m-%d %H:%M')
-
-      # Set dtm
-      #
-      wlDate     = wlDate.replace(tzinfo=datetime.timezone.utc)
-      lev_dtm    = wlDate.strftime("%Y-%m-%d %H:%M %Z")
-
-      gwRecord['lev_dtm'] = lev_dtm
-      
-      # Partial dates YYYY | YYYY-MM | YYYY-MM-DD
-      #
-      if lev_dt_acy_cd in ['Y', 'M', 'D']:
-         lev_str_dt = lev_dt
-         lev_tm     = ''
-         lev_tz_cd  = ''    
-    
-      # Full date YYYY-MM-DD HH:MM [Convert to PST time zone]
-      #
-      elif lev_dt_acy_cd == 'm':
-         tmpDate    = wlDate + datetime.timedelta(hours=pst_offset)
-         lev_dt     = tmpDate.strftime("%Y-%m-%d")
-         lev_tm     = tmpDate.strftime("%H:%M")
-         lev_tz_cd  = "PST"
-         lev_str_dt = tmpDate.strftime("%Y-%m-%d %H:%M")
-    
-      # Set lev_mst to YYYY-MM-DD to identify duplicate measurements
-      #
-      lev_mst = lev_str_dt[:10]
-      
-      # Set date/time/time zone
-      #
-      gwRecord['lev_dt']     = lev_dt
-      gwRecord['lev_tm']     = lev_tm
-      gwRecord['lev_tz_cd']  = lev_tz_cd
-      gwRecord['lev_str_dt'] = lev_str_dt
-            
-      # Set measurement status
-      #
-      lev_status_cd = str(gwRecord['lev_status_cd'])
-      myColumn   = 'lev_status_cd'
-      if myColumn not in gwCodesD:
-         gwCodesD[myColumn] = []
-      if str(lev_status_cd) not in gwCodesD[myColumn]:
-         gwCodesD[myColumn].append(str(lev_status_cd))
-         
-      if len(lev_status_cd) < 1:
-         lev_status_cd = ''
-      elif lev_status_cd == '1':
-         lev_status_cd = ''
-      elif lev_status_cd == '2':
-         lev_status_cd = 'Z'
-      elif lev_status_cd == '3':
-         lev_status_cd = 'Z'
-      elif lev_status_cd == '4':
-         lev_status_cd = 'B'
-      elif lev_status_cd == '5':
-         lev_status_cd = 'X'
-      elif lev_status_cd == '6':
-         lev_status_cd = 'Z'
-      elif lev_status_cd == '7':
-         lev_status_cd = 'L'
-      elif lev_status_cd == '8':
-         lev_status_cd = 'V'
-      elif lev_status_cd == '9':
-         lev_status_cd = 'Z'
- 
-      gwRecord['lev_status_cd'] = lev_status_cd
-
-      # Set measuring method and waterlevel accuracy
-      #
-      lev_meth_cd   = str(gwRecord['lev_meth_cd'])
-      lev_acy_cd    = str(gwRecord['lev_acy_cd'])
-      myColumn   = 'lev_meth_cd'
-      if myColumn not in gwCodesD:
-         gwCodesD[myColumn] = []
-      if str(lev_meth_cd) not in gwCodesD[myColumn]:
-         gwCodesD[myColumn].append(str(lev_meth_cd))            
-      
-      if len(lev_meth_cd) > 0:
-         if lev_meth_cd in ["A","E","D","G","M","N","O","R","U","X","Z"]:
-            lev_acy_cd = '0';
-         elif lev_meth_cd in ["B","C","F","H","L","P","T"]:
-            lev_acy_cd = '1';
-         elif lev_meth_cd in ["S","V","W","H"]:
-            lev_acy_cd = '2';
-
-      if len(lev_va) < 1:
-         lev_acy_cd = '';
-
-      gwRecord['lev_acy_cd'] = lev_acy_cd
-            
-      # Set measuring agency
-      #
-      lev_agency_cd = str(gwRecord['lev_agency_cd']).strip()
-      myColumn      = 'lev_agency_cd'
-      if myColumn not in gwCodesD:
-         gwCodesD[myColumn] = []
-      if str(lev_agency_cd) not in gwCodesD[myColumn]:
-         gwCodesD[myColumn].append(str(lev_agency_cd))
-            
-      if len(lev_agency_cd) > 0 and lev_agency_cd == "OR004":
-         lev_agency_cd = "OWRD"         
-      if len(lev_agency_cd) < 1:
-         lev_agency_cd = "USGS"
-
-      gwRecord['lev_agency_cd'] = lev_agency_cd
-            
-      # Set measuring source
-      #
-      lev_src_cd = str(gwRecord['lev_src_cd'])
-      myColumn   = 'lev_src_cd'
-      if myColumn not in gwCodesD:
-         gwCodesD[myColumn] = []
-      if str(lev_src_cd) not in gwCodesD[myColumn]:
-         gwCodesD[myColumn].append(str(lev_src_cd))
-      
-      if lev_agency_cd == "USGS":
-         lev_src_cd = "S"         
-      if lev_agency_cd != "USGS":
-         lev_src_cd = "A"         
-
-      gwRecord['lev_src_cd'] = lev_src_cd
-          
-      # Set lev_web_cd
-      #
-      lev_web_cd    = 'N'
-      if len(lev_va) > 0 and lev_status_cd == '':
-         lev_web_cd    = 'Y'
-
-      gwRecord['lev_web_cd'] = lev_web_cd
-
-      # New site
-      #
-      if site_id not in gwInfoD:
-         
-         gwInfoD[site_id] = {}
-
-      # New waterlevel record for site
-      #
-      if lev_mst not in gwInfoD[site_id].keys():
-
-         gwInfoD[site_id][lev_mst] = {}
-
-      # Prepare values
-      #
-      for myColumn in myGwFields:
-         if myColumn in mySiteFields:
-            gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
-         else:
-            gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
-         
-
-      del linesL[0]
-
-      
-   # Period of record for USGS recorder sites
-   # ----------------------------------------------------------------------
-   #
-   tempL  = list(usgsSitesL)
-   nsites = 50
-   linesL = []
-
-   while len(tempL) > 0:
-
-      nList = ",".join(tempL[:nsites])
-      del tempL[:nsites]
-
-      # Web request
-      #
-      URL          = 'https://waterservices.usgs.gov/nwis/site/?format=rdb&sites=%s&seriesCatalogOutput=true&siteStatus=all&siteType=GW&hasDataTypeCd=dv,iv&outputDataTypeCd=dv,iv' % nList
-      noparmsDict  = {}
-      contentType  = "text"
-      timeOut      = 1000
-
-      #screen_logger.info("Url %s" % URL)
-                 
-      message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
-     
-      if webContent is not None:
-
-         # Check for empty file
-         #
-         if len(webContent) < 1:
-            message = "Empty content return from web request %s" % URL
-            errorMessage(message)
-
-         newList = list(webContent.splitlines())
-         linesL.extend(newList)
-   
-   # Process site records
-   # -------------------------------------------------
-   #
-   if len(linesL) > 0:
-      while len(linesL) > 0:
-    
-         # Parse for column names [rdb format]
-         #
-         if len(linesL) < 1:
-            del linesL[0]
-         elif linesL[0][0] == '#':
-            del linesL[0]
-         else:
-            namesL = linesL[0].lower().split('\t')
-            del linesL[0]
-            break
-   
-      # Format line in header section
-      #
-      del linesL[0]
-   
-      # Parse for data
-      #
-      while len(linesL) > 0:
-         
-         if len(linesL[0]) < 1:
-            del linesL[0]
-            continue
-         
-         if linesL[0][0] == '#':
-            
-            while len(linesL) > 0:
-   
-               if linesL[0][0] == '#':
-                  del linesL[0]
-                  continue
-   
-               else:
-                  del linesL[0]
-                  del linesL[0]
-                  break
-   
-         valuesL = linesL[0].split('\t')
-         
-         # Set record
-         #
-         gwRecord = {}
-         
-         for i in range(len(namesL)):
-            gwRecord[namesL[i]] = valuesL[namesL.index(namesL[i])]
-         
-         # Accept only groundwater parameters
-         #
-         if gwRecord['parm_cd'] in ['62610', '62611', '72019']:
-            
-            # Set site ID
-            #
-            site_no   = gwRecord['site_no']
-            if site_no in usgsSitesD:
-               site_id = usgsSitesD[site_no]
-            
-            # Set recorder site
-            #
-            if site_id not in rcInfoD:
-               rcInfoD[site_id] = {}
-                  
-            # New recorder record for site
-            #
-            begin_date = str(valuesL[ namesL.index('begin_date') ])
-            if begin_date not in rcInfoD[site_id]:
-               rcInfoD[site_id][begin_date] = {}
-      
-            end_date   = str(valuesL[ namesL.index('end_date') ])
-            if end_date not in rcInfoD[site_id]:
-               rcInfoD[site_id][end_date] = {}
-      
-            # Prepare values
-            #
-            for myColumn in gwRecord.keys():
-               rcInfoD[site_id][begin_date][myColumn] = gwRecord[myColumn]
-               rcInfoD[site_id][end_date][myColumn]   = gwRecord[myColumn]
-   
-                     
-         del linesL[0]
-   
-               
-   # Prepare set of sites
-   #
-   usgsSet        = set(usgsSitesL)
-   missingSet     = set(missSitesL)
-   matchSitesL    = list(usgsSet.difference(missingSet))
-   
-   # Period of record of all measurements for each site and counts
-   #
-   for site_id in sorted(matchSitesL):
-
-      if site_id in gwInfoD:
-         totalRecords += len(gwInfoD[site_id])
-         usgsRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
-         owrdRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
-         cdwrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
-         othrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']}))
-               
-         # Static and Non-static measurements
-         #
-         numYRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] == 'Y'}))
-         numNRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] != 'Y'}))
-         
-         # Assign other measurements to USGS
-         #
-         othrDatesL    = list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']})
-         for gwDate in sorted(othrDatesL):
-            gwInfoD[site_id][gwDate]['lev_agency_cd'] = 'USGS'
-         
-         # USGS period of record of periodic measurements for each site
-         #
-         siteRecordsL  = sorted(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
-         BeginDate     = ''
-         EndDate       = ''
-         status        = 'Inactive'
-         if len(siteRecordsL) > 0:
-            BeginDate     = gwInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
-            EndDate       = gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
-            lev_dt_acy_cd = gwInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
-            dateFmt = '%Y-%m-%d'
-            if lev_dt_acy_cd == 'Y':
-               dateFmt = '%Y'
-            elif lev_dt_acy_cd == 'M':
-               dateFmt = '%Y-%m'
-            wlDate = datetime.datetime.strptime(gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
-            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-            status = 'Inactive'
-            if wlDate >= activeDate:
-               status  = 'Active'
-         else:
-            screen_logger.debug('Site %s has no USGS periodic or recorder groundwater measurements' % site_id)
-   
-         siteInfoD[site_id]['usgs_begin_date']      = BeginDate
-         siteInfoD[site_id]['usgs_end_date']        = EndDate
-         siteInfoD[site_id]['usgs_status']          = status
-         siteInfoD[site_id]['usgs_count']           = len(siteRecordsL)      
-         
-      # Overall period of record of recorder measurements for each site
-      #
-      if site_id in rcInfoD:
-         siteRecordsL  = sorted(list(rcInfoD[site_id].keys()))
-         BeginDate     = rcInfoD[site_id][siteRecordsL[0]]['begin_date']
-         EndDate       = rcInfoD[site_id][siteRecordsL[-1]]['end_date']
-         wlDate        = datetime.datetime.strptime(EndDate, '%Y-%m-%d')
-         wlDate        = wlDate.replace(tzinfo=datetime.timezone.utc)
-         status        = 'Inactive'
-         if wlDate >= activeDate:
-            status  = 'Active'
-
-         siteInfoD[site_id]['usgs_rc_status']     = status
-         siteInfoD[site_id]['usgs_rc_begin_date'] = BeginDate
-         siteInfoD[site_id]['usgs_rc_end_date']   = EndDate
-         siteInfoD[site_id]['usgs_rc_count']      = rcInfoD[site_id][EndDate]['count_nu']
-
-         if rcInfoD[site_id][EndDate]['data_type_cd'] == 'dv':
-            rcRecords += int(rcInfoD[site_id][EndDate]['count_nu'])
-         
-   activeSitesL     = list({x for x in siteInfoD if siteInfoD[x]['usgs_status'] == 'Active'})
-   activeRecordersL = list({x for x in siteInfoD if siteInfoD[x]['usgs_rc_status'] == 'Active'})
-
-   # Print information
-   #
-   ncols    = 150
-   messages = []
-   messages.append('\n\tProcessed USGS periodic and recorder measurements')
-   messages.append('\t%s' % (ncols * '-'))
-   messages.append('\t%-79s %10d' % ('Number of sites with periodic measurements', len(siteInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of USGS sites in collection file', len(usgsSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of USGS sites in collection file NOT retrieved from USGS database', len(missSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of Active periodic sites in collection file measured by the USGS', len(activeSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of USGS sites with periodic measurements', len(gwInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of of static periodic measurements', numYRecords))
-   messages.append('\t%-79s %10d' % ('Number of of non-static periodic measurements', numNRecords))
-   messages.append('\t%-79s %10d' % ('Number of USGS periodic measurements', usgsRecords))
-   messages.append('\t%-79s %10d' % ('Number of OWRD periodic measurements', owrdRecords))
-   messages.append('\t%-79s %10d' % ('Number of CDWR periodic measurements', cdwrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements made by other agencies', othrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements', totalRecords))
-   messages.append('\t%-79s %10d' % ('Number of recorder sites in collection file from USGS database', len(rcInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of Active recorder sites in collection file measured by the USGS', len(activeRecordersL)))
-   messages.append('\t%-79s %10d' % ('Number of recorder measurements', rcRecords))
-   messages.append('\t%s' % (ncols * '-'))
-   if len(matchSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'USGS periodic sites with USGS measurements in collection file in USGS database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Periodic', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_no in sorted(matchSitesL):
-         site_id = usgsSitesD[site_no]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35],
-                                siteInfoD[site_id]['usgs_count'],
-                                siteInfoD[site_id]['usgs_begin_date'],
-                                siteInfoD[site_id]['usgs_end_date'],
-                                siteInfoD[site_id]['usgs_status']
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(rcInfoD.keys()) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'USGS recorder sites with USGS measurements in collection file in USGS database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Recorder', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_id in sorted(rcInfoD.keys()):
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35],
-                                siteInfoD[site_id]['usgs_rc_count'],
-                                siteInfoD[site_id]['usgs_rc_begin_date'],
-                                siteInfoD[site_id]['usgs_rc_end_date'],
-                                siteInfoD[site_id]['usgs_rc_status']
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(missSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'USGS periodic sites in collection file NOT retrieved from USGS database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-20s %-20s %-35s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' '))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_no in sorted(missSitesL):
-         site_id = usgsSitesD[site_no]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35]
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   for myCode in sorted(gwCodesD.keys()):
-      messages.append('')
-      messages.append('\tCode %-70s' % myCode)
-      messages.append('\t%s' % (ncols * '-'))
-      messages.append('\t%s' % '\n\t'.join(gwCodesD[myCode]))
-      messages.append('\t%s' % (ncols * '-'))
-   messages.append('\n')
-
-   screen_logger.info('\n'.join(messages))
-   file_logger.info('\n'.join(messages))
-
-   return gwInfoD
+    return gwInfoD
 
 # =============================================================================
 
 def processOWRD (siteInfoD, mySiteFields, myGwFields, owrd_gw_file, owrd_rc_file):
 
-   gwInfoD      = {}
-   rcInfoD      = {}
+    gwInfoD      = {}
+    rcInfoD      = {}
 
-   keyColumn    = 'gw_logid'
-   
-   usgsRecords  = 0
-   owrdRecords  = 0
-   cdwrRecords  = 0
-   othrRecords  = 0
-   totalRecords = 0
-   rcRecords    = 0
+    keyColumn    = 'gw_logid'
 
-   numYRecords  = 0
-   numNRecords  = 0
+    usgsRecords  = 0
+    owrdRecords  = 0
+    cdwrRecords  = 0
+    othrRecords  = 0
+    totalRecords = 0
+    rcRecords    = 0
 
-   gwCodesD     = {}
-   
-   myOwrdFields = [
-                   "gw_logid",
-                   "measured_date",
-                   "measured_time",
-                   "measured_datetime",
-                   "waterlevel_ft_below_land_surface",
-                   "measurement_status_desc",
-                   "method_of_water_level_measurement",
-                   "measurement_source_organization_desc"
-                  ]
+    numYRecords  = 0
+    numNRecords  = 0
 
-   pst_offset   = 8
-   days_offset  = 365
-   activeDate   = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_offset)
+    gwCodesD     = {}
 
-   endYear      = float(datetime.datetime.now().strftime("%Y")) + 1
+    myOwrdFields = [
+                    "gw_logid",
+                    "measured_date",
+                    "measured_time",
+                    "measured_datetime",
+                    "waterlevel_ft_below_land_surface",
+                    "measurement_status_desc",
+                    "method_of_water_level_measurement",
+                    "measurement_source_organization_desc"
+                   ]
 
-   # Prepare list of site numbers
-   # -------------------------------------------------
-   #
-   usgsSitesD = dict({siteInfoD[x]['coop_site_no']:siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
-   owrdSitesD = dict({siteInfoD[x]['coop_site_no']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
-   owrdSitesL = list({siteInfoD[x]['coop_site_no'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
-   missSitesL = list(owrdSitesL)
-   
-   # Read OWRD periodic waterlevel file
-   # -------------------------------------------------
-   #
-   with open(owrd_gw_file,'r') as f:
-       linesL = f.read().splitlines()
-   
-   # Check for empty file
-   #
-   if len(linesL) < 1:
-      message = "Empty waterlevel file %s" % owrd_gw_file
-      errorMessage(message)
+    pst_offset   = 8
+    days_offset  = 365
+    activeDate   = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_offset)
 
-   # Parse for column names [rdb format]
-   #
-   while 1:
-      if len(linesL) < 1:
-         del linesL[0]
-      elif linesL[0][0] == '#':
-         del linesL[0]
-      else:
-         namesL = linesL[0].lower().split('\t')
-         del linesL[0]
-         break
+    endYear      = float(datetime.datetime.now().strftime("%Y")) + 1
 
-   # Format line in header section
-   #
-   #del linesL[0]
+    # Prepare list of site numbers
+    # -------------------------------------------------
+    #
+    usgsSitesD = dict({siteInfoD[x]['coop_site_no']:siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
+    owrdSitesD = dict({siteInfoD[x]['coop_site_no']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
+    owrdSitesL = list({siteInfoD[x]['coop_site_no'] for x in siteInfoD if len(siteInfoD[x]['coop_site_no']) > 0})
+    missSitesL = list(owrdSitesL)
 
-   # Check column names
-   #
-   if keyColumn not in namesL: 
-      message = "Missing index column %s" % keyColumn
-      errorMessage(message)
+    # Read OWRD periodic waterlevel file
+    # -------------------------------------------------
+    #
+    csvLinesL = []
+    try:
+        with open(owrd_gw_file, newline='', encoding='utf-8') as fh:
 
-   # Parse data lines
-   #
-   while len(linesL) > 0:
-      
-      if len(linesL[0]) < 1:
-         del linesL[0]
-         continue
-      
-      if linesL[0][0] == '#':
-         del linesL[0]
-         continue
-
-      Line     = linesL[0]
-               
-      del linesL[0]
-      
-      valuesL  = Line.split('\t')
-
-      gw_logid = str(valuesL[ namesL.index(keyColumn) ])
-    
-      # Check if site is wanted
-      #
-      if gw_logid in owrdSitesL:
-                  
-         # Remove site from missing list
-         #
-         if gw_logid in missSitesL:
-            missSitesL.remove(gw_logid)
-          
-         # Set site_id
-         #
-         site_id = gw_logid
-         if gw_logid in owrdSitesD:
-            site_id = owrdSitesD[gw_logid]
-
-         # Set record
-         #
-         gwRecord = {}
-
-         for myColumn in myOwrdFields:
-            gwRecord[myColumn] = str(valuesL[ namesL.index(myColumn) ])
-           
-         # Set waterlevel
-         #
-         lev_va = str(gwRecord['waterlevel_ft_below_land_surface'])
-         if lev_va == 'None':
-            lev_va = ''
-         
-         gwRecord['lev_va'] = lev_va
-
-         # Set water-level date information
-         #
-         lev_dtm       = gwRecord['measured_datetime'][:-3]
-         lev_dt        = gwRecord['measured_datetime'][:10]
-         lev_tm        = gwRecord['measured_datetime'][12:-3]
-         lev_tz_cd     = ''
-         lev_dt_acy_cd = 'D'
-            
-         if lev_tm in ['00:00', '12:00']:
-            lev_tm        = ''
-            wlDate        = datetime.datetime.strptime(lev_dt, '%m/%d/%Y')
-            wlDate        = wlDate.replace(hour=4)
-            lev_str_dt    = wlDate.strftime('%Y-%m-%d')
-            lev_dt        = lev_str_dt[:10]
-         else:
-            tmp_str_dt    = lev_dtm
-            wlDate        = datetime.datetime.strptime(tmp_str_dt, '%m/%d/%Y %H:%M')
-            lev_dt_acy_cd = 'm'
-            lev_tz_cd     = 'PST'
-            lev_str_dt    = wlDate.strftime('%Y-%m-%d %H:%M')
-            lev_dt        = lev_str_dt[:10]
-            lev_tm        = lev_str_dt[11:]
-          
-         # Set lev_mst to YYYY-MM-DD to identify duplicate measurements
-         #
-         lev_mst = wlDate.strftime('%Y-%m-%d')
-           
-         # Convert to UTC time zone
-         #
-         wlDate     = wlDate + datetime.timedelta(hours=pst_offset)
-         wlDate     = wlDate.replace(tzinfo=datetime.timezone.utc)
-         lev_dtm    = wlDate.strftime("%Y-%m-%d %H:%M %Z")
-      
-         gwRecord['lev_dt']        = lev_dt
-         gwRecord['lev_tm']        = lev_tm
-         gwRecord['lev_tz_cd']     = lev_tz_cd
-         gwRecord['lev_dt_acy_cd'] = lev_dt_acy_cd
-         gwRecord['lev_str_dt']    = lev_str_dt
-         gwRecord['lev_dtm']       = lev_dtm
-
-         #screen_logger.info('Record %s %s' % (myRecord['measured_date'][:10], myRecord['measured_time'][:5]))
-         #screen_logger.info('Site %s Coop %s: %s %s %s' % (site_id, well_log_id, lev_dt, lev_tm, lev_dtm))
-           
-         # Set lev_status_cd
-         #
-         lev_status_cd = gwRecord['measurement_status_desc']
-         myColumn   = 'lev_status_cd'
-         if myColumn not in gwCodesD:
-            gwCodesD[myColumn] = []
-         if str(lev_status_cd) not in gwCodesD[myColumn]:
-            gwCodesD[myColumn].append(str(lev_status_cd))
-         
-         if lev_status_cd is None:
-            lev_status_cd = ''
-         elif lev_status_cd == "STATIC":
-            lev_status_cd = ""
-         elif lev_status_cd == "FLOWING":
-            lev_status_cd = "F"
-         elif lev_status_cd in ["RISING", "FALLING", "PUMPING"]:
-            lev_status_cd = "P"
-         elif lev_status_cd in ["UNKNOWN", "OTHER"]:
-            lev_status_cd = 'Z'
-         elif lev_status_cd == "DRY":
-            lev_status_cd = 'D'
-         else:
-            screen_logger.info('OWRD site %s [on %s]: Measurement status "%s" needs to be assigned (currently set to Z for Other' % (gw_logid, lev_str_dt, lev_status_cd))
-            lev_status_cd = 'Z'
-               
-         gwRecord['lev_status_cd']  = lev_status_cd
-            
-         # Set measuring method
-         #
-         lev_meth_cd = gwRecord['method_of_water_level_measurement']
-         myColumn   = 'lev_meth_cd'
-         if myColumn not in gwCodesD:
-            gwCodesD[myColumn] = []
-         if str(lev_meth_cd) not in gwCodesD[myColumn]:
-            gwCodesD[myColumn].append(str(lev_meth_cd))            
-      
-         if lev_meth_cd == "AIRLINE":
-            lev_meth_cd = "A"
-         elif lev_meth_cd == "AIRLINE CALIBRATED":
-            lev_meth_cd = "C"
-         elif lev_meth_cd == "RECORDER DIGITAL":
-            lev_meth_cd = "F"
-         elif lev_meth_cd == "TRANSDUCER":
-            lev_meth_cd = "F"
-         elif lev_meth_cd == "PRESSURE GAGE":
-            lev_meth_cd = "G"
-         elif lev_meth_cd == "PRESSURE GAGE CALIBRATED":
-            lev_meth_cd = "H"
-         elif lev_meth_cd == "GEOPHYSICAL LOG":
-            lev_meth_cd = "L"
-         elif lev_meth_cd == "MANOMETER":
-            lev_meth_cd = "M"
-         elif lev_meth_cd == "OBSERVED":
-            lev_meth_cd = "O"
-         elif lev_meth_cd == "SONIC":
-            lev_meth_cd = "P"
-         elif lev_meth_cd == "REPORTED":
-            lev_meth_cd = "R"
-         elif lev_meth_cd == "STEEL TAPE":
-            lev_meth_cd = "S"
-         elif lev_meth_cd == "ETAPE":
-            lev_meth_cd = "T"
-         elif lev_meth_cd == "TAPE":
-            lev_meth_cd = "T"
-         elif lev_meth_cd == "ETAPE CALIBRATED":
-            lev_meth_cd = "V"
-         elif lev_meth_cd in ["UNKNOWN", "OTHER"]:
-            lev_meth_cd = "Z"
-
-         #
-         # Skip record no measurement taken
-         #
-         elif lev_meth_cd == "NOT MEASURED":
-            continue
-         elif lev_meth_cd is None:
-            lev_meth_cd = "Z"
-         else:
-            screen_logger.info('OWRD site %s [on %s]: Measuring method "%s" [method_of_water_level_measurement] needs to be assigned (currently set to Z' % (gw_logid, lev_str_dt, lev_meth_cd))
-            lev_meth_cd = "Z"
-
-         gwRecord['lev_meth_cd'] = lev_meth_cd
-          
-         # Set measuring accuracy [NOT in file determined by measurement method]
-         #
-         lev_acy_cd = '0'
-         if lev_meth_cd in ["A", "E", "F", "G", "M", "N", "O", "R", "U", "X", "Z"]:
-            lev_acy_cd = '0'
-         elif lev_meth_cd in ["B", "C", "H", "L", "P", "T"]:
-            lev_acy_cd = '1'
-         elif lev_meth_cd in ["S", "V", "W"]:
-            lev_acy_cd = '2'
-         else:
-            screen_logger.info('OWRD site %s [on %s]: Measuring accuracy determined by measurement method "%s" needs to be assigned (currently set to 0)' % (gw_logid, lev_str_dt, lev_meth_cd))
-            lev_acy_cd = '0'
-           
-         gwRecord['lev_acy_cd'] = lev_acy_cd
-          
-         # Set measuring agency [measurement_source_organization]
-         #
-         lev_agency_cd = gwRecord['measurement_source_organization_desc']
-         myColumn      = 'lev_agency_cd'
-         if myColumn not in gwCodesD:
-            gwCodesD[myColumn] = []
-         if str(lev_agency_cd) not in gwCodesD[myColumn]:
-            gwCodesD[myColumn].append(str(lev_agency_cd))
-            
-         if lev_agency_cd == "OWRD":
-            lev_agency_cd = "OWRD"
-            lev_src_cd    = "S"
-         elif lev_agency_cd == "ODEQ":
-            lev_agency_cd = "ODEQ"
-            lev_src_cd    = "S"
-         elif lev_agency_cd == "USGS":
-            lev_agency_cd = "USGS"
-            lev_src_cd    = "S"
-         elif lev_agency_cd == "CDWR":
-            lev_agency_cd = "CDWR"
-            lev_src_cd    = "S"
-         elif lev_agency_cd in ["DRLR", "DRILLER"]:
-            lev_meth_cd   = "R"
-            lev_agency_cd = "OWRD"
-            lev_src_cd    = "D"
-         elif lev_agency_cd == "OWNR":
-            lev_meth_cd   = "R"
-            lev_agency_cd = "OWRD"
-            lev_src_cd    = "O"
-         elif lev_agency_cd == "OTH":
-            lev_meth_cd   = "R"
-            lev_agency_cd = "OWRD"
-            lev_src_cd    = "Z"
-         elif lev_agency_cd in ["PMPI","CON","RG","PE","CWRE","HCWC","BWA"]:
-            lev_meth_cd   = "R"
-            lev_agency_cd = "OWRD"
-            lev_src_cd    = "G"
-         elif lev_agency_cd == "Bureau of Reclamation":
-            lev_agency_cd = "USBR"
-            lev_src_cd    = "S"
-         elif lev_agency_cd == "Tulelake Irrigation District" or "Tulelake Irrigation District GSA":
-            lev_agency_cd = "CA049 Tulelake Irrigation Distric"
-            lev_src_cd    = "S"
-         elif lev_agency_cd == "Tulelake Irrigation District GSA":
-            lev_agency_cd = "CA049 Tulelake Irrigation Distric"
-            lev_src_cd    = "S"
-         else:
-            screen_logger.info('OWRD site %s: Measuring agency "%s" [measurement_source_organization] needs to be assigned (currently set to OWRD' % (gw_logid, lev_agency_cd))
-            lev_agency_cd = 'OWRD'
-            lev_src_cd    = "S"
-               
-         gwRecord['lev_agency_cd']  = lev_agency_cd
-         gwRecord['lev_src_cd']     = lev_src_cd
-           
-         # Set lev_web_cd
-         #
-         lev_web_cd    = 'N'
-         if len(lev_va) > 0 and len(lev_status_cd) < 1:
-            lev_web_cd    = 'Y'
-            
-         gwRecord['lev_web_cd']     = lev_web_cd
-           
-         # Set remarks
-         #
-         lev_rmk_tx = ''
-
-         # New site
-         #
-         if site_id not in gwInfoD:
-               
-            gwInfoD[site_id] = {}
-
-         # New waterlevel record for site
-         #
-         if lev_dtm not in gwInfoD[site_id].keys():
-
-            gwInfoD[site_id][lev_mst] = {}
-
-         # Prepare values
-         #
-         for myColumn in myGwFields:
-            if myColumn in mySiteFields:
-               gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
-            else:
-               gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
-
-      
-   # Missing OWRD sites for waterlevel information for periodic/recorder wells
-   # ----------------------------------------------------------------------
-   #
-   if len(missSitesL) > 0:
-      tempL  = list(missSitesL)
-      linesL = []
-   
-      while len(tempL) > 0:
-   
-         gw_logid = tempL[0]
-         del tempL[0]
-   
-         # Web request
-         #
-         # https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0000588/gw_measured_water_level/?start_date=1/1/1905&end_date=1/1/2025&public_viewable=
-         #
-         URL          = 'https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/%s/gw_measured_water_level/?start_date=1/1/1900&end_date=1/1/%s&public_viewable=' % (gw_logid, str(endYear))
-         noparmsDict  = {}
-         contentType  = "application/json"
-         timeOut      = 1000
-   
-         #screen_logger.info("Url %s" % URL)
-                    
-         message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
-        
-         if webContent is not None:
-   
-            # Check for empty file
+            # Create a reader object, specifying the tab delimiter
             #
-            if len(webContent) < 1:
-               message = "Empty content return from web request %s" % URL
-               errorMessage(message)
-    
-         # Convert to json format
-         #
-         gwJson       = json.loads(webContent)
+            csvLinesL = list(csv.DictReader(filter(lambda row: row[0]!='#' and len(row) > 0, fh), delimiter='\t'))
 
-         # Total records
-         #
-         numRecords   = gwJson['feature_count']
+    except FileNotFoundError:
+        message = f"Error: The file '{owrd_gw_file}' was not found."
+        screen_logger.info(message)
+        errorMessage(message)
+    except Exception as e:
+        message = f"An error occurred: {e}"
+        screen_logger.info(message)
 
-         # Check for failed request
-         #
-         if numRecords < 1:
-            message = "Warning: OWRD site %s has no OWRD waterlevel measurements available" % gw_logid
-            screen_logger.info(message)
-            continue
+    # Parse data lines
+    #
+    for myRecord in csvLinesL:
 
-         # Parse records
-         #
-         jsonRecords  = gwJson['feature_list']
-   
-         # Process groundwater measurements
-         # -------------------------------------------------
-         #
-         for myRecord in jsonRecords:
-         
-            # Remove site from missing list
-            #
-            if gw_logid in missSitesL:
-               missSitesL.remove(gw_logid)
-         
+        gw_logid = myRecord[keyColumn]
+
+        # Check if site is wanted
+        #
+        if gw_logid in owrdSitesL:
+
             # Set site_id
             #
             site_id = gw_logid
             if gw_logid in owrdSitesD:
-               site_id = owrdSitesD[gw_logid]
+                site_id = owrdSitesD[gw_logid]
 
             # Set record
             #
             gwRecord = {}
-           
+
+            for myColumn in myOwrdFields:
+                gwRecord[myColumn] = str(myRecord[myColumn])
+
             # Set waterlevel
             #
-            lev_va             = str(myRecord['waterlevel_ft_below_land_surface'])
+            lev_va = str(gwRecord['waterlevel_ft_below_land_surface'])
             if lev_va == 'None':
-               lev_va = ''
-            
+                lev_va = ''
+
             gwRecord['lev_va'] = lev_va
 
             # Set water-level date information
             #
-            lev_dt        = myRecord['measured_date'][:10]
-            lev_tm        = myRecord['measured_time'][:5]
+            lev_dtm       = gwRecord['measured_datetime'][:-3]
+            lev_dt        = gwRecord['measured_datetime'][:10]
+            lev_tm        = gwRecord['measured_datetime'][12:-3]
             lev_tz_cd     = ''
             lev_dt_acy_cd = 'D'
-            
-            if lev_tm in ['00:00', '']:
-               lev_tm        = ''
-               wlDate        = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
-               wlDate        = wlDate.replace(hour=4)
-               lev_str_dt    = lev_dt
+
+            if lev_tm in ['00:00', '12:00']:
+                lev_tm        = ''
+                wlDate        = datetime.datetime.strptime(lev_dt, '%m/%d/%Y')
+                wlDate        = wlDate.replace(hour=4)
+                lev_str_dt    = wlDate.strftime('%Y-%m-%d')
+                lev_dt        = lev_str_dt[:10]
             else:
-               lev_str_dt    = '%s %s' % (lev_dt, lev_tm)
-               wlDate        = datetime.datetime.strptime(lev_str_dt, '%Y-%m-%d %H:%M')
-               lev_dt_acy_cd = 'm'
-               lev_tz_cd     = 'PST'
-           
+                tmp_str_dt    = lev_dtm
+                wlDate        = datetime.datetime.strptime(tmp_str_dt, '%m/%d/%Y %H:%M')
+                lev_dt_acy_cd = 'm'
+                lev_tz_cd     = 'PST'
+                lev_str_dt    = wlDate.strftime('%Y-%m-%d %H:%M')
+                lev_dt        = lev_str_dt[:10]
+                lev_tm        = lev_str_dt[11:]
+
+            # Set lev_mst to YYYY-MM-DD to identify duplicate measurements
+            #
+            lev_mst = wlDate.strftime('%Y-%m-%d')
+
             # Convert to UTC time zone
             #
-            gwDate     = wlDate
             wlDate     = wlDate + datetime.timedelta(hours=pst_offset)
             wlDate     = wlDate.replace(tzinfo=datetime.timezone.utc)
             lev_dtm    = wlDate.strftime("%Y-%m-%d %H:%M %Z")
-      
+
             gwRecord['lev_dt']        = lev_dt
             gwRecord['lev_tm']        = lev_tm
             gwRecord['lev_tz_cd']     = lev_tz_cd
             gwRecord['lev_dt_acy_cd'] = lev_dt_acy_cd
             gwRecord['lev_str_dt']    = lev_str_dt
             gwRecord['lev_dtm']       = lev_dtm
-          
+
             # Set lev_dtm to YYYY-MM-DD to identify duplicate measurements
             #
-            lev_dtm = lev_dtm[:10]
+            lev_mst = lev_dtm[:10]
 
             #screen_logger.info('Record %s %s' % (myRecord['measured_date'][:10], myRecord['measured_time'][:5]))
             #screen_logger.info('Site %s Coop %s: %s %s %s' % (site_id, well_log_id, lev_dt, lev_tm, lev_dtm))
-          
-            # Set measuring accuracy
-            #
-            lev_acy_cd = str(myRecord['waterlevel_accuracy'])
-            myColumn   = 'lev_acy_cd'
-            if myColumn not in gwCodesD:
-               gwCodesD[myColumn] = []
-            if str(lev_acy_cd) not in gwCodesD[myColumn]:
-               gwCodesD[myColumn].append(str(lev_acy_cd))
-      
-            if lev_acy_cd == "0.0":
-               lev_acy_cd = '2'
-            elif lev_acy_cd == "0.01":
-               lev_acy_cd = '2'
-            elif lev_acy_cd == "0.02":
-               lev_acy_cd = '2'
-            elif lev_acy_cd == "0.25":
-               lev_acy_cd = '1'
-            elif lev_acy_cd == "0.5":
-               lev_acy_cd = '1'
-            elif lev_acy_cd == "0.1":
-               lev_acy_cd = '1'
-            elif lev_acy_cd == "1.0":
-               lev_acy_cd = '0'
-            elif lev_acy_cd == "2.0":
-               lev_acy_cd = '9'
-            elif lev_acy_cd == "4.0":
-               lev_acy_cd = '9'
-            elif lev_acy_cd == "None":
-               lev_acy_cd = 'U'
-            else:
-               screen_logger.info('OWRD site %s [on %s]: Measuring accuracy "%s" needs to be assigned (currently set to 0 for Unknown' % (wellNumber, lev_str_dt, lev_acy_cd))
-               screen_logger.info(myRecord)
-               lev_acy_cd = '0'
-            
-            gwRecord['lev_acy_cd'] = lev_acy_cd
-           
+
             # Set lev_status_cd
             #
-            lev_status_cd = myRecord['measurement_status_desc']
+            lev_status_cd = gwRecord['measurement_status_desc']
             myColumn   = 'lev_status_cd'
             if myColumn not in gwCodesD:
-               gwCodesD[myColumn] = []
+                gwCodesD[myColumn] = []
             if str(lev_status_cd) not in gwCodesD[myColumn]:
-               gwCodesD[myColumn].append(str(lev_status_cd))
-         
+                gwCodesD[myColumn].append(str(lev_status_cd))
+
             if lev_status_cd is None:
-               lev_status_cd = ''
+                lev_status_cd = ''
             elif lev_status_cd == "STATIC":
-               lev_status_cd = ""
+                lev_status_cd = ""
             elif lev_status_cd == "FLOWING":
-               lev_status_cd = "F"
+                lev_status_cd = "F"
             elif lev_status_cd in ["RISING", "FALLING", "PUMPING"]:
-               lev_status_cd = "P"
+                lev_status_cd = "P"
             elif lev_status_cd in ["UNKNOWN", "OTHER"]:
-               lev_status_cd = 'Z'
+                lev_status_cd = 'Z'
             elif lev_status_cd == "DRY":
-               lev_status_cd = 'D'
+                lev_status_cd = 'D'
             else:
-               screen_logger.info('OWRD site %s [on %s]: Measurement status "%s" needs to be assigned (currently set to Z for Other' % (wellNumber, lev_str_dt, lev_status_cd))
-               lev_status_cd = 'Z'
-               
+                screen_logger.info('OWRD site %s [on %s]: Measurement status "%s" needs to be assigned (currently set to Z for Other' % (gw_logid, lev_str_dt, lev_status_cd))
+                lev_status_cd = 'Z'
+
             gwRecord['lev_status_cd']  = lev_status_cd
-            
+
             # Set measuring method
             #
-            lev_meth_cd = myRecord['method_of_water_level_measurement']
+            lev_meth_cd = gwRecord['method_of_water_level_measurement']
             myColumn   = 'lev_meth_cd'
             if myColumn not in gwCodesD:
-               gwCodesD[myColumn] = []
+                gwCodesD[myColumn] = []
             if str(lev_meth_cd) not in gwCodesD[myColumn]:
-               gwCodesD[myColumn].append(str(lev_meth_cd))            
-      
+                gwCodesD[myColumn].append(str(lev_meth_cd))
+
             if lev_meth_cd == "AIRLINE":
-               lev_meth_cd = "A"
+                lev_meth_cd = "A"
             elif lev_meth_cd == "AIRLINE CALIBRATED":
-               lev_meth_cd = "C"
+                lev_meth_cd = "C"
             elif lev_meth_cd == "TRANSDUCER":
-               lev_meth_cd = "F"
+                lev_meth_cd = "F"
             elif lev_meth_cd == "RECORDER DIGITAL":
-               lev_meth_cd = "F"
+                lev_meth_cd = "F"
+            elif lev_meth_cd == "RECORDER ANALOG":
+                lev_meth_cd = "F"
             elif lev_meth_cd == "PRESSURE GAGE":
-               lev_meth_cd = "G"
+                lev_meth_cd = "G"
             elif lev_meth_cd == "PRESSURE GAGE CALIBRATED":
-               lev_meth_cd = "H"
+                lev_meth_cd = "H"
             elif lev_meth_cd == "GEOPHYSICAL LOG":
-               lev_meth_cd = "L"
+                lev_meth_cd = "L"
             elif lev_meth_cd == "MANOMETER":
-               lev_meth_cd = "M"
+                lev_meth_cd = "M"
             elif lev_meth_cd == "OBSERVED":
-               lev_meth_cd = "O"
+                lev_meth_cd = "O"
+            elif lev_meth_cd == "SONIC":
+                lev_meth_cd = "P"
             elif lev_meth_cd == "REPORTED":
-               lev_meth_cd = "R"
+                lev_meth_cd = "R"
             elif lev_meth_cd == "STEEL TAPE":
-               lev_meth_cd = "S"
+                lev_meth_cd = "S"
             elif lev_meth_cd == "ETAPE":
-               lev_meth_cd = "T"
+                lev_meth_cd = "T"
             elif lev_meth_cd == "TAPE":
-               lev_meth_cd = "T"
+                lev_meth_cd = "T"
             elif lev_meth_cd == "ETAPE CALIBRATED":
-               lev_meth_cd = "V"
+                lev_meth_cd = "V"
             elif lev_meth_cd in ["UNKNOWN", "OTHER"]:
-               lev_meth_cd = "Z"
+                lev_meth_cd = "Z"
+
             #
             # Skip record no measurement taken
             #
             elif lev_meth_cd == "NOT MEASURED":
-               continue
+                continue
             elif lev_meth_cd is None:
-               lev_meth_cd = "Z"
+                lev_meth_cd = "Z"
             else:
-               screen_logger.info('OWRD site %s [on %s]: Measuring method "%s" [method_of_water_level_measurement] needs to be assigned (currently set to Z' % (wellNumber, lev_str_dt, lev_meth_cd))
-               lev_meth_cd = "Z"
+                screen_logger.info('OWRD site %s [on %s]: Measuring method "%s" [method_of_water_level_measurement] needs to be assigned (currently set to Z' % (gw_logid, lev_str_dt, lev_meth_cd))
+                lev_meth_cd = "Z"
 
             gwRecord['lev_meth_cd'] = lev_meth_cd
-           
+
+            # Set measuring accuracy [NOT in file determined by measurement method]
+            #
+            lev_acy_cd = '0'
+            if lev_meth_cd in ["A", "E", "F", "G", "M", "N", "O", "R", "U", "X", "Z"]:
+                lev_acy_cd = '0'
+            elif lev_meth_cd in ["B", "C", "H", "L", "P", "T"]:
+                lev_acy_cd = '1'
+            elif lev_meth_cd in ["S", "V", "W"]:
+                lev_acy_cd = '2'
+            else:
+                screen_logger.info('OWRD site %s [on %s]: Measuring accuracy determined by measurement method "%s" needs to be assigned (currently set to 0)' % (gw_logid, lev_str_dt, lev_meth_cd))
+                lev_acy_cd = '0'
+
+            gwRecord['lev_acy_cd'] = lev_acy_cd
+
             # Set measuring agency [measurement_source_organization]
             #
-            lev_agency_cd = myRecord['measurement_source_organization']
+            lev_agency_cd = gwRecord['measurement_source_organization_desc']
             myColumn      = 'lev_agency_cd'
             if myColumn not in gwCodesD:
-               gwCodesD[myColumn] = []
+                gwCodesD[myColumn] = []
             if str(lev_agency_cd) not in gwCodesD[myColumn]:
-               gwCodesD[myColumn].append(str(lev_agency_cd))
-            
+                gwCodesD[myColumn].append(str(lev_agency_cd))
+
             if lev_agency_cd == "OWRD":
-               lev_agency_cd = "OWRD"
-               lev_src_cd    = "S"
+                lev_agency_cd = "OWRD"
+                lev_src_cd    = "S"
             elif lev_agency_cd == "ODEQ":
-               lev_agency_cd = "ODEQ"
-               lev_src_cd    = "S"
+                lev_agency_cd = "ODEQ"
+                lev_src_cd    = "S"
             elif lev_agency_cd == "USGS":
-               lev_agency_cd = "USGS"
-               lev_src_cd    = "S"
+                lev_agency_cd = "USGS"
+                lev_src_cd    = "S"
             elif lev_agency_cd == "CDWR":
-               lev_agency_cd = "CDWR"
-               lev_src_cd    = "S"
-            elif lev_agency_cd == "DRLR":
-               lev_meth_cd   = "R"
-               lev_agency_cd = "OWRD"
-               lev_src_cd    = "D"
+                lev_agency_cd = "CDWR"
+                lev_src_cd    = "S"
+            elif lev_agency_cd in ["DRLR", "DRILLER"]:
+                lev_meth_cd   = "R"
+                lev_agency_cd = "OWRD"
+                lev_src_cd    = "D"
             elif lev_agency_cd == "OWNR":
-               lev_meth_cd   = "R"
-               lev_agency_cd = "OWRD"
-               lev_src_cd    = "O"
+                lev_meth_cd   = "R"
+                lev_agency_cd = "OWRD"
+                lev_src_cd    = "O"
             elif lev_agency_cd == "OTH":
-               lev_meth_cd   = "R"
-               lev_agency_cd = "OWRD"
-               lev_src_cd    = "Z"
+                lev_meth_cd   = "R"
+                lev_agency_cd = "OWRD"
+                lev_src_cd    = "Z"
             elif lev_agency_cd in ["PMPI","CON","RG","PE","CWRE","HCWC","BWA"]:
-               lev_meth_cd   = "R"
-               lev_agency_cd = "OWRD"
-               lev_src_cd    = "G"
+                lev_meth_cd   = "R"
+                lev_agency_cd = "OWRD"
+                lev_src_cd    = "G"
             elif lev_agency_cd == "Bureau of Reclamation":
-               lev_agency_cd = "USBR"
-               lev_src_cd    = "S"
+                lev_agency_cd = "USBR"
+                lev_src_cd    = "S"
             elif lev_agency_cd == "Tulelake Irrigation District" or "Tulelake Irrigation District GSA":
-               lev_agency_cd = "CA049 Tulelake Irrigation Distric"
-               lev_src_cd    = "S"
+                lev_agency_cd = "CA049 Tulelake Irrigation Distric"
+                lev_src_cd    = "S"
             elif lev_agency_cd == "Tulelake Irrigation District GSA":
-               lev_agency_cd = "CA049 Tulelake Irrigation Distric"
-               lev_src_cd    = "S"
+                lev_agency_cd = "CA049 Tulelake Irrigation Distric"
+                lev_src_cd    = "S"
             else:
-               screen_logger.info('OWRD site %s: Measuring agency "%s" [measurement_source_organization] needs to be assigned (currently set to OWRD' % (site_id, lev_agency_cd))
-               lev_agency_cd = 'OWRD'
-               lev_src_cd    = "S"
-               
+                screen_logger.info('OWRD site %s: Measuring agency "%s" [measurement_source_organization] needs to be assigned (currently set to OWRD' % (gw_logid, lev_agency_cd))
+                lev_agency_cd = 'OWRD'
+                lev_src_cd    = "S"
+
             gwRecord['lev_agency_cd']  = lev_agency_cd
             gwRecord['lev_src_cd']     = lev_src_cd
-           
+
             # Set lev_web_cd
             #
             lev_web_cd    = 'N'
             if len(lev_va) > 0 and len(lev_status_cd) < 1:
-               lev_web_cd    = 'Y'
-               
+                lev_web_cd    = 'Y'
+
             gwRecord['lev_web_cd']     = lev_web_cd
-      
-            # Set site information
-            #
-            if site_id not in gwInfoD:
-               gwInfoD[site_id] = {}
 
-            # New waterlevel record for site
-            #
-            if lev_dtm not in gwInfoD[site_id].keys():
-   
-               gwInfoD[site_id][lev_mst] = {}
-   
-            # Prepare values
-            #
-            for myColumn in myGwFields:
-               if myColumn in mySiteFields:
-                  gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
-               else:
-                  gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
-         
-
-               
-   
-   # Read OWRD recorder waterlevel file
-   # -------------------------------------------------
-   #
-   with open(owrd_rc_file,'r') as f:
-       linesL = f.read().splitlines()
-   
-   # Check for empty file
-   #
-   if len(linesL) < 1:
-      message = "Empty waterlevel file %s" % owrd_rc_file
-      errorMessage(message)
-
-   # Parse for column names [rdb format]
-   #
-   while 1:
-      if len(linesL) < 1:
-         del linesL[0]
-      elif linesL[0][0] == '#':
-         del linesL[0]
-      else:
-         namesL = linesL[0].lower().split('\t')
-         del linesL[0]
-         break
-
-   # Format line in header section
-   #
-   #del linesL[0]
-
-   # Check column names
-   #
-   if keyColumn not in namesL: 
-      message = "Missing index column %s" % keyColumn
-      errorMessage(message)
-
-   # Parse data lines
-   #
-   while len(linesL) > 0:
-      
-      if len(linesL[0]) < 1:
-         del linesL[0]
-         continue
-      
-      if linesL[0][0] == '#':
-         del linesL[0]
-         continue
-
-      Line = linesL[0]
-               
-      del linesL[0]
-      
-      valuesL  = Line.split('\t')
-
-      gw_logid = str(valuesL[ namesL.index(keyColumn) ])
-    
-      # Check if site is wanted
-      #
-      if gw_logid in owrdSitesL:
-                  
-         # Remove site from missing list
-         #
-         if gw_logid in missSitesL:
-            missSitesL.remove(gw_logid)
-            
-         # Set record
-         #
-         gwRecord = {}
-
-         for myColumn in namesL:
-            gwRecord[myColumn] = str(valuesL[ namesL.index(myColumn) ])
-
-         # Set water-level date information
-         #
-         tmp_str_dt    = gwRecord['record_date'][:-6]
-         wlDate        = datetime.datetime.strptime(tmp_str_dt, '%m/%d/%Y %H:%M')
-         lev_str_dt    = wlDate.strftime("%Y-%m-%d %H:%M")
-         lev_dt        = lev_str_dt[:10]
-         lev_tm        = lev_str_dt[:-5]
-         lev_tz_cd     = 'PST'
-         lev_dt_acy_cd = 'm'
-           
-         # Convert to UTC time zone
-         #
-         wlDate        = datetime.datetime.strptime(tmp_str_dt, '%m/%d/%Y %H:%M')
-         wlDate        = wlDate + datetime.timedelta(hours=pst_offset)
-         wlDate        = wlDate.replace(tzinfo=datetime.timezone.utc)
-         lev_dtm       = wlDate.strftime("%Y-%m-%d %H:%M %Z")
-
-         # Set measuring agency information
-         #
-         lev_agency_cd = gwRecord['source_description']
-      
-         # Set record
-         #
-         gwRecord['lev_dt']        = lev_str_dt[:10]
-         gwRecord['lev_tm']        = lev_str_dt[:-5]
-         gwRecord['lev_tz_cd']     = lev_tz_cd
-         gwRecord['lev_dt_acy_cd'] = lev_dt_acy_cd
-         gwRecord['lev_str_dt']    = lev_str_dt
-         gwRecord['lev_dtm']       = lev_dtm
-         gwRecord['lev_agency_cd'] = lev_dtm
-          
-         # Set lev_dtm to YYYY-MM-DD to identify duplicate measurements
-         #
-         lev_dtm = lev_dtm[:10]
-           
-         # Set site_id
-         #
-         site_id = gw_logid
-         if gw_logid in owrdSitesD:
-            site_id = owrdSitesD[gw_logid]
-      
-         # Set site information
-         #
-         if site_id not in rcInfoD:
-            rcInfoD[site_id] = {}
-      
-         # Set lev_dtm to YYYY-MM-DD to identify duplicate measurements
-         #
-         lev_dtm = lev_dtm[:10]
-           
-         # Set site information
-         #
-         if lev_dtm not in rcInfoD[site_id]:
-            rcInfoD[site_id][lev_dtm] = {}
- 
-         # Prepare values
-         #
-         for myColumn in gwRecord.keys():
-            rcInfoD[site_id][lev_dtm][myColumn] = gwRecord[myColumn]
-
-      
-   # Prepare set of sites
-   #
-   owrdSet        = set(owrdSitesL)
-   missingSet     = set(missSitesL)
-   matchSitesL    = list(owrdSet.difference(missingSet))
-   
-   # Period of record of all measurements for each site and counts
-   #
-   for well_log_id in sorted(matchSitesL):
-      
-      site_id = owrdSitesD[well_log_id]
-      
-      totalRecords += len(gwInfoD[site_id])
-      usgsRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
-      owrdRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
-      cdwrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
-      othrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']}))
-            
-      # Static and Non-static measurements
-      #
-      numYRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] == 'Y'}))
-      numNRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] != 'Y'}))
-      
-      # Assign other measurements to OWRD
-      #
-      othrDatesL    = list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']})
-      for gwDate in sorted(othrDatesL):
-         gwInfoD[site_id][gwDate]['lev_agency_cd'] = 'OWRD'
-      
-      # OWRD period of record of periodic measurements for each site
-      #
-      siteRecordsL  = sorted(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
-      BeginDate     = ''
-      EndDate       = ''
-      status        = 'Inactive'
-      if len(siteRecordsL) > 0:
-         BeginDate     = gwInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
-         EndDate       = gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
-         lev_dt_acy_cd = gwInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
-         dateFmt = '%Y-%m-%d'
-         if lev_dt_acy_cd == 'Y':
-            dateFmt = '%Y'
-         elif lev_dt_acy_cd == 'M':
-            dateFmt = '%Y-%m'
-         wlDate = datetime.datetime.strptime(gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
-         wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-         status = 'Inactive'
-         if wlDate >= activeDate:
-            status  = 'Active'
-      else:
-         screen_logger.debug('Site %s has no OWRD periodic or recorder groundwater measurements' % site_id)
-
-      siteInfoD[site_id]['owrd_begin_date']      = BeginDate
-      siteInfoD[site_id]['owrd_end_date']        = EndDate
-      siteInfoD[site_id]['owrd_status']          = status
-      siteInfoD[site_id]['owrd_count']           = len(siteRecordsL)      
-      
-      # Overall period of record of recorder measurements for each site
-      #
-      if site_id in rcInfoD:
-         siteRecordsL  = sorted(list(rcInfoD[site_id].keys()))
-         BeginDate     = rcInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
-         EndDate       = rcInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
-         lev_dt_acy_cd = rcInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
-         dateFmt = '%Y-%m-%d'
-         if lev_dt_acy_cd == 'Y':
-            dateFmt = '%Y'
-         elif lev_dt_acy_cd == 'M':
-            dateFmt = '%Y-%m'
-         wlDate = datetime.datetime.strptime(rcInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
-         wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-         status = 'Inactive'
-         if wlDate >= activeDate:
-            status  = 'Active'
-
-         siteInfoD[site_id]['owrd_rc_status']     = status
-         siteInfoD[site_id]['owrd_rc_begin_date'] = BeginDate
-         siteInfoD[site_id]['owrd_rc_end_date']   = EndDate
-         siteInfoD[site_id]['owrd_rc_count']      = len(rcInfoD[site_id])
-
-         rcRecords                               += len(rcInfoD[site_id])
-
-   activeSitesL     = list({x for x in siteInfoD if siteInfoD[x]['owrd_status'] == 'Active'})
-   activeRecordersL = list({x for x in siteInfoD if siteInfoD[x]['owrd_rc_status'] == 'Active'})
-
-             
-   # Print information
-   #
-   ncols    = 150
-   messages = []
-   messages.append('\n\tProcessed OWRD periodic and recorder measurements')
-   messages.append('\t%s' % (ncols * '-'))
-   messages.append('\t%-79s %10d' % ('Number of sites in collection file', len(siteInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of OWRD sites in collection file', len(owrdSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of OWRD sites in collection file NOT retrieved from OWRD database', len(missSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of Active sites in collection file measured by the OWRD', len(activeSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of OWRD sites in collection file assigned an USGS site number', len(usgsSitesD)))
-   messages.append('\t%-79s %10d' % ('Number of of static periodic measurements for OWRD sites in collection file', numYRecords))
-   messages.append('\t%-79s %10d' % ('Number of of non-static periodic measurements for OWRD sites in collection file', numNRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements made by USGS', usgsRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements made by OWRD', owrdRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements made by CDWR', cdwrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements made by other agencies', othrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements', totalRecords))
-   messages.append('\t%-79s %10d' % ('Number of OWRD recorder sites in collection file from OWRD database', len(rcInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of Active recorder sites in collection file measured by the OWRD', len(activeRecordersL)))
-   messages.append('\t%-79s %10d' % ('Number of recorder measurements', rcRecords))
-   messages.append('\t%s' % (ncols * '-'))
-   if len(matchSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'OWRD periodic sites with OWRD measurements in collection file in OWRD database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Periodic', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for well_log_id in sorted(matchSitesL):
-         site_id = owrdSitesD[well_log_id]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35],
-                                siteInfoD[site_id]['owrd_count'],
-                                siteInfoD[site_id]['owrd_begin_date'],
-                                siteInfoD[site_id]['owrd_end_date'],
-                                siteInfoD[site_id]['owrd_status']
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(rcInfoD.keys()) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'OWRD recorder sites with OWRD measurements in collection file in OWRD database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Recorder', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_id in sorted(rcInfoD.keys()):
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35],
-                                siteInfoD[site_id]['owrd_rc_count'],
-                                siteInfoD[site_id]['owrd_rc_begin_date'],
-                                siteInfoD[site_id]['owrd_rc_end_date'],
-                                siteInfoD[site_id]['owrd_rc_status']
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(missSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'OWRD periodic sites in collection file NOT retrieved from OWRD database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-20s %-20s %-35s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' '))
-      messages.append('\t%s' % (ncols * '-'))
-      for well_log_id in sorted(missSitesL):
-         site_id = owrdSitesD[well_log_id]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35]
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   for myCode in sorted(gwCodesD.keys()):
-      messages.append('')
-      messages.append('\tCode %-70s' % myCode)
-      messages.append('\t%s' % (ncols * '-'))
-      messages.append('\t%s' % '\n\t'.join(gwCodesD[myCode]))
-      messages.append('\t%s' % (ncols * '-'))
-   messages.append('\n')
-
-   screen_logger.info('\n'.join(messages))
-   file_logger.info('\n'.join(messages))
-
-   return gwInfoD
-# =============================================================================
-
-def processCDWR (siteInfoD, mySiteFields, myGwFields):
-
-   gwInfoD      = {}
-   rcInfoD      = {}
-   
-   usgsRecords  = 0
-   owrdRecords  = 0
-   cdwrRecords  = 0
-   othrRecords  = 0
-   totalRecords = 0
-   rcRecords    = 0
-
-   numYRecords  = 0
-   numNRecords  = 0
-
-   gwCodesD     = {}
-   
-   myCdwrFields = [
-                   "_id",
-                   "gwe",
-                   "wlm_org_name",
-                   "wlm_mthd_desc",
-                   "wlm_acc_desc",
-                   "gse_gwe",
-                   "msmt_date",
-                   "site_code",
-                   "wlm_gse",
-                   "wlm_qa_detail",
-                   "coop_org_name",
-                   "source",
-                   "msmt_cmt",
-                   "rank site_code",
-                   "monitoring_program",
-                   "wlm_qa_desc"
-                  ]
- 
-   pst_offset   = 8
-   days_offset  = 365
-   activeDate   = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_offset)
-
-   # Prepare list of site numbers
-   # -------------------------------------------------
-   #
-   usgsSitesD    = dict({siteInfoD[x]['cdwr_id']:siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
-   cdwrSitesD    = dict({siteInfoD[x]['cdwr_id']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
-   cdwrSitesL    = list({siteInfoD[x]['cdwr_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
-   cdwrStationsL = list({siteInfoD[x]['state_well_nmbr'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0 and len(siteInfoD[x]['state_well_nmbr']) > 0})
-   cdwrStationsD = dict({siteInfoD[x]['state_well_nmbr']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0 and len(siteInfoD[x]['state_well_nmbr']) > 0})
-   
-   missSitesL    = list(cdwrSitesL)
-   missStationsL = list(cdwrStationsL)
-
-   # CDWR periodic service
-   # -------------------------------------------------
-   #
-   tempL  = list(cdwrSitesL)
-   nsites = 10
-   linesL = []
-
-   while len(tempL) > 0:
-
-      nList = ",".join(list(map(lambda x: "'%s'" % x, tempL[:nsites])))
-      del tempL[:nsites]
-
-      # Web request
-      #
-      # https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "site_code" IN ('419980N1215455W001', '419978N1214546W001') ORDER BY "site_code", "msmt_date"
-      #
-      URL          = 'https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "site_code" IN (%s) ORDER BY "site_code", "msmt_date"' % nList
-      noparmsDict  = {}
-      contentType  = "application/json"
-      timeOut      = 1000
-
-      screen_logger.debug("Url %s" % URL)
-                 
-      message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
-     
-      screen_logger.debug("webContent %s" % webContent)
-                 
-      if webContent is not None:
-
-         # Check for empty
-         #
-         if len(webContent) < 1:
-            message = "Empty content return from web request %s" % URL
-            errorMessage(message)
-    
-         # Convert to json format
-         #
-         gwJson = json.loads(webContent)
-
-         # Check for failed request
-         #
-         if gwJson['success'] is False:
-            message = "Error: %s for %s content return from web request %s" % (gwJson['error'], URL)
-            errorMessage(message)
-
-         # Total records
-         #
-         numRecords = len(gwJson['result']['records'])
-
-         # Check for failed request
-         #
-         if numRecords < 1:
-            message = "Warning: CWDR sites %s has no waterlevel measurements available" % nList
-            screen_logger.info(message)
-            continue
-
-         # Parse records
-         #
-         jsonRecords  = gwJson['result']['records']
-
-         #print(jsonRecords)
-   
-         # Process groundwater measurements
-         # -------------------------------------------------
-         #
-         for myRecord in jsonRecords:
-
-            # Set record
-            #
-            gwRecord = {}
-
-            # Set record
-            #
-            site_code = myRecord['site_code']
-            
-            # Site ID from collection file
-            #
-            site_id = cdwrSitesD[site_code]
-            
-            # Remove site from missing list
-            #
-            if site_code in missSitesL:
-               missSitesL.remove(site_code)
-           
-            # Set waterlevel
-            #
-            lev_va             = str(myRecord['gse_gwe'])
-            if lev_va == 'None':
-               lev_va = ''
-            
-            gwRecord['lev_va'] = lev_va
-
-            # Set local water-level date information
-            #
-            lev_dt        = myRecord['msmt_date'][:10]
-            lev_tm        = myRecord['msmt_date'][11:]
-            lev_tz_cd     = 'PST'
-            lev_dt_acy_cd = 'D'
-          
-            # Set lev_mst to YYYY-MM-DD to identify duplicate measurements
-            #
-            lev_mst = lev_dt
-
-            if lev_tm in ['00:00:00', '12:00:00']:
-               lev_tm     = ''
-               lev_tz_cd  = ''
-               wlDate     = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
-               lev_str_dt = lev_dt
-               wlDate     = wlDate.replace(hour=12)
-            elif len(lev_tm) < 1:
-               lev_tm     = ''
-               lev_tz_cd  = ''
-               wlDate     = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
-               lev_str_dt = lev_dt
-               wlDate     = wlDate.replace(hour=12)
-            else:
-               lev_tm        = lev_tm[:5]
-               lev_str_dt    = '%s %s' % (lev_dt, lev_tm)
-               wlDate        = datetime.datetime.strptime(lev_str_dt, '%Y-%m-%d %H:%M')
-               wlDate        = wlDate + datetime.timedelta(hours=pst_offset)
-               lev_dt_acy_cd = 'm'
-           
-            # Convert to UTC time zone
-            #
-            wlDate     = wlDate.replace(tzinfo=datetime.timezone.utc)
-            lev_dtm    = wlDate.strftime("%Y-%m-%d %H:%M %Z")
-      
-            gwRecord['lev_dt']        = lev_dt
-            gwRecord['lev_tm']        = lev_tm
-            gwRecord['lev_tz_cd']     = lev_tz_cd
-            gwRecord['lev_dt_acy_cd'] = lev_dt_acy_cd
-            gwRecord['lev_str_dt']    = lev_str_dt
-            gwRecord['lev_dtm']       = lev_dtm
-          
-            # Set measuring accuracy
-            #
-            lev_acy_cd = myRecord['wlm_acc_desc']
-            myColumn   = 'lev_acy_cd'
-            if myColumn not in gwCodesD:
-               gwCodesD[myColumn] = []
-            if str(lev_acy_cd) not in gwCodesD[myColumn]:
-               gwCodesD[myColumn].append(str(lev_acy_cd))
-            
-            if lev_acy_cd == "Water level accuracy to nearest foot":
-               lev_acy_cd = '0'
-            elif lev_acy_cd == "Water level accuracy to nearest tenth of a foot":
-               lev_acy_cd = '1'
-            elif lev_acy_cd == "0.1 Ft":
-               lev_acy_cd = '1'
-            elif lev_acy_cd == "Water level accuracy to nearest hundredth of a foot":
-               lev_acy_cd = '2'
-            elif lev_acy_cd == "0.01 Ft":
-               lev_acy_cd = '2'
-            elif lev_acy_cd == "Water level accuracy to nearest thousandth of a foot":
-               lev_acy_cd = 'U'
-            elif lev_acy_cd == "Water level accuracy is unknown":
-               lev_acy_cd = 'U'
-            elif lev_acy_cd == "Unknown":
-               lev_acy_cd = 'U'
-            elif lev_acy_cd is None:
-               lev_acy_cd = 'U'
-            else:
-               screen_logger.info('CDWR site %s [on %s]: Measuring accuracy "%s" needs to be assigned (currently set to U for Unknown' % (site_id, lev_str_dt, lev_acy_cd))
-               screen_logger.info(myRecord)
-               lev_acy_cd = 'U'
-            
-            gwRecord['lev_acy_cd'] = lev_acy_cd
-           
-            # Set lev_status_cd
-            #
-            lev_status_cd = myRecord['wlm_qa_detail']
-            myColumn   = 'lev_status_cd'
-            if myColumn not in gwCodesD:
-               gwCodesD[myColumn] = []
-            if str(lev_status_cd) not in gwCodesD[myColumn]:
-               gwCodesD[myColumn].append(str(lev_status_cd))
-
-            if lev_status_cd is None:
-               lev_status_cd = ''
-            elif lev_status_cd in ["Good data", "Good quality edited data"]:
-               lev_status_cd = ""
-            elif lev_status_cd == "Recharge or surface water effects near well":
-               lev_status_cd = "J"
-            elif lev_status_cd == "Casing leaking or wet":
-               lev_status_cd = "K"
-            elif lev_status_cd == "Measurement Discontinued":
-               lev_status_cd = "N"
-            elif lev_status_cd in ["Can't get tape in casing", "Tape hung up"]:
-               lev_status_cd = "O"
-            elif lev_status_cd == "Pumping":
-               lev_status_cd = "P"
-            elif lev_status_cd == "Pumped recently":
-               lev_status_cd = "R"
-            elif lev_status_cd == "Nearby pump operating":
-               lev_status_cd = "S"
-            elif lev_status_cd == "Oil or foreign substance in casing":
-               lev_status_cd = "V"
-            elif lev_status_cd == "Well has been destroyed":
-               lev_status_cd = "W"
-            elif lev_status_cd in ["Temporarily inaccessible",
-                                    "Pump house locked",
-                                    "Special/Other",                                    
-                                    "Other",
-                                    "Unable to locate well",
-                                    "Caved or deepened",
-                                    "Acoustical sounder",
-                                    "Unknown Measurement Quality",
-                                    "Provisional measurement",
-                                    "Estimated Data"
-                                   ]:
-               lev_status_cd = "Z"
-            else:
-               screen_logger.info('CDWR site %s [on %s]: Measurement status "%s" needs to be assigned (currently set to U for Reported' % (site_id, lev_str_dt, lev_status_cd))
-               lev_status_cd = 'U'
-               
-            gwRecord['lev_status_cd']  = lev_status_cd
-            
-            # Set measuring method
-            #
-            lev_meth_cd = myRecord['wlm_mthd_desc']
-            myColumn   = 'lev_meth_cd'
-            if myColumn not in gwCodesD:
-               gwCodesD[myColumn] = []
-            if str(lev_meth_cd) not in gwCodesD[myColumn]:
-               gwCodesD[myColumn].append(str(lev_meth_cd))
-            
-            if lev_meth_cd == "Electronic pressure transducer":
-               lev_meth_cd = "F"
-            elif lev_meth_cd == "Acoustic or sonic sounder":
-               lev_meth_cd = "P"
-            elif lev_meth_cd == "Steel tape measurement":
-               lev_meth_cd = "S"
-            elif lev_meth_cd == "Electric sounder measurement":
-               lev_meth_cd = "T"
-            elif lev_meth_cd == "Other":
-               lev_meth_cd = "Z"
-            elif lev_meth_cd == "Airline measurement, pressure gage, or manometer":
-               lev_meth_cd = "A"
-            # Depending on accuracy, airline is to nearest foot, pressure gage and manometer (find out accuracy)
-            #  Will determine the method
-            elif lev_meth_cd == "Unknown":
-               lev_meth_cd = "R"
-            elif lev_meth_cd is None:
-               lev_meth_cd = "R"
-            else:
-               screen_logger.info('CDWR site %s [on %s]: Measuring method "%s" [wlm_mthd_desc] needs to be assigned (currently set to R' % (site_id, lev_str_dt, lev_meth_cd))
-               lev_meth_cd = "R"
-
-            gwRecord['lev_meth_cd'] = lev_meth_cd
-           
-            # Set measuring agency [coop_org_name]
-            #
-            lev_agency_cd = myRecord['coop_org_name']
-            myColumn   = 'lev_agency_cd'
-            if myColumn not in gwCodesD:
-               gwCodesD[myColumn] = []
-            if str(lev_agency_cd) not in gwCodesD[myColumn]:
-               gwCodesD[myColumn].append(str(lev_agency_cd))
-            
-            if lev_agency_cd == "Department of Water Resources":
-               lev_agency_cd = "CDWR"
-            elif lev_agency_cd == "United States Geological Survey":
-               lev_agency_cd = "USGS"
-            elif lev_agency_cd == "Bureau of Reclamation":
-               lev_agency_cd = "USBR"
-            elif lev_agency_cd == "Tulelake Irrigation District" or "Tulelake Irrigation District GSA":
-               lev_agency_cd = "CA049 Tulelake Irrigation District"
-            elif lev_agency_cd == "Tulelake Irrigation District GSA":
-               lev_agency_cd = "CA049 Tulelake Irrigation District"
-            else:
-               screen_logger.info('CDWR site %s: Measuring agency "%s" [coop_org_name] needs to be assigned (currently set to CDWR' % (site_id, lev_agency_cd))
-               lev_acy_cd = 'CDWR'
-               
-            gwRecord['lev_agency_cd']  = lev_agency_cd
-          
-            # Set source agency [wlm_org_name]
-            #
-            lev_src_cd = myRecord['wlm_org_name']
-            myColumn   = 'lev_src_cd'
-            if myColumn not in gwCodesD:
-               gwCodesD[myColumn] = []
-            if str(lev_src_cd) not in gwCodesD[myColumn]:
-               gwCodesD[myColumn].append(str(lev_src_cd))
-            
-            if lev_src_cd == "Department of Water Resources":
-               lev_src_cd = "CDWR"
-            elif lev_src_cd == "Bureau of Reclamation":
-               lev_src_cd = "USBR"
-            elif lev_src_cd == "Tulelake Irrigation District" or "Tulelake Irrigation District GSA":
-               lev_src_cd = "CA049 Tulelake Irrigation District"
-            elif lev_src_cd == "Tulelake Irrigation District GSA":
-               lev_src_cd = "CA049 Tulelake Irrigation District"
-            else:
-               screen_logger.info('CDWR site %s: Measuring source agency "%s" [wlm_org_name] needs to be assigned (currently set to CDWR' % (site_id, lev_src_cd))
-               lev_src_cd = 'CDWR'
-
-            # Set source agency if measuring agency is USGS
-            #
-            if lev_agency_cd == "USGS":
-               lev_src_cd = "USGS"
-               
-            if lev_src_cd == lev_agency_cd:
-               lev_src_cd = 'S'
-            else:
-               #screen_logger.info('CDWR site %s: Measuring agency "%s" [coop_org_name] Measuring agency "%s" [coop_org_name]' % (site_id, lev_agency_cd, lev_src_cd))
-               lev_src_cd = 'A'
-               
-            gwRecord['lev_src_cd'] = lev_src_cd
-           
-            # Set lev_web_cd
-            #
-            lev_web_cd = 'N'
-            if len(lev_va) > 0 and len(lev_status_cd) < 1:
-               lev_web_cd = 'Y'
-               
-            gwRecord['lev_web_cd'] = lev_web_cd
-           
             # Set remarks
             #
-            lev_rmk_tx = myRecord['msmt_cmt']
-            lev_rmk_tx = myRecord['source']
-            if lev_rmk_tx is None:
-               lev_rmk_tx = ''
-            gwRecord['lev_rmk_tx'] = lev_rmk_tx
+            lev_rmk_tx = ''
 
             # New site
             #
             if site_id not in gwInfoD:
-               
-               gwInfoD[site_id] = {}
+
+                gwInfoD[site_id] = {}
 
             # New waterlevel record for site
             #
-            if lev_mst not in gwInfoD[site_id].keys():
+            if lev_dtm not in gwInfoD[site_id].keys():
 
-               gwInfoD[site_id][lev_mst] = {}
+                gwInfoD[site_id][lev_mst] = {}
 
             # Prepare values
             #
             for myColumn in myGwFields:
-               if myColumn in mySiteFields:
-                  gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
-               else:
-                  gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
+                if myColumn in mySiteFields:
+                    gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
+                else:
+                    gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
 
-                  
-   # CDWR recorder service
-   # -------------------------------------------------
-   #
-   tempL  = list(cdwrStationsL)
-   nsites = 10
-   linesL = []
 
-   while len(tempL) > 0:
+    # Missing OWRD sites for waterlevel information for periodic/recorder wells
+    # ----------------------------------------------------------------------
+    #
+    if len(missSitesL) > 0:
+        tempL  = list(missSitesL)
+        linesL = []
 
-      nList = ",".join(list(map(lambda x: "'%s'" % x, tempL[:nsites])))
-      del tempL[:nsites]
+        while len(tempL) > 0:
 
-      # Web request
-      #
-      # https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "84e02633-00ca-47e8-97ec-c0093313ddcd" WHERE "STATION" IN ('46N05E21M001M', '46N05E22D001M')
-      #
-      URL          = 'https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "84e02633-00ca-47e8-97ec-c0093313ddcd" WHERE "STATION" IN (%s)' % nList
-      noparmsDict  = {}
-      contentType  = "application/json"
-      timeOut      = 1000
+            gw_logid = tempL[0]
+            del tempL[0]
 
-      screen_logger.debug("Url %s" % URL)
-                 
-      message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
-     
-      screen_logger.debug("webContent %s" % webContent)
-                 
-      if webContent is not None:
+            # Web request
+            #
+            # https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/KLAM0000588/gw_measured_water_level/?start_date=1/1/1905&end_date=1/1/2025&public_viewable=
+            #
+            URL          = 'https://apps.wrd.state.or.us/apps/gw/gw_data_rws/api/%s/gw_measured_water_level/?start_date=1/1/1900&end_date=1/1/%s&public_viewable=' % (gw_logid, str(endYear))
+            noparmsDict  = {}
+            contentType  = "application/json"
+            timeOut      = 1000
 
-         # Check for empty
-         #
-         if len(webContent) < 1:
-            message = "Empty content return from web request %s" % URL
-            errorMessage(message)
-    
-         # Convert to json format
-         #
-         gwJson = json.loads(webContent)
+            #screen_logger.info("Url %s" % URL)
 
-         # Check for failed request
-         #
-         if gwJson['success'] is False:
-            message = "Error: %s for %s content return from web request %s" % (gwJson['error'], URL)
-            errorMessage(message)
+            message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
 
-         # Total records
-         #
-         numRecords = len(gwJson['result']['records'])
+            if webContent is not None:
 
-         # Check for failed request
-         #
-         if numRecords < 1:
-            message = "Warning: CWDR sites %s has no waterlevel measurements available" % nList
-            screen_logger.info(message)
-            continue
+                # Check for empty file
+                #
+                if len(webContent) < 1:
+                    message = "Empty content return from web request %s" % URL
+                    errorMessage(message)
 
-         # Parse records
-         #
-         jsonRecords  = gwJson['result']['records']
+            # Convert to json format
+            #
+            gwJson       = json.loads(webContent)
 
-         #print(jsonRecords)
-   
-         # Process groundwater measurements
-         # -------------------------------------------------
-         #
-         for myRecord in jsonRecords:
+            # Total records
+            #
+            numRecords   = gwJson['feature_count']
+
+            # Check for failed request
+            #
+            if numRecords < 1:
+                message = "Warning: OWRD site %s has no OWRD waterlevel measurements available" % gw_logid
+                screen_logger.info(message)
+                continue
+
+            # Parse records
+            #
+            jsonRecords  = gwJson['feature_list']
+
+            # Process groundwater measurements
+            # -------------------------------------------------
+            #
+            for myRecord in jsonRecords:
+
+                # Remove site from missing list
+                #
+                if gw_logid in missSitesL:
+                    missSitesL.remove(gw_logid)
+
+                # Set site_id
+                #
+                site_id = gw_logid
+                if gw_logid in owrdSitesD:
+                    site_id = owrdSitesD[gw_logid]
+
+                # Set record
+                #
+                gwRecord = {}
+
+                # Set waterlevel
+                #
+                lev_va             = str(myRecord['waterlevel_ft_below_land_surface'])
+                if lev_va == 'None':
+                    lev_va = ''
+
+                gwRecord['lev_va'] = lev_va
+
+                # Set water-level date information
+                #
+                lev_dt        = myRecord['measured_date'][:10]
+                lev_tm        = myRecord['measured_time'][:5]
+                lev_tz_cd     = ''
+                lev_dt_acy_cd = 'D'
+
+                if lev_tm in ['00:00', '']:
+                    lev_tm        = ''
+                    wlDate        = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
+                    wlDate        = wlDate.replace(hour=4)
+                    lev_str_dt    = lev_dt
+                else:
+                    lev_str_dt    = '%s %s' % (lev_dt, lev_tm)
+                    wlDate        = datetime.datetime.strptime(lev_str_dt, '%Y-%m-%d %H:%M')
+                    lev_dt_acy_cd = 'm'
+                    lev_tz_cd     = 'PST'
+
+                # Convert to UTC time zone
+                #
+                gwDate     = wlDate
+                wlDate     = wlDate + datetime.timedelta(hours=pst_offset)
+                wlDate     = wlDate.replace(tzinfo=datetime.timezone.utc)
+                lev_dtm    = wlDate.strftime("%Y-%m-%d %H:%M %Z")
+
+                gwRecord['lev_dt']        = lev_dt
+                gwRecord['lev_tm']        = lev_tm
+                gwRecord['lev_tz_cd']     = lev_tz_cd
+                gwRecord['lev_dt_acy_cd'] = lev_dt_acy_cd
+                gwRecord['lev_str_dt']    = lev_str_dt
+                gwRecord['lev_dtm']       = lev_dtm
+
+                # Set lev_dtm to YYYY-MM-DD to identify duplicate measurements
+                #
+                lev_mst = lev_dtm[:10]
+
+                #screen_logger.info('Record %s %s' % (myRecord['measured_date'][:10], myRecord['measured_time'][:5]))
+                #screen_logger.info('Site %s Coop %s: %s %s %s' % (site_id, well_log_id, lev_dt, lev_tm, lev_dtm))
+
+                # Set measuring accuracy
+                #
+                lev_acy_cd = str(myRecord['waterlevel_accuracy'])
+                myColumn   = 'lev_acy_cd'
+                if myColumn not in gwCodesD:
+                    gwCodesD[myColumn] = []
+                if str(lev_acy_cd) not in gwCodesD[myColumn]:
+                    gwCodesD[myColumn].append(str(lev_acy_cd))
+
+                if lev_acy_cd == "0.0":
+                    lev_acy_cd = '2'
+                elif lev_acy_cd == "0.01":
+                    lev_acy_cd = '2'
+                elif lev_acy_cd == "0.02":
+                    lev_acy_cd = '2'
+                elif lev_acy_cd == "0.05":
+                    lev_acy_cd = '2'
+                elif lev_acy_cd == "0.2":
+                    lev_acy_cd = '1'
+                elif lev_acy_cd == "0.25":
+                    lev_acy_cd = '1'
+                elif lev_acy_cd == "0.3":
+                    lev_acy_cd = '1'
+                elif lev_acy_cd == "0.5":
+                    lev_acy_cd = '1'
+                elif lev_acy_cd == "0.1":
+                    lev_acy_cd = '1'
+                elif lev_acy_cd == "1.0":
+                    lev_acy_cd = '0'
+                elif lev_acy_cd == "2.0":
+                    lev_acy_cd = '9'
+                elif lev_acy_cd == "4.0":
+                    lev_acy_cd = '9'
+                elif lev_acy_cd == "None":
+                    lev_acy_cd = 'U'
+                else:
+                    screen_logger.info('OWRD site %s [on %s]: Measuring accuracy "%s" needs to be assigned (currently set to 0 for Unknown' % (site_id, lev_str_dt, lev_acy_cd))
+                    screen_logger.info(myRecord)
+                    lev_acy_cd = '0'
+
+                gwRecord['lev_acy_cd'] = lev_acy_cd
+
+                # Set lev_status_cd
+                #
+                lev_status_cd = myRecord['measurement_status_desc']
+                myColumn   = 'lev_status_cd'
+                if myColumn not in gwCodesD:
+                    gwCodesD[myColumn] = []
+                if str(lev_status_cd) not in gwCodesD[myColumn]:
+                    gwCodesD[myColumn].append(str(lev_status_cd))
+
+                if lev_status_cd is None:
+                    lev_status_cd = ''
+                elif lev_status_cd == "STATIC":
+                    lev_status_cd = ""
+                elif lev_status_cd == "FLOWING":
+                    lev_status_cd = "F"
+                elif lev_status_cd in ["RISING", "FALLING", "PUMPING"]:
+                    lev_status_cd = "P"
+                elif lev_status_cd in ["UNKNOWN", "OTHER"]:
+                    lev_status_cd = 'Z'
+                elif lev_status_cd == "DRY":
+                    lev_status_cd = 'D'
+                else:
+                    screen_logger.info('OWRD site %s [on %s]: Measurement status "%s" needs to be assigned (currently set to Z for Other' % (site_id, lev_str_dt, lev_status_cd))
+                    lev_status_cd = 'Z'
+
+                gwRecord['lev_status_cd']  = lev_status_cd
+
+                # Set measuring method
+                #
+                lev_meth_cd = myRecord['method_of_water_level_measurement']
+                myColumn   = 'lev_meth_cd'
+                if myColumn not in gwCodesD:
+                    gwCodesD[myColumn] = []
+                if str(lev_meth_cd) not in gwCodesD[myColumn]:
+                    gwCodesD[myColumn].append(str(lev_meth_cd))
+
+                if lev_meth_cd == "AIRLINE":
+                    lev_meth_cd = "A"
+                elif lev_meth_cd == "AIRLINE CALIBRATED":
+                    lev_meth_cd = "C"
+                elif lev_meth_cd == "TRANSDUCER":
+                    lev_meth_cd = "F"
+                elif lev_meth_cd == "RECORDER DIGITAL":
+                    lev_meth_cd = "F"
+                elif lev_meth_cd == "RECORDER ANALOG":
+                    lev_meth_cd = "F"
+                elif lev_meth_cd == "PRESSURE GAGE":
+                    lev_meth_cd = "G"
+                elif lev_meth_cd == "PRESSURE GAGE CALIBRATED":
+                    lev_meth_cd = "H"
+                elif lev_meth_cd == "GEOPHYSICAL LOG":
+                    lev_meth_cd = "L"
+                elif lev_meth_cd == "MANOMETER":
+                    lev_meth_cd = "M"
+                elif lev_meth_cd == "OBSERVED":
+                    lev_meth_cd = "O"
+                elif lev_meth_cd == "SONIC":
+                    lev_meth_cd = "P"
+                elif lev_meth_cd == "REPORTED":
+                    lev_meth_cd = "R"
+                elif lev_meth_cd == "STEEL TAPE":
+                    lev_meth_cd = "S"
+                elif lev_meth_cd == "ETAPE":
+                    lev_meth_cd = "T"
+                elif lev_meth_cd == "TAPE":
+                    lev_meth_cd = "T"
+                elif lev_meth_cd == "ETAPE CALIBRATED":
+                    lev_meth_cd = "V"
+                elif lev_meth_cd in ["UNKNOWN", "OTHER"]:
+                    lev_meth_cd = "Z"
+                #
+                # Skip record no measurement taken
+                #
+                elif lev_meth_cd == "NOT MEASURED":
+                    continue
+                elif lev_meth_cd is None:
+                    lev_meth_cd = "Z"
+                else:
+                    screen_logger.info('OWRD site %s [on %s]: Measuring method "%s" [method_of_water_level_measurement] needs to be assigned (currently set to Z' % (site_id, lev_str_dt, lev_meth_cd))
+                    lev_meth_cd = "Z"
+
+                gwRecord['lev_meth_cd'] = lev_meth_cd
+
+                # Set measuring agency [measurement_source_organization]
+                #
+                lev_agency_cd = myRecord['measurement_source_organization']
+                myColumn      = 'lev_agency_cd'
+                if myColumn not in gwCodesD:
+                    gwCodesD[myColumn] = []
+                if str(lev_agency_cd) not in gwCodesD[myColumn]:
+                    gwCodesD[myColumn].append(str(lev_agency_cd))
+
+                if lev_agency_cd == "OWRD":
+                    lev_agency_cd = "OWRD"
+                    lev_src_cd    = "S"
+                elif lev_agency_cd == "ODEQ":
+                    lev_agency_cd = "ODEQ"
+                    lev_src_cd    = "S"
+                elif lev_agency_cd == "USGS":
+                    lev_agency_cd = "USGS"
+                    lev_src_cd    = "S"
+                elif lev_agency_cd == "CDWR":
+                    lev_agency_cd = "CDWR"
+                    lev_src_cd    = "S"
+                elif lev_agency_cd == "DRLR":
+                    lev_meth_cd   = "R"
+                    lev_agency_cd = "OWRD"
+                    lev_src_cd    = "D"
+                elif lev_agency_cd == "OWNR":
+                    lev_meth_cd   = "R"
+                    lev_agency_cd = "OWRD"
+                    lev_src_cd    = "O"
+                elif lev_agency_cd == "OTH":
+                    lev_meth_cd   = "R"
+                    lev_agency_cd = "OWRD"
+                    lev_src_cd    = "Z"
+                elif lev_agency_cd in ["PMPI","CON","RG","PE","CWRE","HCWC","BWA"]:
+                    lev_meth_cd   = "R"
+                    lev_agency_cd = "OWRD"
+                    lev_src_cd    = "G"
+                elif lev_agency_cd == "Bureau of Reclamation":
+                    lev_agency_cd = "USBR"
+                    lev_src_cd    = "S"
+                elif lev_agency_cd == "Tulelake Irrigation District" or "Tulelake Irrigation District GSA":
+                    lev_agency_cd = "CA049 Tulelake Irrigation Distric"
+                    lev_src_cd    = "S"
+                elif lev_agency_cd == "Tulelake Irrigation District GSA":
+                    lev_agency_cd = "CA049 Tulelake Irrigation Distric"
+                    lev_src_cd    = "S"
+                else:
+                    screen_logger.info('OWRD site %s: Measuring agency "%s" [measurement_source_organization] needs to be assigned (currently set to OWRD' % (site_id, lev_agency_cd))
+                    lev_agency_cd = 'OWRD'
+                    lev_src_cd    = "S"
+
+                gwRecord['lev_agency_cd']  = lev_agency_cd
+                gwRecord['lev_src_cd']     = lev_src_cd
+
+                # Set lev_web_cd
+                #
+                lev_web_cd    = 'N'
+                if len(lev_va) > 0 and len(lev_status_cd) < 1:
+                    lev_web_cd    = 'Y'
+
+                gwRecord['lev_web_cd']     = lev_web_cd
+
+                # Set site information
+                #
+                if site_id not in gwInfoD:
+                    gwInfoD[site_id] = {}
+
+                # New waterlevel record for site
+                #
+                if lev_dtm not in gwInfoD[site_id].keys():
+
+                    gwInfoD[site_id][lev_mst] = {}
+
+                # Prepare values
+                #
+                for myColumn in myGwFields:
+                    if myColumn in mySiteFields:
+                        gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
+                    else:
+                        gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
+
+
+    # Read OWRD recorder waterlevel file
+    # -------------------------------------------------
+    #
+    csvLinesL = []
+    try:
+        with open(owrd_rc_file, newline='', encoding='utf-8') as fh:
+
+            # Create a reader object, specifying the tab delimiter
+            #
+            csvLinesL = list(csv.DictReader(filter(lambda row: row[0]!='#' and len(row) > 0, fh), delimiter='\t'))
+
+    except FileNotFoundError:
+        message = f"Error: The file '{owrd_rc_file}' was not found."
+        screen_logger.info(message)
+        errorMessage(message)
+    except Exception as e:
+        message = f"An error occurred: {e}"
+        screen_logger.info(message)
+
+    # Parse data lines
+    #
+    for myRecord in csvLinesL:
+
+        gw_logid = myRecord[keyColumn]
+
+        # Check if site is wanted
+        #
+        if gw_logid in owrdSitesL:
+
+            # Remove site from missing list
+            #
+            if gw_logid in missSitesL:
+                missSitesL.remove(gw_logid)
 
             # Set record
             #
             gwRecord = {}
 
-            # Set record
-            #
-            station = myRecord['STATION']
-            
-            # Site ID from collection file
-            #
-            site_id = cdwrStationsD[station]
-            
-            # Remove site from missing list
-            #
-            if station in missStationsL:
-               missStationsL.remove(station)
-     
             # Set water-level date information
             #
-            lev_str_dt    = myRecord['MSMT_DATE'][:10]
+            tmp_str_dt    = myRecord['record_date'][:-6]
+            wlDate        = datetime.datetime.strptime(tmp_str_dt, '%m/%d/%Y %H:%M')
+            lev_str_dt    = wlDate.strftime("%Y-%m-%d %H:%M")
             lev_dt        = lev_str_dt[:10]
-            lev_tm        = '12:00'
+            lev_tm        = lev_str_dt[:-5]
             lev_tz_cd     = 'PST'
-            lev_dt_acy_cd = 'D'
-            lev_dtm       = lev_str_dt
-   
+            lev_dt_acy_cd = 'm'
+
+            # Convert to UTC time zone
+            #
+            wlDate        = datetime.datetime.strptime(tmp_str_dt, '%m/%d/%Y %H:%M')
+            wlDate        = wlDate + datetime.timedelta(hours=pst_offset)
+            wlDate        = wlDate.replace(tzinfo=datetime.timezone.utc)
+            lev_dtm       = wlDate.strftime("%Y-%m-%d %H:%M %Z")
+
             # Set measuring agency information
             #
-            lev_agency_cd = 'CDWR'
-         
+            lev_agency_cd = myRecord['source_description']
+
             # Set record
             #
             gwRecord['lev_dt']        = lev_str_dt[:10]
@@ -3605,315 +1796,1031 @@ def processCDWR (siteInfoD, mySiteFields, myGwFields):
             gwRecord['lev_str_dt']    = lev_str_dt
             gwRecord['lev_dtm']       = lev_dtm
             gwRecord['lev_agency_cd'] = lev_dtm
-              
+
+            # Set lev_dtm to YYYY-MM-DD to identify duplicate measurements
+            #
+            lev_dtm = lev_dtm[:10]
+
             # Set site_id
             #
-            site_id = station
-            if station in cdwrStationsD:
-               site_id = cdwrStationsD[station]
-         
+            site_id = gw_logid
+            if gw_logid in owrdSitesD:
+                site_id = owrdSitesD[gw_logid]
+
             # Set site information
             #
             if site_id not in rcInfoD:
-               rcInfoD[site_id] = {}
-              
+                rcInfoD[site_id] = {}
+
+            # Set lev_dtm to YYYY-MM-DD to identify duplicate measurements
+            #
+            lev_mst = lev_dtm[:10]
+
             # Set site information
             #
-            if lev_dtm not in rcInfoD[site_id]:
-               rcInfoD[site_id][lev_dtm] = {}
-    
+            if lev_mst not in rcInfoD[site_id]:
+                rcInfoD[site_id][lev_mst] = {}
+
             # Prepare values
             #
             for myColumn in gwRecord.keys():
-               rcInfoD[site_id][lev_dtm][myColumn] = gwRecord[myColumn]
-               
+                rcInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
 
-   # Prepare set of sites
-   #
-   cdwrSet        = set(cdwrSitesL)
-   missingSet     = set(missSitesL)
-   matchSitesL    = list(cdwrSet.difference(missingSet))
-   
-   # Overall period of record of all measurements for each site and counts
-   #
-   for site_code in sorted(matchSitesL):
-      
-      site_id = cdwrSitesD[site_code]
-      
-      # Counts
-      #
-      totalRecords += len(gwInfoD[site_id])
-      usgsRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
-      owrdRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
-      cdwrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
-      othrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']}))
-      
-      # Static and Non-static measurements
-      #
-      numYRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] == 'Y'}))
-      numNRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] != 'Y'}))
-      
-      # Assign other measurements to CDWR
-      #
-      othrDatesL    = list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']})
-      for gwDate in sorted(othrDatesL):
-         gwInfoD[site_id][gwDate]['lev_agency_cd'] = 'CDWR'
-      
-      # CDWR period of record of periodic measurements for each site
-      #
-      siteRecordsL  = sorted(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
-      BeginDate     = ''
-      EndDate       = ''
-      status        = 'Inactive'
-      if len(siteRecordsL) > 0:
-         BeginDate     = gwInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
-         EndDate       = gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
-         lev_dt_acy_cd = gwInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
-         dateFmt = '%Y-%m-%d'
-         if lev_dt_acy_cd == 'Y':
-            dateFmt = '%Y'
-         elif lev_dt_acy_cd == 'M':
-            dateFmt = '%Y-%m'
-         wlDate = datetime.datetime.strptime(gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
-         wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-         status = 'Inactive'
-         if wlDate >= activeDate:
-            status  = 'Active'
-      else:
-         screen_logger.debug('Site %s has no CDWR periodic or recorder groundwater measurements' % site_id)
 
-      siteInfoD[site_id]['cdwr_begin_date']      = BeginDate
-      siteInfoD[site_id]['cdwr_end_date']        = EndDate
-      siteInfoD[site_id]['cdwr_status']          = status
-      siteInfoD[site_id]['cdwr_count']           = len(siteRecordsL)      
-      
-      # CDWR period of record of recorder measurements for each site
-      #
-      if site_id in rcInfoD:
-         siteRecordsL  = sorted(list(rcInfoD[site_id].keys()))
-         BeginDate     = rcInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
-         EndDate       = rcInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
-         lev_dt_acy_cd = rcInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
-         dateFmt = '%Y-%m-%d'
-         if lev_dt_acy_cd == 'Y':
-            dateFmt = '%Y'
-         elif lev_dt_acy_cd == 'M':
-            dateFmt = '%Y-%m'
-         wlDate = datetime.datetime.strptime(rcInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
-         wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-         status = 'Inactive'
-         if wlDate >= activeDate:
-            status  = 'Active'
+    # Prepare set of sites
+    #
+    owrdSet        = set(owrdSitesL)
+    missingSet     = set(missSitesL)
+    matchSitesL    = list(owrdSet.difference(missingSet))
 
-         siteInfoD[site_id]['cdwr_rc_status']     = status
-         siteInfoD[site_id]['cdwr_rc_begin_date'] = BeginDate
-         siteInfoD[site_id]['cdwr_rc_end_date']   = EndDate
-         siteInfoD[site_id]['cdwr_rc_count']      = len(rcInfoD[site_id])
+    # Period of record of all measurements for each site and counts
+    #
+    for well_log_id in sorted(matchSitesL):
 
-         rcRecords                               += len(rcInfoD[site_id])
+        site_id = owrdSitesD[well_log_id]
 
-   activeSitesL      = list({x for x in siteInfoD if siteInfoD[x]['cdwr_status'] == 'Active'})
-   activeRecordersL  = list({x for x in siteInfoD if siteInfoD[x]['cdwr_rc_status'] == 'Active'})
-            
-   # Print information
-   #
-   ncols    = 150
-   messages = []
-   messages.append('\n\tProcessed CDWR periodic and recorder measurements')
-   messages.append('\t%s' % (ncols * '-'))
-   messages.append('\t%-79s %10d' % ('Number of sites in collection file', len(siteInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of CDWR sites in collection file', len(cdwrSet)))
-   messages.append('\t%-79s %10d' % ('Number of CDWR sites in collection file NOT retrieved from CDWR database', len(missSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of Active sites in collection file measured by the CDWR', len(activeSitesL)))
-   messages.append('\t%-79s %10d' % ('Number of CDWR sites in collection file assigned an USGS site number', len(usgsSitesD)))
-   messages.append('\t%-79s %10d' % ('Number of of static periodic measurements', numYRecords))
-   messages.append('\t%-79s %10d' % ('Number of of non-static periodic measurements', numNRecords))
-   messages.append('\t%-79s %10d' % ('Number of USGS periodic measurements', usgsRecords))
-   messages.append('\t%-79s %10d' % ('Number of OWRD periodic measurements', owrdRecords))
-   messages.append('\t%-79s %10d' % ('Number of CDWR periodic measurements', cdwrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements made by other agencies', othrRecords))
-   messages.append('\t%-79s %10d' % ('Number of periodic measurements', totalRecords))
-   messages.append('\t%-79s %10d' % ('Number of CDWR recorder sites in collection file from CDWR database', len(rcInfoD)))
-   messages.append('\t%-79s %10d' % ('Number of Active recorder sites in collection file measured by the CDWR', len(activeRecordersL)))
-   messages.append('\t%-79s %10d' % ('Number of recorder measurements', rcRecords))
-   messages.append('\t%s' % (ncols * '-'))
-   if len(matchSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'CDWR periodic sites with CDWR measurements in collection file in CDWR database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Periodic', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for cdwr_id in sorted(matchSitesL):
-         site_id = cdwrSitesD[cdwr_id]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35],
-                                siteInfoD[site_id]['cdwr_count'],
-                                siteInfoD[site_id]['cdwr_begin_date'],
-                                siteInfoD[site_id]['cdwr_end_date'],
-                                siteInfoD[site_id]['cdwr_status']
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(rcInfoD.keys()) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'CDWR recorder sites with CDWR measurements in collection file in CDWR database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Recorder', 'Begin', 'End',  'Active'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
-      messages.append('\t%s' % (ncols * '-'))
-      for site_id in sorted(rcInfoD.keys()):
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35],
-                                siteInfoD[site_id]['cdwr_rc_count'],
-                                siteInfoD[site_id]['cdwr_rc_begin_date'],
-                                siteInfoD[site_id]['cdwr_rc_end_date'],
-                                siteInfoD[site_id]['cdwr_rc_status']
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   if len(missSitesL) > 0:
-      messages.append('')
-      messages.append('\t%s' % 'CDWR periodic sites in collection file NOT retrieved from CDWR database')
-      messages.append('\t%s' % (ncols * '-'))
-      fmt = '\t%-20s %-20s %-20s %-35s'
-      messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station'))
-      messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' '))
-      messages.append('\t%s' % (ncols * '-'))
-      for cdwr_id in sorted(missSitesL):
-         site_id = cdwrSitesD[cdwr_id]
-         messages.append(fmt % (siteInfoD[site_id]['site_no'],
-                                siteInfoD[site_id]['coop_site_no'],
-                                siteInfoD[site_id]['cdwr_id'],
-                                siteInfoD[site_id]['station_nm'][:35]
-                                ))
-      messages.append('\t%s' % (ncols * '-'))
-   for myCode in sorted(gwCodesD.keys()):
-      messages.append('')
-      messages.append('\tCode %-70s' % myCode)
-      messages.append('\t%s' % (ncols * '-'))
-      messages.append('\t%s' % '\n\t'.join(gwCodesD[myCode]))
-      messages.append('\t%s' % (ncols * '-'))
-   messages.append('\n')
+        totalRecords += len(gwInfoD[site_id])
+        usgsRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
+        owrdRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
+        cdwrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
+        othrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']}))
 
-   screen_logger.info('\n'.join(messages))
-   file_logger.info('\n'.join(messages))
+        # Static and Non-static measurements
+        #
+        numYRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] == 'Y'}))
+        numNRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] != 'Y'}))
 
-   return gwInfoD
+        # Assign other measurements to OWRD
+        #
+        othrDatesL    = list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']})
+        for gwDate in sorted(othrDatesL):
+            gwInfoD[site_id][gwDate]['lev_agency_cd'] = 'OWRD'
+
+        # OWRD period of record of periodic measurements for each site
+        #
+        siteRecordsL  = sorted(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
+        BeginDate     = ''
+        EndDate       = ''
+        status        = 'Inactive'
+        if len(siteRecordsL) > 0:
+            BeginDate     = gwInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
+            EndDate       = gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
+            lev_dt_acy_cd = gwInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
+            dateFmt = '%Y-%m-%d'
+            if lev_dt_acy_cd == 'Y':
+                dateFmt = '%Y'
+            elif lev_dt_acy_cd == 'M':
+                dateFmt = '%Y-%m'
+            wlDate = datetime.datetime.strptime(gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
+            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+            status = 'Inactive'
+            if wlDate >= activeDate:
+                status  = 'Active'
+        else:
+            screen_logger.debug('Site %s has no OWRD periodic or recorder groundwater measurements' % site_id)
+
+        siteInfoD[site_id]['owrd_begin_date']      = BeginDate
+        siteInfoD[site_id]['owrd_end_date']        = EndDate
+        siteInfoD[site_id]['owrd_status']          = status
+        siteInfoD[site_id]['owrd_count']           = len(siteRecordsL)
+
+        # Overall period of record of recorder measurements for each site
+        #
+        if site_id in rcInfoD:
+            siteRecordsL  = sorted(list(rcInfoD[site_id].keys()))
+            BeginDate     = rcInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
+            EndDate       = rcInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
+            lev_dt_acy_cd = rcInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
+            dateFmt = '%Y-%m-%d'
+            if lev_dt_acy_cd == 'Y':
+                dateFmt = '%Y'
+            elif lev_dt_acy_cd == 'M':
+                dateFmt = '%Y-%m'
+            wlDate = datetime.datetime.strptime(rcInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
+            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+            status = 'Inactive'
+            if wlDate >= activeDate:
+                status  = 'Active'
+
+            siteInfoD[site_id]['owrd_rc_status']     = status
+            siteInfoD[site_id]['owrd_rc_begin_date'] = BeginDate
+            siteInfoD[site_id]['owrd_rc_end_date']   = EndDate
+            siteInfoD[site_id]['owrd_rc_count']      = len(rcInfoD[site_id])
+
+            rcRecords                               += len(rcInfoD[site_id])
+
+    activeSitesL     = list({x for x in siteInfoD if siteInfoD[x]['owrd_status'] == 'Active'})
+    activeRecordersL = list({x for x in siteInfoD if siteInfoD[x]['owrd_rc_status'] == 'Active'})
+
+
+    # Print information
+    #
+    ncols    = 150
+    messages = []
+    messages.append('\n\tProcessed OWRD periodic and recorder measurements')
+    messages.append('\t%s' % (ncols * '-'))
+    messages.append('\t%-79s %10d' % ('Number of sites in collection file', len(siteInfoD)))
+    messages.append('\t%-79s %10d' % ('Number of OWRD sites in collection file', len(owrdSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of OWRD sites in collection file NOT retrieved from OWRD database', len(missSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of Active sites in collection file measured by the OWRD', len(activeSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of OWRD sites in collection file assigned an USGS site number', len(usgsSitesD)))
+    messages.append('\t%-79s %10d' % ('Number of of static periodic measurements for OWRD sites in collection file', numYRecords))
+    messages.append('\t%-79s %10d' % ('Number of of non-static periodic measurements for OWRD sites in collection file', numNRecords))
+    messages.append('\t%-79s %10d' % ('Number of periodic measurements made by USGS', usgsRecords))
+    messages.append('\t%-79s %10d' % ('Number of periodic measurements made by OWRD', owrdRecords))
+    messages.append('\t%-79s %10d' % ('Number of periodic measurements made by CDWR', cdwrRecords))
+    messages.append('\t%-79s %10d' % ('Number of periodic measurements made by other agencies', othrRecords))
+    messages.append('\t%-79s %10d' % ('Number of periodic measurements', totalRecords))
+    messages.append('\t%-79s %10d' % ('Number of OWRD recorder sites in collection file from OWRD database', len(rcInfoD)))
+    messages.append('\t%-79s %10d' % ('Number of Active recorder sites in collection file measured by the OWRD', len(activeRecordersL)))
+    messages.append('\t%-79s %10d' % ('Number of recorder measurements', rcRecords))
+    messages.append('\t%s' % (ncols * '-'))
+    if len(matchSitesL) > 0:
+        messages.append('')
+        messages.append('\t%s' % 'OWRD periodic sites with OWRD measurements in collection file in OWRD database')
+        messages.append('\t%s' % (ncols * '-'))
+        fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
+        messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Periodic', 'Begin', 'End',  'Active'))
+        messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
+        messages.append('\t%s' % (ncols * '-'))
+        for well_log_id in sorted(matchSitesL):
+            site_id = owrdSitesD[well_log_id]
+            messages.append(fmt % (siteInfoD[site_id]['site_no'],
+                                   siteInfoD[site_id]['coop_site_no'],
+                                   siteInfoD[site_id]['cdwr_id'],
+                                   siteInfoD[site_id]['station_nm'][:35],
+                                   siteInfoD[site_id]['owrd_count'],
+                                   siteInfoD[site_id]['owrd_begin_date'],
+                                   siteInfoD[site_id]['owrd_end_date'],
+                                   siteInfoD[site_id]['owrd_status']
+                                   ))
+        messages.append('\t%s' % (ncols * '-'))
+    if len(rcInfoD.keys()) > 0:
+        messages.append('')
+        messages.append('\t%s' % 'OWRD recorder sites with OWRD measurements in collection file in OWRD database')
+        messages.append('\t%s' % (ncols * '-'))
+        fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
+        messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Recorder', 'Begin', 'End',  'Active'))
+        messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
+        messages.append('\t%s' % (ncols * '-'))
+        for site_id in sorted(rcInfoD.keys()):
+            messages.append(fmt % (siteInfoD[site_id]['site_no'],
+                                   siteInfoD[site_id]['coop_site_no'],
+                                   siteInfoD[site_id]['cdwr_id'],
+                                   siteInfoD[site_id]['station_nm'][:35],
+                                   siteInfoD[site_id]['owrd_rc_count'],
+                                   siteInfoD[site_id]['owrd_rc_begin_date'],
+                                   siteInfoD[site_id]['owrd_rc_end_date'],
+                                   siteInfoD[site_id]['owrd_rc_status']
+                                   ))
+        messages.append('\t%s' % (ncols * '-'))
+    if len(missSitesL) > 0:
+        messages.append('')
+        messages.append('\t%s' % 'OWRD periodic sites in collection file NOT retrieved from OWRD database')
+        messages.append('\t%s' % (ncols * '-'))
+        fmt = '\t%-20s %-20s %-20s %-35s'
+        messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station'))
+        messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' '))
+        messages.append('\t%s' % (ncols * '-'))
+        for well_log_id in sorted(missSitesL):
+            site_id = owrdSitesD[well_log_id]
+            messages.append(fmt % (siteInfoD[site_id]['site_no'],
+                                   siteInfoD[site_id]['coop_site_no'],
+                                   siteInfoD[site_id]['cdwr_id'],
+                                   siteInfoD[site_id]['station_nm'][:35]
+                                   ))
+        messages.append('\t%s' % (ncols * '-'))
+    for myCode in sorted(gwCodesD.keys()):
+        messages.append('')
+        messages.append('\tCode %-70s' % myCode)
+        messages.append('\t%s' % (ncols * '-'))
+        messages.append('\t%s' % '\n\t'.join(gwCodesD[myCode]))
+        messages.append('\t%s' % (ncols * '-'))
+    messages.append('\n')
+
+    screen_logger.info('\n'.join(messages))
+    file_logger.info('\n'.join(messages))
+
+    return gwInfoD
+# =============================================================================
+
+def processCDWR (siteInfoD, mySiteFields, myGwFields):
+
+    gwInfoD      = {}
+    rcInfoD      = {}
+
+    usgsRecords  = 0
+    owrdRecords  = 0
+    cdwrRecords  = 0
+    othrRecords  = 0
+    totalRecords = 0
+    rcRecords    = 0
+
+    numYRecords  = 0
+    numNRecords  = 0
+
+    gwCodesD     = {}
+
+    myCdwrFields = [
+                    "_id",
+                    "gwe",
+                    "wlm_org_name",
+                    "wlm_mthd_desc",
+                    "wlm_acc_desc",
+                    "gse_gwe",
+                    "msmt_date",
+                    "site_code",
+                    "wlm_gse",
+                    "wlm_qa_detail",
+                    "coop_org_name",
+                    "source",
+                    "msmt_cmt",
+                    "rank site_code",
+                    "monitoring_program",
+                    "wlm_qa_desc"
+                   ]
+
+    pst_offset   = 8
+    days_offset  = 365
+    activeDate   = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_offset)
+
+    # Prepare list of site numbers
+    # -------------------------------------------------
+    #
+    usgsSitesD    = dict({siteInfoD[x]['cdwr_id']:siteInfoD[x]['site_no'] for x in siteInfoD if len(siteInfoD[x]['site_no']) > 0})
+    cdwrSitesD    = dict({siteInfoD[x]['cdwr_id']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
+    cdwrSitesL    = list({siteInfoD[x]['cdwr_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0})
+    cdwrStationsL = list({siteInfoD[x]['state_well_nmbr'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0 and len(siteInfoD[x]['state_well_nmbr']) > 0})
+    cdwrStationsD = dict({siteInfoD[x]['state_well_nmbr']:siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInfoD[x]['cdwr_id']) > 0 and len(siteInfoD[x]['state_well_nmbr']) > 0})
+
+    missSitesL    = list(cdwrSitesL)
+    missStationsL = list(cdwrStationsL)
+
+    # CDWR periodic service
+    # -------------------------------------------------
+    #
+    tempL  = list(cdwrSitesL)
+    nsites = 10
+    linesL = []
+
+    while len(tempL) > 0:
+
+        nList = ",".join(list(map(lambda x: "'%s'" % x, tempL[:nsites])))
+        del tempL[:nsites]
+
+        # Web request
+        #
+        # https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "site_code" IN ('419980N1215455W001', '419978N1214546W001') ORDER BY "site_code", "msmt_date"
+        #
+        URL          = 'https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "bfa9f262-24a1-45bd-8dc8-138bc8107266" WHERE "site_code" IN (%s) ORDER BY "site_code", "msmt_date"' % nList
+        noparmsDict  = {}
+        contentType  = "application/json"
+        timeOut      = 1000
+
+        screen_logger.debug("Url %s" % URL)
+
+        message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
+
+        screen_logger.debug("webContent %s" % webContent)
+
+        if webContent is not None:
+
+            # Check for empty
+            #
+            if len(webContent) < 1:
+                message = "Empty content return from web request %s" % URL
+                errorMessage(message)
+
+            # Convert to json format
+            #
+            gwJson = json.loads(webContent)
+
+            # Check for failed request
+            #
+            if gwJson['success'] is False:
+                message = "Error: %s for %s content return from web request %s" % (gwJson['error'], URL)
+                errorMessage(message)
+
+            # Total records
+            #
+            numRecords = len(gwJson['result']['records'])
+
+            # Check for failed request
+            #
+            if numRecords < 1:
+                message = "Warning: CWDR sites %s has no waterlevel measurements available" % nList
+                screen_logger.info(message)
+                continue
+
+            # Parse records
+            #
+            jsonRecords  = gwJson['result']['records']
+
+            #print(jsonRecords)
+
+            # Process groundwater measurements
+            # -------------------------------------------------
+            #
+            for myRecord in jsonRecords:
+
+                # Set record
+                #
+                gwRecord = {}
+
+                # Set record
+                #
+                site_code = myRecord['site_code']
+
+                # Site ID from collection file
+                #
+                site_id = cdwrSitesD[site_code]
+
+                # Remove site from missing list
+                #
+                if site_code in missSitesL:
+                    missSitesL.remove(site_code)
+
+                # Set waterlevel
+                #
+                lev_va             = str(myRecord['gse_gwe'])
+                if lev_va == 'None':
+                    lev_va = ''
+
+                gwRecord['lev_va'] = lev_va
+
+                # Set local water-level date information
+                #
+                lev_dt        = myRecord['msmt_date'][:10]
+                lev_tm        = myRecord['msmt_date'][11:]
+                lev_tz_cd     = 'PST'
+                lev_dt_acy_cd = 'D'
+
+                if lev_tm in ['00:00:00', '12:00:00']:
+                    lev_tm     = ''
+                    lev_tz_cd  = ''
+                    wlDate     = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
+                    lev_str_dt = lev_dt
+                    wlDate     = wlDate.replace(hour=12)
+                elif len(lev_tm) < 1:
+                    lev_tm     = ''
+                    lev_tz_cd  = ''
+                    wlDate     = datetime.datetime.strptime(lev_dt, '%Y-%m-%d')
+                    lev_str_dt = lev_dt
+                    wlDate     = wlDate.replace(hour=12)
+                else:
+                    lev_tm        = lev_tm[:5]
+                    lev_str_dt    = '%s %s' % (lev_dt, lev_tm)
+                    wlDate        = datetime.datetime.strptime(lev_str_dt, '%Y-%m-%d %H:%M')
+                    wlDate        = wlDate + datetime.timedelta(hours=pst_offset)
+                    lev_dt_acy_cd = 'm'
+
+                # Convert to UTC time zone
+                #
+                wlDate     = wlDate.replace(tzinfo=datetime.timezone.utc)
+                lev_dtm    = wlDate.strftime("%Y-%m-%d %H:%M %Z")
+
+                gwRecord['lev_dt']        = lev_dt
+                gwRecord['lev_tm']        = lev_tm
+                gwRecord['lev_tz_cd']     = lev_tz_cd
+                gwRecord['lev_dt_acy_cd'] = lev_dt_acy_cd
+                gwRecord['lev_str_dt']    = lev_str_dt
+                gwRecord['lev_dtm']       = lev_dtm
+
+                # Set lev_mst to YYYY-MM-DD to identify duplicate measurements
+                #
+                lev_mst = lev_dtm[:10]
+
+                # Set measuring accuracy
+                #
+                lev_acy_cd = myRecord['wlm_acc_desc']
+                myColumn   = 'lev_acy_cd'
+                if myColumn not in gwCodesD:
+                    gwCodesD[myColumn] = []
+                if str(lev_acy_cd) not in gwCodesD[myColumn]:
+                    gwCodesD[myColumn].append(str(lev_acy_cd))
+
+                if lev_acy_cd == "Water level accuracy to nearest foot":
+                    lev_acy_cd = '0'
+                elif lev_acy_cd == "Water level accuracy to nearest tenth of a foot":
+                    lev_acy_cd = '1'
+                elif lev_acy_cd == "0.1 Ft":
+                    lev_acy_cd = '1'
+                elif lev_acy_cd == "Water level accuracy to nearest hundredth of a foot":
+                    lev_acy_cd = '2'
+                elif lev_acy_cd == "0.01 Ft":
+                    lev_acy_cd = '2'
+                elif lev_acy_cd == "0.001 Ft":
+                    lev_acy_cd = '2'
+                elif lev_acy_cd == "Water level accuracy to nearest thousandth of a foot":
+                    lev_acy_cd = 'U'
+                elif lev_acy_cd == "Water level accuracy is unknown":
+                    lev_acy_cd = 'U'
+                elif lev_acy_cd == "Unknown":
+                    lev_acy_cd = 'U'
+                elif lev_acy_cd is None:
+                    lev_acy_cd = 'U'
+                else:
+                    screen_logger.info('CDWR site %s [on %s]: Measuring accuracy "%s" needs to be assigned (currently set to U for Unknown' % (site_id, lev_str_dt, lev_acy_cd))
+                    screen_logger.info(myRecord)
+                    lev_acy_cd = 'U'
+
+                gwRecord['lev_acy_cd'] = lev_acy_cd
+
+                # Set lev_status_cd
+                #
+                lev_status_cd = myRecord['wlm_qa_detail']
+                myColumn   = 'lev_status_cd'
+                if myColumn not in gwCodesD:
+                    gwCodesD[myColumn] = []
+                if str(lev_status_cd) not in gwCodesD[myColumn]:
+                    gwCodesD[myColumn].append(str(lev_status_cd))
+
+                if lev_status_cd is None:
+                    lev_status_cd = ''
+                elif lev_status_cd in ["Good data", "Good quality edited data"]:
+                    lev_status_cd = ""
+                elif lev_status_cd == "Recharge or surface water effects near well":
+                    lev_status_cd = "J"
+                elif lev_status_cd == "Casing leaking or wet":
+                    lev_status_cd = "K"
+                elif lev_status_cd == "Measurement Discontinued":
+                    lev_status_cd = "N"
+                elif lev_status_cd in ["Can't get tape in casing", "Tape hung up"]:
+                    lev_status_cd = "O"
+                elif lev_status_cd == "Pumping":
+                    lev_status_cd = "P"
+                elif lev_status_cd == "Pumped recently":
+                    lev_status_cd = "R"
+                elif lev_status_cd == "Nearby pump operating":
+                    lev_status_cd = "S"
+                elif lev_status_cd == "Oil or foreign substance in casing":
+                    lev_status_cd = "V"
+                elif lev_status_cd == "Well has been destroyed":
+                    lev_status_cd = "W"
+                elif lev_status_cd == "Estimated data imported from historic records.":
+                    lev_status_cd = "U"
+                elif lev_status_cd in ["Temporarily inaccessible",
+                                        "Pump house locked",
+                                        "Special/Other",
+                                        "Other",
+                                        "Unable to locate well",
+                                        "Caved or deepened",
+                                        "Acoustical sounder",
+                                        "Unknown Measurement Quality",
+                                        "Provisional measurement",
+                                        "Estimated Data"
+                                       ]:
+                    lev_status_cd = "Z"
+                else:
+                    screen_logger.info('CDWR site %s [on %s]: Measurement status "%s" needs to be assigned (currently set to U for Reported' % (site_id, lev_str_dt, lev_status_cd))
+                    lev_status_cd = 'U'
+
+                gwRecord['lev_status_cd']  = lev_status_cd
+
+                # Set measuring method
+                #
+                lev_meth_cd = myRecord['wlm_mthd_desc']
+                myColumn   = 'lev_meth_cd'
+                if myColumn not in gwCodesD:
+                    gwCodesD[myColumn] = []
+                if str(lev_meth_cd) not in gwCodesD[myColumn]:
+                    gwCodesD[myColumn].append(str(lev_meth_cd))
+
+                if lev_meth_cd == "Electronic pressure transducer":
+                    lev_meth_cd = "F"
+                elif lev_meth_cd == "Acoustic or sonic sounder":
+                    lev_meth_cd = "P"
+                elif lev_meth_cd == "Steel tape measurement":
+                    lev_meth_cd = "S"
+                elif lev_meth_cd == "Electric sounder measurement":
+                    lev_meth_cd = "T"
+                elif lev_meth_cd == "Other":
+                    lev_meth_cd = "Z"
+                elif lev_meth_cd == "Airline measurement, pressure gage, or manometer":
+                    lev_meth_cd = "A"
+                # Depending on accuracy, airline is to nearest foot, pressure gage and manometer (find out accuracy)
+                #  Will determine the method
+                elif lev_meth_cd == "Unknown":
+                    lev_meth_cd = "R"
+                elif lev_meth_cd is None:
+                    lev_meth_cd = "R"
+                else:
+                    screen_logger.info('CDWR site %s [on %s]: Measuring method "%s" [wlm_mthd_desc] needs to be assigned (currently set to R' % (site_id, lev_str_dt, lev_meth_cd))
+                    lev_meth_cd = "R"
+
+                gwRecord['lev_meth_cd'] = lev_meth_cd
+
+                # Set measuring agency [coop_org_name]
+                #
+                lev_agency_cd = myRecord['coop_org_name']
+                myColumn   = 'lev_agency_cd'
+                if myColumn not in gwCodesD:
+                    gwCodesD[myColumn] = []
+                if str(lev_agency_cd) not in gwCodesD[myColumn]:
+                    gwCodesD[myColumn].append(str(lev_agency_cd))
+
+                if lev_agency_cd == "Department of Water Resources":
+                    lev_agency_cd = "CDWR"
+                elif lev_agency_cd == "United States Geological Survey":
+                    lev_agency_cd = "USGS"
+                elif lev_agency_cd == "Bureau of Reclamation":
+                    lev_agency_cd = "USBR"
+                elif lev_agency_cd == "Tulelake Irrigation District" or "Tulelake Irrigation District GSA":
+                    lev_agency_cd = "CA049 Tulelake Irrigation District"
+                elif lev_agency_cd == "Tulelake Irrigation District GSA":
+                    lev_agency_cd = "CA049 Tulelake Irrigation District"
+                else:
+                    screen_logger.info('CDWR site %s: Measuring agency "%s" [coop_org_name] needs to be assigned (currently set to CDWR' % (site_id, lev_agency_cd))
+                    lev_acy_cd = 'CDWR'
+
+                gwRecord['lev_agency_cd']  = lev_agency_cd
+
+                # Set source agency [wlm_org_name]
+                #
+                lev_src_cd = myRecord['wlm_org_name']
+                myColumn   = 'lev_src_cd'
+                if myColumn not in gwCodesD:
+                    gwCodesD[myColumn] = []
+                if str(lev_src_cd) not in gwCodesD[myColumn]:
+                    gwCodesD[myColumn].append(str(lev_src_cd))
+
+                if lev_src_cd == "Department of Water Resources":
+                    lev_src_cd = "CDWR"
+                elif lev_src_cd == "Bureau of Reclamation":
+                    lev_src_cd = "USBR"
+                elif lev_src_cd == "Tulelake Irrigation District" or "Tulelake Irrigation District GSA":
+                    lev_src_cd = "CA049 Tulelake Irrigation District"
+                elif lev_src_cd == "Tulelake Irrigation District GSA":
+                    lev_src_cd = "CA049 Tulelake Irrigation District"
+                else:
+                    screen_logger.info('CDWR site %s: Measuring source agency "%s" [wlm_org_name] needs to be assigned (currently set to CDWR' % (site_id, lev_src_cd))
+                    lev_src_cd = 'CDWR'
+
+                # Set source agency if measuring agency is USGS
+                #
+                if lev_agency_cd == "USGS":
+                    lev_src_cd = "USGS"
+
+                if lev_src_cd == lev_agency_cd:
+                    lev_src_cd = 'S'
+                else:
+                    #screen_logger.info('CDWR site %s: Measuring agency "%s" [coop_org_name] Measuring agency "%s" [coop_org_name]' % (site_id, lev_agency_cd, lev_src_cd))
+                    lev_src_cd = 'A'
+
+                gwRecord['lev_src_cd'] = lev_src_cd
+
+                # Set lev_web_cd
+                #
+                lev_web_cd = 'N'
+                if len(lev_va) > 0 and len(lev_status_cd) < 1:
+                    lev_web_cd = 'Y'
+
+                gwRecord['lev_web_cd'] = lev_web_cd
+
+                # Set remarks
+                #
+                lev_rmk_tx = myRecord['msmt_cmt']
+                lev_rmk_tx = myRecord['source']
+                if lev_rmk_tx is None:
+                    lev_rmk_tx = ''
+                gwRecord['lev_rmk_tx'] = lev_rmk_tx
+
+                # New site
+                #
+                if site_id not in gwInfoD:
+
+                    gwInfoD[site_id] = {}
+
+                # New waterlevel record for site
+                #
+                if lev_mst not in gwInfoD[site_id].keys():
+
+                    gwInfoD[site_id][lev_mst] = {}
+
+                # Prepare values
+                #
+                for myColumn in myGwFields:
+                    if myColumn in mySiteFields:
+                        gwInfoD[site_id][lev_mst][myColumn] = siteInfoD[site_id][myColumn]
+                    else:
+                        gwInfoD[site_id][lev_mst][myColumn] = gwRecord[myColumn]
+
+
+    # CDWR recorder service
+    # -------------------------------------------------
+    #
+    tempL  = list(cdwrStationsL)
+    nsites = 10
+    linesL = []
+
+    while len(tempL) > 0:
+
+        nList = ",".join(list(map(lambda x: "'%s'" % x, tempL[:nsites])))
+        del tempL[:nsites]
+
+        # Web request
+        #
+        # https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "84e02633-00ca-47e8-97ec-c0093313ddcd" WHERE "STATION" IN ('46N05E21M001M', '46N05E22D001M')
+        #
+        URL          = 'https://data.cnra.ca.gov/api/3/action/datastore_search_sql?sql=SELECT * from "84e02633-00ca-47e8-97ec-c0093313ddcd" WHERE "STATION" IN (%s)' % nList
+        noparmsDict  = {}
+        contentType  = "application/json"
+        timeOut      = 1000
+
+        screen_logger.debug("Url %s" % URL)
+
+        message, webContent = webRequest(URL, noparmsDict, contentType, timeOut, None, screen_logger)
+
+        screen_logger.debug("webContent %s" % webContent)
+
+        if webContent is not None:
+
+            # Check for empty
+            #
+            if len(webContent) < 1:
+                message = "Empty content return from web request %s" % URL
+                errorMessage(message)
+
+            # Convert to json format
+            #
+            gwJson = json.loads(webContent)
+
+            # Check for failed request
+            #
+            if gwJson['success'] is False:
+                message = "Error: %s for %s content return from web request %s" % (gwJson['error'], URL)
+                errorMessage(message)
+
+            # Total records
+            #
+            numRecords = len(gwJson['result']['records'])
+
+            # Check for failed request
+            #
+            if numRecords < 1:
+                message = "Warning: CWDR sites %s has no waterlevel measurements available" % nList
+                screen_logger.info(message)
+                continue
+
+            # Parse records
+            #
+            jsonRecords  = gwJson['result']['records']
+
+            #print(jsonRecords)
+
+            # Process groundwater measurements
+            # -------------------------------------------------
+            #
+            for myRecord in jsonRecords:
+
+                # Set record
+                #
+                gwRecord = {}
+
+                # Set record
+                #
+                station = myRecord['STATION']
+
+                # Site ID from collection file
+                #
+                site_id = cdwrStationsD[station]
+
+                # Remove site from missing list
+                #
+                if station in missStationsL:
+                    missStationsL.remove(station)
+
+                # Set water-level date information
+                #
+                lev_str_dt    = myRecord['MSMT_DATE'][:10]
+                lev_dt        = lev_str_dt[:10]
+                lev_tm        = '12:00'
+                lev_tz_cd     = 'PST'
+                lev_dt_acy_cd = 'D'
+                lev_dtm       = lev_str_dt
+
+                # Set measuring agency information
+                #
+                lev_agency_cd = 'CDWR'
+
+                # Set record
+                #
+                gwRecord['lev_dt']        = lev_str_dt[:10]
+                gwRecord['lev_tm']        = lev_str_dt[:-5]
+                gwRecord['lev_tz_cd']     = lev_tz_cd
+                gwRecord['lev_dt_acy_cd'] = lev_dt_acy_cd
+                gwRecord['lev_str_dt']    = lev_str_dt
+                gwRecord['lev_dtm']       = lev_dtm
+                gwRecord['lev_agency_cd'] = lev_dtm
+
+                # Set site_id
+                #
+                site_id = station
+                if station in cdwrStationsD:
+                    site_id = cdwrStationsD[station]
+
+                # Set site information
+                #
+                if site_id not in rcInfoD:
+                    rcInfoD[site_id] = {}
+
+                # Set site information
+                #
+                if lev_dtm not in rcInfoD[site_id]:
+                    rcInfoD[site_id][lev_dtm] = {}
+
+                # Prepare values
+                #
+                for myColumn in gwRecord.keys():
+                    rcInfoD[site_id][lev_dtm][myColumn] = gwRecord[myColumn]
+
+
+    # Prepare set of sites
+    #
+    cdwrSet        = set(cdwrSitesL)
+    missingSet     = set(missSitesL)
+    matchSitesL    = list(cdwrSet.difference(missingSet))
+
+    # Overall period of record of all measurements for each site and counts
+    #
+    for site_code in sorted(matchSitesL):
+
+        site_id = cdwrSitesD[site_code]
+
+        # Counts
+        #
+        totalRecords += len(gwInfoD[site_id])
+        usgsRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'USGS'}))
+        owrdRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'OWRD'}))
+        cdwrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
+        othrRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']}))
+
+        # Static and Non-static measurements
+        #
+        numYRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] == 'Y'}))
+        numNRecords  += len(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_web_cd'] != 'Y'}))
+
+        # Assign other measurements to CDWR
+        #
+        othrDatesL    = list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] not in ['USGS', 'OWRD', 'CDWR']})
+        for gwDate in sorted(othrDatesL):
+            gwInfoD[site_id][gwDate]['lev_agency_cd'] = 'CDWR'
+
+        # CDWR period of record of periodic measurements for each site
+        #
+        siteRecordsL  = sorted(list({x for x in gwInfoD[site_id] if gwInfoD[site_id][x]['lev_agency_cd'] == 'CDWR'}))
+        BeginDate     = ''
+        EndDate       = ''
+        status        = 'Inactive'
+        if len(siteRecordsL) > 0:
+            BeginDate     = gwInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
+            EndDate       = gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
+            lev_dt_acy_cd = gwInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
+            dateFmt = '%Y-%m-%d'
+            if lev_dt_acy_cd == 'Y':
+                dateFmt = '%Y'
+            elif lev_dt_acy_cd == 'M':
+                dateFmt = '%Y-%m'
+            wlDate = datetime.datetime.strptime(gwInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
+            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+            status = 'Inactive'
+            if wlDate >= activeDate:
+                status  = 'Active'
+        else:
+            screen_logger.debug('Site %s has no CDWR periodic or recorder groundwater measurements' % site_id)
+
+        siteInfoD[site_id]['cdwr_begin_date']      = BeginDate
+        siteInfoD[site_id]['cdwr_end_date']        = EndDate
+        siteInfoD[site_id]['cdwr_status']          = status
+        siteInfoD[site_id]['cdwr_count']           = len(siteRecordsL)
+
+        # CDWR period of record of recorder measurements for each site
+        #
+        if site_id in rcInfoD:
+            siteRecordsL  = sorted(list(rcInfoD[site_id].keys()))
+            BeginDate     = rcInfoD[site_id][siteRecordsL[0]]['lev_str_dt'][:10]
+            EndDate       = rcInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10]
+            lev_dt_acy_cd = rcInfoD[site_id][siteRecordsL[-1]]['lev_dt_acy_cd']
+            dateFmt = '%Y-%m-%d'
+            if lev_dt_acy_cd == 'Y':
+                dateFmt = '%Y'
+            elif lev_dt_acy_cd == 'M':
+                dateFmt = '%Y-%m'
+            wlDate = datetime.datetime.strptime(rcInfoD[site_id][siteRecordsL[-1]]['lev_str_dt'][:10], dateFmt)
+            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+            status = 'Inactive'
+            if wlDate >= activeDate:
+                status  = 'Active'
+
+            siteInfoD[site_id]['cdwr_rc_status']     = status
+            siteInfoD[site_id]['cdwr_rc_begin_date'] = BeginDate
+            siteInfoD[site_id]['cdwr_rc_end_date']   = EndDate
+            siteInfoD[site_id]['cdwr_rc_count']      = len(rcInfoD[site_id])
+
+            rcRecords                               += len(rcInfoD[site_id])
+
+    activeSitesL      = list({x for x in siteInfoD if siteInfoD[x]['cdwr_status'] == 'Active'})
+    activeRecordersL  = list({x for x in siteInfoD if siteInfoD[x]['cdwr_rc_status'] == 'Active'})
+
+    # Print information
+    #
+    ncols    = 150
+    messages = []
+    messages.append('\n\tProcessed CDWR periodic and recorder measurements')
+    messages.append('\t%s' % (ncols * '-'))
+    messages.append('\t%-79s %10d' % ('Number of sites in collection file', len(siteInfoD)))
+    messages.append('\t%-79s %10d' % ('Number of CDWR sites in collection file', len(cdwrSet)))
+    messages.append('\t%-79s %10d' % ('Number of CDWR sites in collection file NOT retrieved from CDWR database', len(missSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of Active sites in collection file measured by the CDWR', len(activeSitesL)))
+    messages.append('\t%-79s %10d' % ('Number of CDWR sites in collection file assigned an USGS site number', len(usgsSitesD)))
+    messages.append('\t%-79s %10d' % ('Number of of static periodic measurements', numYRecords))
+    messages.append('\t%-79s %10d' % ('Number of of non-static periodic measurements', numNRecords))
+    messages.append('\t%-79s %10d' % ('Number of USGS periodic measurements', usgsRecords))
+    messages.append('\t%-79s %10d' % ('Number of OWRD periodic measurements', owrdRecords))
+    messages.append('\t%-79s %10d' % ('Number of CDWR periodic measurements', cdwrRecords))
+    messages.append('\t%-79s %10d' % ('Number of periodic measurements made by other agencies', othrRecords))
+    messages.append('\t%-79s %10d' % ('Number of periodic measurements', totalRecords))
+    messages.append('\t%-79s %10d' % ('Number of CDWR recorder sites in collection file from CDWR database', len(rcInfoD)))
+    messages.append('\t%-79s %10d' % ('Number of Active recorder sites in collection file measured by the CDWR', len(activeRecordersL)))
+    messages.append('\t%-79s %10d' % ('Number of recorder measurements', rcRecords))
+    messages.append('\t%s' % (ncols * '-'))
+    if len(matchSitesL) > 0:
+        messages.append('')
+        messages.append('\t%s' % 'CDWR periodic sites with CDWR measurements in collection file in CDWR database')
+        messages.append('\t%s' % (ncols * '-'))
+        fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
+        messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Periodic', 'Begin', 'End',  'Active'))
+        messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
+        messages.append('\t%s' % (ncols * '-'))
+        for cdwr_id in sorted(matchSitesL):
+            site_id = cdwrSitesD[cdwr_id]
+            messages.append(fmt % (siteInfoD[site_id]['site_no'],
+                                   siteInfoD[site_id]['coop_site_no'],
+                                   siteInfoD[site_id]['cdwr_id'],
+                                   siteInfoD[site_id]['station_nm'][:35],
+                                   siteInfoD[site_id]['cdwr_count'],
+                                   siteInfoD[site_id]['cdwr_begin_date'],
+                                   siteInfoD[site_id]['cdwr_end_date'],
+                                   siteInfoD[site_id]['cdwr_status']
+                                   ))
+        messages.append('\t%s' % (ncols * '-'))
+    if len(rcInfoD.keys()) > 0:
+        messages.append('')
+        messages.append('\t%s' % 'CDWR recorder sites with CDWR measurements in collection file in CDWR database')
+        messages.append('\t%s' % (ncols * '-'))
+        fmt = '\t%-20s %-15s %-20s %-35s %10s %15s %15s %10s'
+        messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station', 'Recorder', 'Begin', 'End',  'Active'))
+        messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' ',       'Counts',   'Date',  'Date', 'Status'))
+        messages.append('\t%s' % (ncols * '-'))
+        for site_id in sorted(rcInfoD.keys()):
+            messages.append(fmt % (siteInfoD[site_id]['site_no'],
+                                   siteInfoD[site_id]['coop_site_no'],
+                                   siteInfoD[site_id]['cdwr_id'],
+                                   siteInfoD[site_id]['station_nm'][:35],
+                                   siteInfoD[site_id]['cdwr_rc_count'],
+                                   siteInfoD[site_id]['cdwr_rc_begin_date'],
+                                   siteInfoD[site_id]['cdwr_rc_end_date'],
+                                   siteInfoD[site_id]['cdwr_rc_status']
+                                   ))
+        messages.append('\t%s' % (ncols * '-'))
+    if len(missSitesL) > 0:
+        messages.append('')
+        messages.append('\t%s' % 'CDWR periodic sites in collection file NOT retrieved from CDWR database')
+        messages.append('\t%s' % (ncols * '-'))
+        fmt = '\t%-20s %-20s %-20s %-35s'
+        messages.append(fmt % ('USGS',        'OWRD',        'CDWR', 'Station'))
+        messages.append(fmt % ('Site Number', 'Well Log ID', 'ID',   ' '))
+        messages.append('\t%s' % (ncols * '-'))
+        for cdwr_id in sorted(missSitesL):
+            site_id = cdwrSitesD[cdwr_id]
+            messages.append(fmt % (siteInfoD[site_id]['site_no'],
+                                   siteInfoD[site_id]['coop_site_no'],
+                                   siteInfoD[site_id]['cdwr_id'],
+                                   siteInfoD[site_id]['station_nm'][:35]
+                                   ))
+        messages.append('\t%s' % (ncols * '-'))
+    for myCode in sorted(gwCodesD.keys()):
+        messages.append('')
+        messages.append('\tCode %-70s' % myCode)
+        messages.append('\t%s' % (ncols * '-'))
+        messages.append('\t%s' % '\n\t'.join(gwCodesD[myCode]))
+        messages.append('\t%s' % (ncols * '-'))
+    messages.append('\n')
+
+    screen_logger.info('\n'.join(messages))
+    file_logger.info('\n'.join(messages))
+
+    return gwInfoD
 # =============================================================================
 def LoggingOutput (siteInfoD, ColumnsL, FormatsL):
 
-   ncols        = 400
-   
-   usgsRecords  = 0
-   owrdRecords  = 0
-   cdwrRecords  = 0
-   totalRecords = 0
+    ncols        = 400
 
-   localDate    = datetime.datetime.now().strftime("%B %d, %Y")
+    usgsRecords  = 0
+    owrdRecords  = 0
+    cdwrRecords  = 0
+    totalRecords = 0
 
-   # Print summary file information
-   #
-   outputL = []
-   outputL.append("## Groundwater Site Summary")
-   outputL.append("##")
-   outputL.append("## Version %-30s" % version)
-   outputL.append("## Version_Date on %-30s" % localDate)
-   outputL.append("##")
+    localDate    = datetime.datetime.now().strftime("%B %d, %Y")
 
-   outputL.append('%s' % "\t".join(ColumnsL))
-   outputL.append('%s' % "\t".join(list(map(lambda x: x[1:], FormatsL))))
+    # Print summary file information
+    #
+    outputL = []
+    outputL.append("## Groundwater Site Summary")
+    outputL.append("##")
+    outputL.append("## Version %-30s" % version)
+    outputL.append("## Version_Date on %-30s" % localDate)
+    outputL.append("##")
 
-   # Print information
-   #
-   messages = []
-   message  = "Groundwater Site Summary Information"
-   fmt      = "%" + str(int(ncols/2-len(message)/2)) + "s%s"
-   messages.append(fmt % (' ', message))
-   messages.append("=" * ncols)
-   message  = "Recorded on %s" % localDate
-   fmt      = "%" + str(int(ncols/2-len(message)/2)) + "s%s"
-   messages.append(fmt % (' ', message))
-   messages.append("-" * ncols)
+    outputL.append('%s' % "\t".join(ColumnsL))
+    #outputL.append('%s' % "\t".join(list(map(lambda x: x[1:], FormatsL))))
 
-   headLine = []
-   for i in range(len(ColumnsL)):
-      myColumn = FormatsL[i] % ColumnsL[i]
-      headLine.append(myColumn)
-                       
-   messages.append("   ".join(headLine))
+    # Print information
+    #
+    messages = []
+    message  = "Groundwater Site Summary Information"
+    fmt      = "%" + str(int(ncols/2-len(message)/2)) + "s%s"
+    messages.append(fmt % (' ', message))
+    messages.append("=" * ncols)
+    message  = "Recorded on %s" % localDate
+    fmt      = "%" + str(int(ncols/2-len(message)/2)) + "s%s"
+    messages.append(fmt % (' ', message))
+    messages.append("-" * ncols)
 
-   messages.append("-" * ncols)
-          
-   # Print information
-   #
-   for site_id in sorted(siteInfoD.keys()):
-      
-      headLine = []
-      for i in range(len(ColumnsL)):
-         if siteInfoD[site_id][ColumnsL[i]] is None:
-            siteInfoD[site_id][ColumnsL[i]] = ''
-         elif str(siteInfoD[site_id][ColumnsL[i]]) == '0':
-            siteInfoD[site_id][ColumnsL[i]] = ''
-            
-         myValue = FormatsL[i] % str(siteInfoD[site_id][ColumnsL[i]])
-         headLine.append(myValue)
+    headLine = []
+    for i in range(len(ColumnsL)):
+        myColumn = FormatsL[i] % ColumnsL[i]
+        headLine.append(myColumn)
 
-      if isinstance(siteInfoD[site_id]['usgs_count'], int):
-         usgsRecords  += int(siteInfoD[site_id]['usgs_count'])
-      if isinstance(siteInfoD[site_id]['owrd_count'], int):
-         owrdRecords  += int(siteInfoD[site_id]['owrd_count'])
-      if isinstance(siteInfoD[site_id]['cdwr_count'], int):
-         cdwrRecords  += int(siteInfoD[site_id]['cdwr_count'])
-      
-      messages.append("   ".join(headLine))
+    messages.append("   ".join(headLine))
 
-      outputL.append("\t".join(list(map(lambda x: '%s' % str(siteInfoD[site_id][x]), ColumnsL))))
+    messages.append("-" * ncols)
 
-   totalRecords = usgsRecords + owrdRecords + cdwrRecords
-      
-   # Print information
-   #
-   messages.append("-" * ncols)
-   
-   file_logger.info("\n".join(messages))
-             
-   # Print information
-   #
-   ncols    = 85
-   messages = []
-   messages.append('') 
-   messages.append('')
-   messages.append('\n\tProcessed periodic measurements output to the waterlevel file')
-   messages.append('\t%s' % (ncols * '-'))
-   messages.append('\t%-70s %10d' % ('Number of sites with periodic measurements', len(siteInfoD)))
-   messages.append('\t%-70s %10d' % ('Number of USGS periodic measurements', usgsRecords))
-   messages.append('\t%-70s %10d' % ('Number of OWRD periodic measurements', owrdRecords))
-   messages.append('\t%-70s %10d' % ('Number of CDWR periodic measurements', cdwrRecords))
-   messages.append('\t%-70s %10d' % ('Number of periodic measurements', totalRecords))
-   messages.append('\t%s' % (ncols * '-'))
-   messages.append('') 
-   messages.append('')
-   
-   screen_logger.info("\n".join(messages))
-   file_logger.info("\n".join(messages))
+    # Print information
+    #
+    for site_id in sorted(siteInfoD.keys()):
 
-   # Print site summary file
-   #
-   output_file = 'site_summary.txt'
-   if os.path.isfile(output_file):
-      os.remove(output_file)
+        headLine = []
+        for i in range(len(ColumnsL)):
+            if siteInfoD[site_id][ColumnsL[i]] is None:
+                siteInfoD[site_id][ColumnsL[i]] = ''
+            elif str(siteInfoD[site_id][ColumnsL[i]]) == '0':
+                siteInfoD[site_id][ColumnsL[i]] = ''
 
-   # Output records
-   #
-   with open(output_file,'w') as f:
-      f.write('\n'.join(outputL))
-            
-   return
+            myValue = FormatsL[i] % str(siteInfoD[site_id][ColumnsL[i]])
+            headLine.append(myValue)
+
+        if isinstance(siteInfoD[site_id]['usgs_count'], int):
+            usgsRecords  += int(siteInfoD[site_id]['usgs_count'])
+        if isinstance(siteInfoD[site_id]['owrd_count'], int):
+            owrdRecords  += int(siteInfoD[site_id]['owrd_count'])
+        if isinstance(siteInfoD[site_id]['cdwr_count'], int):
+            cdwrRecords  += int(siteInfoD[site_id]['cdwr_count'])
+
+        messages.append("   ".join(headLine))
+
+        outputL.append("\t".join(list(map(lambda x: '%s' % str(siteInfoD[site_id][x]), ColumnsL))))
+
+    totalRecords = usgsRecords + owrdRecords + cdwrRecords
+
+    # Print information
+    #
+    messages.append("-" * ncols)
+
+    file_logger.info("\n".join(messages))
+
+    # Print information
+    #
+    ncols    = 85
+    messages = []
+    messages.append('')
+    messages.append('')
+    messages.append('\n\tProcessed periodic measurements output to the waterlevel file')
+    messages.append('\t%s' % (ncols * '-'))
+    messages.append('\t%-70s %10d' % ('Number of sites with periodic measurements', len(siteInfoD)))
+    messages.append('\t%-70s %10d' % ('Number of USGS periodic measurements', usgsRecords))
+    messages.append('\t%-70s %10d' % ('Number of OWRD periodic measurements', owrdRecords))
+    messages.append('\t%-70s %10d' % ('Number of CDWR periodic measurements', cdwrRecords))
+    messages.append('\t%-70s %10d' % ('Number of periodic measurements', totalRecords))
+    messages.append('\t%s' % (ncols * '-'))
+    messages.append('')
+    messages.append('')
+
+    screen_logger.info("\n".join(messages))
+    file_logger.info("\n".join(messages))
+
+    # Print site summary file
+    #
+    output_file = 'site_summary.txt'
+    if os.path.isfile(output_file):
+        os.remove(output_file)
+
+    # Output records
+    #
+    with open(output_file,'w') as f:
+        f.write('\n'.join(outputL))
+
+    return
 # =============================================================================
 
 # ----------------------------------------------------------------------
@@ -3930,7 +2837,7 @@ cdwrInfoD        = {}
 usgsRecordsD     = {}
 owrdRecordsD     = {}
 cdwrRecordsD     = {}
-   
+
 collection_file  = "data/collection.txt"
 
 usgsOnly         = False
@@ -3948,43 +2855,41 @@ parser = argparse.ArgumentParser(prog=program)
 
 parser.add_argument("--usage", help="Provide usage",
                     type=str)
- 
+
 parser.add_argument("-sites", "--sites",
                     help="Name of collection file listing sites",
                     required = True,
                     type=str)
- 
+
 parser.add_argument("-output", "--output",
                     help="Name of output file containing processed waterlevel measurements",
                     required = True,
                     type=str)
- 
+
 parser.add_argument("-usgs", "--usgs",
                     help="Process only USGS measurement record",
                     action="store_true")
- 
+
 parser.add_argument("-owrd", "--owrd",
                     help="Process only OWRD measurement record",
                     action="store_true")
- 
+
 parser.add_argument("-cdwr", "--cdwr",
                     help="Process only CDWR measurement record",
                     action="store_true")
- 
+
 parser.add_argument("-owrd_gw", "--owrd_gw",
                     help="Provide a filename of OWRD waterlevel file for periodic sites in text format",
-                    required = True,
                     type=str)
- 
+
 parser.add_argument("-owrd_rc", "--owrd_rc",
                     help="Provide a filename of OWRD waterlevel file for recorder sites in text format",
-                    required = True,
                     type=str)
- 
+
 parser.add_argument("-keepOWRD", "--keepOwrd",
                     help="Keep OWRD records over USGS matching records",
                     action="store_true")
- 
+
 parser.add_argument("-debug", "--debug",
                     help="Enable full operational output to a debugging file",
                     action="store_true")
@@ -3997,46 +2902,46 @@ args = parser.parse_args()
 #
 if args.sites:
 
-   collection_file = args.sites
-   if not os.path.isfile(collection_file):
-      message  = "File listing sites %s does not exist" % collection_file
-      errorMessage(message)
+    collection_file = args.sites
+    if not os.path.isfile(collection_file):
+        message  = "File listing sites %s does not exist" % collection_file
+        errorMessage(message)
 
 if args.output:
 
-   output_file = args.output
-   if os.path.isfile(output_file):
-      os.remove(output_file)
+    output_file = args.output
+    if os.path.isfile(output_file):
+        os.remove(output_file)
 
 if args.usgs:
-   usgsOnly = True
+    usgsOnly = True
 
 if args.owrd:
-   owrdOnly = True
+    owrdOnly = True
 
 if args.cdwr:
-   cdwrOnly = True
+    cdwrOnly = True
 
 if usgsOnly is False and owrdOnly is False and cdwrOnly is False:
-   usgsOnly = True
-   owrdOnly = True
-   cdwrOnly = True
+    usgsOnly = True
+    owrdOnly = True
+    cdwrOnly = True
 
 if args.owrd_gw:
-   owrd_gw_file = args.owrd_gw
-   if not os.path.isfile(owrd_gw_file):
-      message  = "File listing waterlevel measurements for periodic sites %s does not exist" % owrd_gw_file
-      errorMessage(message)
+    owrd_gw_file = args.owrd_gw
+    if not os.path.isfile(owrd_gw_file):
+        message  = "File listing waterlevel measurements for periodic sites %s does not exist" % owrd_gw_file
+        errorMessage(message)
 
 if args.owrd_rc:
-   owrd_rc_file = args.owrd_rc
-   if not os.path.isfile(owrd_rc_file):
-      message  = "File listing waterlevel measurements for recorder sites %s does not exist" % owrd_rc_file
-      errorMessage(message)
+    owrd_rc_file = args.owrd_rc
+    if not os.path.isfile(owrd_rc_file):
+        message  = "File listing waterlevel measurements for recorder sites %s does not exist" % owrd_rc_file
+        errorMessage(message)
 
 if args.debug:
 
-   screen_logger.setLevel(logging.DEBUG)
+    screen_logger.setLevel(logging.DEBUG)
 
 # Read collection file
 # -------------------------------------------------
@@ -4160,25 +3065,26 @@ myGwFields  = [
               ]
 
 if usgsOnly:
-   #usgsRecordsD = processUSGS(siteInfoD, mySiteFields, myGwFields)
-   #usgsRecordsD = jsonUSGS(siteInfoD, mySiteFields, myGwFields)
-   usgsRecordsD = rdbUSGS(siteInfoD, mySiteFields, myGwFields)
+    #usgsRecordsD = processUSGS(siteInfoD, mySiteFields, myGwFields)
+    #usgsRecordsD = jsonUSGS(siteInfoD, mySiteFields, myGwFields)
+    #usgsRecordsD = rdbUSGS(siteInfoD, mySiteFields, myGwFields)
+    usgsRecordsD = ogcapiUSGS(siteInfoD, mySiteFields, myGwFields)
 
 
 # Prepare OWRD records
 # -------------------------------------------------
 #
 if owrdOnly:
-   owrdRecordsD = processOWRD(siteInfoD, mySiteFields, myGwFields, owrd_gw_file, owrd_rc_file)
+    owrdRecordsD = processOWRD(siteInfoD, mySiteFields, myGwFields, owrd_gw_file, owrd_rc_file)
 
 
 # Prepare CDWR records
 # -------------------------------------------------
 #
 if cdwrOnly:
-   cdwrRecordsD = processCDWR(siteInfoD, mySiteFields, myGwFields)
+    cdwrRecordsD = processCDWR(siteInfoD, mySiteFields, myGwFields)
 
-   
+
 # Prepare output
 # -------------------------------------------------
 #
@@ -4217,268 +3123,268 @@ outputL.append("\t".join(myGwFields))
 #
 for site_id in sorted(siteInfoD.keys()):
 
-   gwInfoD       = {}
+    gwInfoD       = {}
 
-   duplUsgsL  = []
-   duplOwrdL  = []
-   duplCdwrL  = []
+    duplUsgsL  = []
+    duplOwrdL  = []
+    duplCdwrL  = []
 
-   yRecords   = 0
-   nRecords   = 0
+    yRecords   = 0
+    nRecords   = 0
 
-   # Build common date list for USGS, OWRD, and CDWR records
-   #
-   usgsRecordsL = []
-   if site_id in usgsRecordsD:
-      usgsRecordsL = list(usgsRecordsD[site_id].keys())
-   owrdRecordsL = []
-   if site_id in owrdRecordsD:
-      owrdRecordsL = list(owrdRecordsD[site_id].keys())
-   cdwrRecordsL = []
-   if site_id in cdwrRecordsD:
-      cdwrRecordsL = list(cdwrRecordsD[site_id].keys())
+    # Build common date list for USGS, OWRD, and CDWR records
+    #
+    usgsRecordsL = []
+    if site_id in usgsRecordsD:
+        usgsRecordsL = list(usgsRecordsD[site_id].keys())
+    owrdRecordsL = []
+    if site_id in owrdRecordsD:
+        owrdRecordsL = list(owrdRecordsD[site_id].keys())
+    cdwrRecordsL = []
+    if site_id in cdwrRecordsD:
+        cdwrRecordsL = list(cdwrRecordsD[site_id].keys())
 
-   if len(usgsRecordsL) > 0 or len(owrdRecordsL) > 0 or len(cdwrRecordsL) > 0:
+    if len(usgsRecordsL) > 0 or len(owrdRecordsL) > 0 or len(cdwrRecordsL) > 0:
 
-       siteCount += 1
+        siteCount += 1
 
-       # Add USGS records
-       #
-       if len(usgsRecordsL) > 0:
-          uniqueUsgs = dict({x:usgsRecordsD[site_id][x] for x in usgsRecordsL})
-          gwInfoD.update(uniqueUsgs)
-             
-       # Insert OWRD records if unique on lev_dtm using YYYY-MM-DD portion only
-       #
-       if len(owrdRecordsL) > 0:
-          owrdSet = set(owrdRecordsL)
+        # Add USGS records
+        #
+        if len(usgsRecordsL) > 0:
+            uniqueUsgs = dict({x:usgsRecordsD[site_id][x] for x in usgsRecordsL})
+            gwInfoD.update(uniqueUsgs)
 
-          # Exisiting USGS records
-          #
-          if len(gwInfoD) > 0:
-             gwDateSet = set(gwInfoD.keys())
-             onlyOwrdL = list(owrdSet.difference(gwDateSet))
-             duplOwrdL = list(owrdSet.intersection(gwDateSet))
-             
-             # Insert unique OWRD records with USGS records
-             #
-             if len(onlyOwrdL) > 0:
-                uniqueOwrdD = dict({x:owrdRecordsD[site_id][x] for x in onlyOwrdL})
-                gwInfoD.update(uniqueOwrdD)
+        # Insert OWRD records if unique on lev_dtm using YYYY-MM-DD portion only
+        #
+        if len(owrdRecordsL) > 0:
+            owrdSet = set(owrdRecordsL)
 
-          # No exisiting USGS records
-          #
-          else:
-             uniqueOwrd = dict({x:owrdRecordsD[site_id][x] for x in owrdRecordsL})
-             gwInfoD.update(uniqueOwrd)
-            
-       # Insert CDWR records if unique on lev_dtm using YYYY-MM-DD portion only
-       #
-       if len(cdwrRecordsL) > 0:
-          cdwrSet = set(cdwrRecordsL)
-          
-          # Exisiting USGS and OWRD records
-          #
-          if len(gwInfoD) > 0:
-             gwDateSet = set(gwInfoD.keys())
-             onlyCdwrL = list(cdwrSet.difference(gwDateSet))
-             duplCdwrL = list(cdwrSet.intersection(gwDateSet))
-             
-             # Insert unique CDWR records with USGS and OWRD records
-             #
-             if len(onlyCdwrL) > 0:
-                uniqueCdwrD = dict({x:cdwrRecordsD[site_id][x] for x in onlyCdwrL})
-                gwInfoD.update(uniqueCdwrD)
+            # Exisiting USGS records
+            #
+            if len(gwInfoD) > 0:
+                gwDateSet = set(gwInfoD.keys())
+                onlyOwrdL = list(owrdSet.difference(gwDateSet))
+                duplOwrdL = list(owrdSet.intersection(gwDateSet))
 
-          # No exisiting USGS and OWRD records
-          #
-          else:
-             uniqueCdwr = dict({x:cdwrRecordsD[site_id][x] for x in cdwrRecordsL})
-             gwInfoD.update(uniqueCdwr)
+                # Insert unique OWRD records with USGS records
+                #
+                if len(onlyOwrdL) > 0:
+                    uniqueOwrdD = dict({x:owrdRecordsD[site_id][x] for x in onlyOwrdL})
+                    gwInfoD.update(uniqueOwrdD)
 
-       # Site lists for measurements by each agency
-       #
-       usgsRecordsL = sorted(list({x for x in gwInfoD if gwInfoD[x]['lev_agency_cd'] == 'USGS'}))
-       owrdRecordsL = sorted(list({x for x in gwInfoD if gwInfoD[x]['lev_agency_cd'] == 'OWRD'}))
-       cdwrRecordsL = sorted(list({x for x in gwInfoD if gwInfoD[x]['lev_agency_cd'] == 'CDWR'}))
-       siteRecordsL = sorted(list(gwInfoD.keys()))
-    
-       # Overall period of record for periodic measurements for all agencies
-       #
-       siteInfoD[site_id]['gw_agency_cd']    = []
-       siteInfoD[site_id]['gw_status']       = 'Inactive'
-       siteInfoD[site_id]['gw_begin_date']   = gwInfoD[siteRecordsL[0]]['lev_str_dt'][:10]
-       siteInfoD[site_id]['gw_end_date']     = gwInfoD[siteRecordsL[-1]]['lev_str_dt'][:10]
-       lev_dt_acy_cd                         = gwInfoD[siteRecordsL[-1]]['lev_dt_acy_cd']
-       fmt = '%Y-%m-%d'
-       if lev_dt_acy_cd == 'Y':
-          fmt = '%Y'
-       elif lev_dt_acy_cd == 'M':
-          fmt = '%Y-%m'
-       wlDate = datetime.datetime.strptime(siteInfoD[site_id]['gw_end_date'], fmt)
-       wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-       if wlDate >= activeDate:
-          siteInfoD[site_id]['gw_status'] = 'Active'
-    
-       # Period of record for periodic measurements by USGS
-       #
-       if len(usgsRecordsL) > 0:
-          siteInfoD[site_id]['gw_agency_cd'].append('USGS')
-          siteInfoD[site_id]['usgs_status']     = 'Inactive'
-          siteInfoD[site_id]['usgs_begin_date'] = gwInfoD[usgsRecordsL[0]]['lev_str_dt'][:10]
-          siteInfoD[site_id]['usgs_end_date']   = gwInfoD[usgsRecordsL[-1]]['lev_str_dt'][:10]
-          lev_dt_acy_cd                         = gwInfoD[usgsRecordsL[-1]]['lev_dt_acy_cd']
-          fmt = '%Y-%m-%d'
-          if lev_dt_acy_cd == 'Y':
-             fmt = '%Y'
-          elif lev_dt_acy_cd == 'M':
-             fmt = '%Y-%m'
-          wlDate = datetime.datetime.strptime(siteInfoD[site_id]['usgs_end_date'], fmt)
-          wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-          if wlDate >= activeDate:
-             siteInfoD[site_id]['usgs_status'] = 'Active'
-    
-       # Period of record for periodic measurements by OWRD
-       #
-       if len(owrdRecordsL) > 0:
-          siteInfoD[site_id]['gw_agency_cd'].append('OWRD')
-          siteInfoD[site_id]['owrd_status']     = 'Inactive'
-          siteInfoD[site_id]['owrd_begin_date'] = gwInfoD[owrdRecordsL[0]]['lev_str_dt'][:10]
-          siteInfoD[site_id]['owrd_end_date']   = gwInfoD[owrdRecordsL[-1]]['lev_str_dt'][:10]
-          lev_dt_acy_cd                         = gwInfoD[owrdRecordsL[-1]]['lev_dt_acy_cd']
-          fmt = '%Y-%m-%d'
-          if lev_dt_acy_cd == 'Y':
-             fmt = '%Y'
-          elif lev_dt_acy_cd == 'M':
-             fmt = '%Y-%m'
-          wlDate = datetime.datetime.strptime(siteInfoD[site_id]['owrd_end_date'], fmt)
-          wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-          if wlDate >= activeDate:
-             siteInfoD[site_id]['owrd_status'] = 'Active'
-    
-       # Period of record for periodic measurements by CDWR
-       #
-       if len(cdwrRecordsL) > 0:
-          siteInfoD[site_id]['gw_agency_cd'].append('CDWR')
-          siteInfoD[site_id]['cdwr_status']     = 'Inactive'
-          siteInfoD[site_id]['cdwr_begin_date'] = gwInfoD[cdwrRecordsL[0]]['lev_str_dt'][:10]
-          siteInfoD[site_id]['cdwr_end_date']   = gwInfoD[cdwrRecordsL[-1]]['lev_str_dt'][:10]
-          lev_dt_acy_cd                         = gwInfoD[cdwrRecordsL[-1]]['lev_dt_acy_cd']
-          fmt = '%Y-%m-%d'
-          if lev_dt_acy_cd == 'Y':
-             fmt = '%Y'
-          elif lev_dt_acy_cd == 'M':
-             fmt = '%Y-%m'
-          wlDate = datetime.datetime.strptime(siteInfoD[site_id]['cdwr_end_date'], fmt)
-          wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-          if wlDate >= activeDate:
-             siteInfoD[site_id]['cdwr_status'] = 'Active'
-    
-       # Periodic count
-       #
-       if len(siteInfoD[site_id]['gw_agency_cd']) > 0:
-          siteInfoD[site_id]['gw_agency_cd'] = ",".join(siteInfoD[site_id]['gw_agency_cd'])
-       else:
-          siteInfoD[site_id]['gw_agency_cd'] = ''
-       siteInfoD[site_id]['gw_count']   = len(usgsRecordsL) + len(owrdRecordsL) + len(cdwrRecordsL)
-       siteInfoD[site_id]['usgs_count'] = len(usgsRecordsL)
-       siteInfoD[site_id]['owrd_count'] = len(owrdRecordsL)
-       siteInfoD[site_id]['cdwr_count'] = len(cdwrRecordsL)
+            # No exisiting USGS records
+            #
+            else:
+                uniqueOwrd = dict({x:owrdRecordsD[site_id][x] for x in owrdRecordsL})
+                gwInfoD.update(uniqueOwrd)
 
-       usgsDups    += len(duplUsgsL)
-       owrdDups    += len(duplOwrdL)
-       cdwrDups    += len(duplCdwrL)
+        # Insert CDWR records if unique on lev_dtm using YYYY-MM-DD portion only
+        #
+        if len(cdwrRecordsL) > 0:
+            cdwrSet = set(cdwrRecordsL)
 
-       yRecords     = len(list({x for x in gwInfoD if gwInfoD[x]['lev_web_cd'] == 'Y'}))
-       nRecords     = len(list({x for x in gwInfoD if gwInfoD[x]['lev_web_cd'] == 'N'}))
-       totalY      += yRecords
-       totalN      += nRecords
-    
-       # Overall period of record for recorder measurements for all agencies
-       #
-       siteInfoD[site_id]['rc_agency_cd']    = []
-       rc_begin_date                         = None
-       rc_end_date                           = None
-       rc_count                              = 0
-       rc_status                             = ''
-       
-       if siteInfoD[site_id]['usgs_rc_begin_date'] is not None:
-          siteInfoD[site_id]['rc_agency_cd'].append('USGS')
-          rc_begin_date = siteInfoD[site_id]['usgs_rc_begin_date']
-          rc_end_date   = siteInfoD[site_id]['usgs_rc_end_date']
-          rc_count     += int(siteInfoD[site_id]['usgs_rc_count'])
-          rc_status     = 'Inactive'
-          
-       if rc_begin_date is None and siteInfoD[site_id]['owrd_rc_begin_date'] is not None:
-          siteInfoD[site_id]['rc_agency_cd'].append('OWRD')
-          rc_begin_date = siteInfoD[site_id]['owrd_rc_begin_date']
-          rc_end_date   = siteInfoD[site_id]['owrd_rc_end_date']
-          rc_count     += int(siteInfoD[site_id]['owrd_rc_count'])
-          rc_status     = 'Inactive'
-       elif rc_begin_date is not None and siteInfoD[site_id]['owrd_rc_begin_date'] is not None:
-          siteInfoD[site_id]['rc_agency_cd'].append('OWRD')
-          beginDateL    = sorted([rc_begin_date, siteInfoD[site_id]['owrd_rc_begin_date']])
-          endDateL      = sorted([rc_end_date, siteInfoD[site_id]['owrd_rc_end_date']])
-          rc_begin_date = beginDateL[0]
-          rc_end_date   = endDateL[-1]
-          rc_count     += int(siteInfoD[site_id]['owrd_rc_count'])
-          rc_status     = 'Inactive'
-          
-       if rc_begin_date is None and siteInfoD[site_id]['cdwr_rc_begin_date'] is not None:
-          siteInfoD[site_id]['rc_agency_cd'].append('CDWR')
-          rc_begin_date = siteInfoD[site_id]['cdwr_rc_begin_date']
-          rc_end_date   = siteInfoD[site_id]['cdwr_rc_end_date']
-          rc_count     += int(siteInfoD[site_id]['cdwr_rc_count'])
-          rc_status     = 'Inactive'
-       elif rc_begin_date is not None and siteInfoD[site_id]['cdwr_rc_begin_date'] is not None:
-          siteInfoD[site_id]['rc_agency_cd'].append('CDWR')
-          beginDateL    = sorted([rc_begin_date, siteInfoD[site_id]['cdwr_rc_begin_date']])
-          endDateL      = sorted([rc_end_date, siteInfoD[site_id]['cdwr_rc_end_date']])
-          rc_begin_date = beginDateL[0]
-          rc_end_date   = endDateL[-1]
-          rc_count     += int(siteInfoD[site_id]['cdwr_rc_count'])
-          rc_status     = 'Inactive'
-                            
-       if rc_end_date is not None:
-          wlDate = datetime.datetime.strptime(str(rc_end_date), '%Y-%m-%d')
-          wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
-          if wlDate >= activeDate:
-             rc_status = 'Active'
-          
-       siteInfoD[site_id]['rc_agency_cd']  = ",".join(siteInfoD[site_id]['rc_agency_cd'])
-       siteInfoD[site_id]['rc_begin_date'] = rc_begin_date
-       siteInfoD[site_id]['rc_end_date']   = rc_end_date
-       siteInfoD[site_id]['rc_count']      = rc_count
-       siteInfoD[site_id]['rc_status']     = rc_status
+            # Exisiting USGS and OWRD records
+            #
+            if len(gwInfoD) > 0:
+                gwDateSet = set(gwInfoD.keys())
+                onlyCdwrL = list(cdwrSet.difference(gwDateSet))
+                duplCdwrL = list(cdwrSet.intersection(gwDateSet))
 
-       # Output periodic records
-       #
-       for myDate in sorted(gwInfoD.keys()):
-          valuesL = list(map(lambda x: gwInfoD[myDate][x], myGwFields))
-          #valuesL = list({'%s' % str(gwInfoD[myDate][x]) for x in myGwFields})
-          outputL.append("\t".join(valuesL))
+                # Insert unique CDWR records with USGS and OWRD records
+                #
+                if len(onlyCdwrL) > 0:
+                    uniqueCdwrD = dict({x:cdwrRecordsD[site_id][x] for x in onlyCdwrL})
+                    gwInfoD.update(uniqueCdwrD)
 
-       # Print messages
-       #
-       messages = []
-       messages.append("Processed site %s site" % site_id)
-       messages.append("\t%40s %20d" % ("USGS Records", len(usgsRecordsL))) 
-       messages.append("\t%40s %20d" % ("USGS Records duplicates removed", len(duplUsgsL))) 
-       messages.append("\t%40s %20d" % ("OWRD Records", len(owrdRecordsL)))
-       messages.append("\t%40s %20d" % ("OWRD Records duplicates removed", len(duplOwrdL))) 
-       messages.append("\t%40s %20d" % ("CDWR Records", len(cdwrRecordsL)))
-       messages.append("\t%40s %20d" % ("CDWR Records duplicates removed", len(duplCdwrL)))
-       messages.append("\t%40s %20d" % ("Static Records", yRecords))
-       messages.append("\t%40s %20d" % ("Non-static Records", nRecords)) 
-       screen_logger.debug('\n'.join(messages))
- 
-   else:
-       message = "Skipping site %s site with no waterlevels" % site_id
-       screen_logger.debug(message)
+            # No exisiting USGS and OWRD records
+            #
+            else:
+                uniqueCdwr = dict({x:cdwrRecordsD[site_id][x] for x in cdwrRecordsL})
+                gwInfoD.update(uniqueCdwr)
 
-   totalUSGS   += len(usgsRecordsL)
-   totalOWRD   += len(owrdRecordsL)
-   totalCDWR   += len(cdwrRecordsL)
+        # Site lists for measurements by each agency
+        #
+        usgsRecordsL = sorted(list({x for x in gwInfoD if gwInfoD[x]['lev_agency_cd'] == 'USGS'}))
+        owrdRecordsL = sorted(list({x for x in gwInfoD if gwInfoD[x]['lev_agency_cd'] == 'OWRD'}))
+        cdwrRecordsL = sorted(list({x for x in gwInfoD if gwInfoD[x]['lev_agency_cd'] == 'CDWR'}))
+        siteRecordsL = sorted(list(gwInfoD.keys()))
+
+        # Overall period of record for periodic measurements for all agencies
+        #
+        siteInfoD[site_id]['gw_agency_cd']    = []
+        siteInfoD[site_id]['gw_status']       = 'Inactive'
+        siteInfoD[site_id]['gw_begin_date']   = gwInfoD[siteRecordsL[0]]['lev_str_dt'][:10]
+        siteInfoD[site_id]['gw_end_date']     = gwInfoD[siteRecordsL[-1]]['lev_str_dt'][:10]
+        lev_dt_acy_cd                         = gwInfoD[siteRecordsL[-1]]['lev_dt_acy_cd']
+        fmt = '%Y-%m-%d'
+        if lev_dt_acy_cd == 'Y':
+            fmt = '%Y'
+        elif lev_dt_acy_cd == 'M':
+            fmt = '%Y-%m'
+        wlDate = datetime.datetime.strptime(siteInfoD[site_id]['gw_end_date'], fmt)
+        wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+        if wlDate >= activeDate:
+            siteInfoD[site_id]['gw_status'] = 'Active'
+
+        # Period of record for periodic measurements by USGS
+        #
+        if len(usgsRecordsL) > 0:
+            siteInfoD[site_id]['gw_agency_cd'].append('USGS')
+            siteInfoD[site_id]['usgs_status']     = 'Inactive'
+            siteInfoD[site_id]['usgs_begin_date'] = gwInfoD[usgsRecordsL[0]]['lev_str_dt'][:10]
+            siteInfoD[site_id]['usgs_end_date']   = gwInfoD[usgsRecordsL[-1]]['lev_str_dt'][:10]
+            lev_dt_acy_cd                         = gwInfoD[usgsRecordsL[-1]]['lev_dt_acy_cd']
+            fmt = '%Y-%m-%d'
+            if lev_dt_acy_cd == 'Y':
+                fmt = '%Y'
+            elif lev_dt_acy_cd == 'M':
+                fmt = '%Y-%m'
+            wlDate = datetime.datetime.strptime(siteInfoD[site_id]['usgs_end_date'], fmt)
+            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+            if wlDate >= activeDate:
+                siteInfoD[site_id]['usgs_status'] = 'Active'
+
+        # Period of record for periodic measurements by OWRD
+        #
+        if len(owrdRecordsL) > 0:
+            siteInfoD[site_id]['gw_agency_cd'].append('OWRD')
+            siteInfoD[site_id]['owrd_status']     = 'Inactive'
+            siteInfoD[site_id]['owrd_begin_date'] = gwInfoD[owrdRecordsL[0]]['lev_str_dt'][:10]
+            siteInfoD[site_id]['owrd_end_date']   = gwInfoD[owrdRecordsL[-1]]['lev_str_dt'][:10]
+            lev_dt_acy_cd                         = gwInfoD[owrdRecordsL[-1]]['lev_dt_acy_cd']
+            fmt = '%Y-%m-%d'
+            if lev_dt_acy_cd == 'Y':
+                fmt = '%Y'
+            elif lev_dt_acy_cd == 'M':
+                fmt = '%Y-%m'
+            wlDate = datetime.datetime.strptime(siteInfoD[site_id]['owrd_end_date'], fmt)
+            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+            if wlDate >= activeDate:
+                siteInfoD[site_id]['owrd_status'] = 'Active'
+
+        # Period of record for periodic measurements by CDWR
+        #
+        if len(cdwrRecordsL) > 0:
+            siteInfoD[site_id]['gw_agency_cd'].append('CDWR')
+            siteInfoD[site_id]['cdwr_status']     = 'Inactive'
+            siteInfoD[site_id]['cdwr_begin_date'] = gwInfoD[cdwrRecordsL[0]]['lev_str_dt'][:10]
+            siteInfoD[site_id]['cdwr_end_date']   = gwInfoD[cdwrRecordsL[-1]]['lev_str_dt'][:10]
+            lev_dt_acy_cd                         = gwInfoD[cdwrRecordsL[-1]]['lev_dt_acy_cd']
+            fmt = '%Y-%m-%d'
+            if lev_dt_acy_cd == 'Y':
+                fmt = '%Y'
+            elif lev_dt_acy_cd == 'M':
+                fmt = '%Y-%m'
+            wlDate = datetime.datetime.strptime(siteInfoD[site_id]['cdwr_end_date'], fmt)
+            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+            if wlDate >= activeDate:
+                siteInfoD[site_id]['cdwr_status'] = 'Active'
+
+        # Periodic count
+        #
+        if len(siteInfoD[site_id]['gw_agency_cd']) > 0:
+            siteInfoD[site_id]['gw_agency_cd'] = ",".join(siteInfoD[site_id]['gw_agency_cd'])
+        else:
+            siteInfoD[site_id]['gw_agency_cd'] = ''
+        siteInfoD[site_id]['gw_count']   = len(usgsRecordsL) + len(owrdRecordsL) + len(cdwrRecordsL)
+        siteInfoD[site_id]['usgs_count'] = len(usgsRecordsL)
+        siteInfoD[site_id]['owrd_count'] = len(owrdRecordsL)
+        siteInfoD[site_id]['cdwr_count'] = len(cdwrRecordsL)
+
+        usgsDups    += len(duplUsgsL)
+        owrdDups    += len(duplOwrdL)
+        cdwrDups    += len(duplCdwrL)
+
+        yRecords     = len(list({x for x in gwInfoD if gwInfoD[x]['lev_web_cd'] == 'Y'}))
+        nRecords     = len(list({x for x in gwInfoD if gwInfoD[x]['lev_web_cd'] == 'N'}))
+        totalY      += yRecords
+        totalN      += nRecords
+
+        # Overall period of record for recorder measurements for all agencies
+        #
+        siteInfoD[site_id]['rc_agency_cd']    = []
+        rc_begin_date                         = None
+        rc_end_date                           = None
+        rc_count                              = 0
+        rc_status                             = ''
+
+        if siteInfoD[site_id]['usgs_rc_begin_date'] is not None:
+            siteInfoD[site_id]['rc_agency_cd'].append('USGS')
+            rc_begin_date = siteInfoD[site_id]['usgs_rc_begin_date']
+            rc_end_date   = siteInfoD[site_id]['usgs_rc_end_date']
+            rc_count     += int(siteInfoD[site_id]['usgs_rc_count'])
+            rc_status     = 'Inactive'
+
+        if rc_begin_date is None and siteInfoD[site_id]['owrd_rc_begin_date'] is not None:
+            siteInfoD[site_id]['rc_agency_cd'].append('OWRD')
+            rc_begin_date = siteInfoD[site_id]['owrd_rc_begin_date']
+            rc_end_date   = siteInfoD[site_id]['owrd_rc_end_date']
+            rc_count     += int(siteInfoD[site_id]['owrd_rc_count'])
+            rc_status     = 'Inactive'
+        elif rc_begin_date is not None and siteInfoD[site_id]['owrd_rc_begin_date'] is not None:
+            siteInfoD[site_id]['rc_agency_cd'].append('OWRD')
+            beginDateL    = sorted([rc_begin_date, siteInfoD[site_id]['owrd_rc_begin_date']])
+            endDateL      = sorted([rc_end_date, siteInfoD[site_id]['owrd_rc_end_date']])
+            rc_begin_date = beginDateL[0]
+            rc_end_date   = endDateL[-1]
+            rc_count     += int(siteInfoD[site_id]['owrd_rc_count'])
+            rc_status     = 'Inactive'
+
+        if rc_begin_date is None and siteInfoD[site_id]['cdwr_rc_begin_date'] is not None:
+            siteInfoD[site_id]['rc_agency_cd'].append('CDWR')
+            rc_begin_date = siteInfoD[site_id]['cdwr_rc_begin_date']
+            rc_end_date   = siteInfoD[site_id]['cdwr_rc_end_date']
+            rc_count     += int(siteInfoD[site_id]['cdwr_rc_count'])
+            rc_status     = 'Inactive'
+        elif rc_begin_date is not None and siteInfoD[site_id]['cdwr_rc_begin_date'] is not None:
+            siteInfoD[site_id]['rc_agency_cd'].append('CDWR')
+            beginDateL    = sorted([rc_begin_date, siteInfoD[site_id]['cdwr_rc_begin_date']])
+            endDateL      = sorted([rc_end_date, siteInfoD[site_id]['cdwr_rc_end_date']])
+            rc_begin_date = beginDateL[0]
+            rc_end_date   = endDateL[-1]
+            rc_count     += int(siteInfoD[site_id]['cdwr_rc_count'])
+            rc_status     = 'Inactive'
+
+        if rc_end_date is not None:
+            wlDate = datetime.datetime.strptime(str(rc_end_date), '%Y-%m-%d')
+            wlDate = wlDate.replace(tzinfo=datetime.timezone.utc)
+            if wlDate >= activeDate:
+                rc_status = 'Active'
+
+        siteInfoD[site_id]['rc_agency_cd']  = ",".join(siteInfoD[site_id]['rc_agency_cd'])
+        siteInfoD[site_id]['rc_begin_date'] = rc_begin_date
+        siteInfoD[site_id]['rc_end_date']   = rc_end_date
+        siteInfoD[site_id]['rc_count']      = rc_count
+        siteInfoD[site_id]['rc_status']     = rc_status
+
+        # Output periodic records
+        #
+        for myDate in sorted(gwInfoD.keys()):
+            valuesL = list(map(lambda x: gwInfoD[myDate][x], myGwFields))
+            #valuesL = list({'%s' % str(gwInfoD[myDate][x]) for x in myGwFields})
+            outputL.append("\t".join(valuesL))
+
+        # Print messages
+        #
+        messages = []
+        messages.append("Processed site %s site" % site_id)
+        messages.append("\t%40s %20d" % ("USGS Records", len(usgsRecordsL)))
+        messages.append("\t%40s %20d" % ("USGS Records duplicates removed", len(duplUsgsL)))
+        messages.append("\t%40s %20d" % ("OWRD Records", len(owrdRecordsL)))
+        messages.append("\t%40s %20d" % ("OWRD Records duplicates removed", len(duplOwrdL)))
+        messages.append("\t%40s %20d" % ("CDWR Records", len(cdwrRecordsL)))
+        messages.append("\t%40s %20d" % ("CDWR Records duplicates removed", len(duplCdwrL)))
+        messages.append("\t%40s %20d" % ("Static Records", yRecords))
+        messages.append("\t%40s %20d" % ("Non-static Records", nRecords))
+        screen_logger.debug('\n'.join(messages))
+
+    else:
+        message = "Skipping site %s site with no waterlevels" % site_id
+        screen_logger.debug(message)
+
+    totalUSGS   += len(usgsRecordsL)
+    totalOWRD   += len(owrdRecordsL)
+    totalCDWR   += len(cdwrRecordsL)
 
 totalRecords = totalUSGS + totalOWRD + totalCDWR
 totalDups    = usgsDups + owrdDups + cdwrDups
@@ -4486,7 +3392,7 @@ totalDups    = usgsDups + owrdDups + cdwrDups
 # Output records
 #
 with open(output_file,'w') as f:
-   f.write('\n'.join(outputL))
+    f.write('\n'.join(outputL))
 
 # Sites with recorder records
 #
@@ -4494,7 +3400,7 @@ RecorderSitesL = list({siteInfoD[x]['site_id'] for x in siteInfoD if len(siteInf
 usgsRecordersL = list({siteInfoD[x]['site_id'] for x in siteInfoD if 'USGS' in siteInfoD[x]['rc_agency_cd']})
 owrdRecordersL = list({siteInfoD[x]['site_id'] for x in siteInfoD if 'OWRD' in siteInfoD[x]['rc_agency_cd']})
 cdwrRecordersL = list({siteInfoD[x]['site_id'] for x in siteInfoD if 'CDWR' in siteInfoD[x]['rc_agency_cd']})
-             
+
 # Print information
 #
 ncols    = 85
@@ -4519,9 +3425,9 @@ messages.append('\t%-70s %10d' % ('Number of sites with recorder measurements', 
 messages.append('\t%-70s %10d' % ('Number of USGS sites with recorder measurements', len(usgsRecordersL)))
 messages.append('\t%-70s %10d' % ('Number of OWRD sites with recorder measurements', len(owrdRecordersL)))
 messages.append('\t%-70s %10d' % ('Number of CDWR sites with recorder measurements', len(cdwrRecordersL)))
-messages.append('') 
 messages.append('')
-   
+messages.append('')
+
 screen_logger.info("\n".join(messages))
 file_logger.info("\n".join(messages))
 
