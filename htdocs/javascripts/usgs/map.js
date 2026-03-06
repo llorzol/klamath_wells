@@ -4,9 +4,9 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- $Id: /var/www/html/klamath_wells/javascripts/usgs/map.js, v 3.37 2026/01/27 20:07:21 llorzol Exp $
- $Revision: 3.37 $
- $Date: 2026/01/27 20:07:21 $
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/map.js, v 3.38 2026/03/05 13:49:37 llorzol Exp $
+ $Revision: 3.38 $
+ $Date: 2026/03/05 13:49:37 $
  $Author: llorzol $
  *
 */
@@ -191,12 +191,12 @@ function buildMap(mySites, myGwData, BasinBoundary)
 	  
    // Add base map
    //
-   map.addLayer(ESRItopoBasemap);
-   $("#ESRItopoBasemap a").addClass('active');
+   map.addLayer(USGSTopoBasemap);
+   $("#USGSTopoBasemap a").addClass('active');
       
    // Create the miniMap
    //
-   miniMap = new L.Control.MiniMap(ESRIusaTopoMinimap, { toggleDisplay: true }).addTo(map);
+   miniMap = new L.Control.MiniMap(USGSTopoMinimap, { toggleDisplay: true }).addTo(map);
 
    // Add basin boundary
    //
