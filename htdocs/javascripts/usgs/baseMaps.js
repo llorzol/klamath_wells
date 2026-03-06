@@ -4,9 +4,9 @@
  * baseMaps is a JavaScript library to set of functions to manage
  *  the base maps layers on the map.
  *
- $Id: /var/www/html/klamath_wells/javascripts/usgs/baseMaps.js, v 2.06 2026/01/27 20:01:58 llorzol Exp $
- $Revision: 2.06 $
- $Date: 2026/01/27 20:01:58 $
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/baseMaps.js, v 2.07 2026/03/05 14:40:18 llorzol Exp $
+ $Revision: 2.07 $
+ $Date: 2026/03/05 14:40:18 $
  $Author: llorzol $
  *
 */
@@ -42,15 +42,16 @@
 // Base maps
 //
 var basemapNameArray   = [
-                          ["ESRIgrayBasemap",   "ESRI Gray"],
-                          ["ESRIstreetsBasemap","ESRI Streets"],
-                          ["ESRIimageryBasemap","ESRI Imagery"],
-                          ["ESRIusaTopoBasemap","ESRI USA Topo"],
-                          ["ESRInatGeoBasemap", "ESRI Nat Geo"],
-                          ["tnmBasemap",        "National Map"],
-                          ["ESRItopoBasemap",   "Topo"]
-                          //["USGS Topo <br />with river miles", "RiverMiles"]
-                         ];
+    // ["ESRIgrayBasemap",   "ESRI Gray"],
+    // ["ESRIstreetsBasemap","ESRI Streets"],
+    // ["ESRIimageryBasemap","ESRI Imagery"],
+    // ["ESRIusaTopoBasemap","ESRI USA Topo"],
+    // ["ESRInatGeoBasemap", "ESRI Nat Geo"],
+    // ["ESRItopoBasemap",   "ESRI Topo"],
+    ["USGSTopoBasemap", "USGS Topo"],
+    ["USGSImageryTopo", "USGS Imagery"]
+    //["USGS Topo <br />with river miles", "RiverMiles"]
+];
 
 // Set up basemap layers
 //
@@ -59,63 +60,70 @@ var ESRIstreetsBasemap = L.tileLayer("https://server.arcgisonline.com/ArcGIS/res
 var ESRIimageryBasemap = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {attribution: 'Source: Esri, DigitalGlobe, GeoEye, i-cubed, USDA, USGS, AEX, Getmapping, Aerogrid, IGN, IGP, swisstopo, and the GIS User Community'});
 var ESRIusaTopoBasemap = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer/tile/{z}/{y}/{x}", {opacity: 0.7,attribution: 'Copyright:&copy; 2013 National Geographic Society, i-cubed'});
 var ESRInatGeoBasemap  = L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}", {attribution: 'National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC>'});
-var tnmBasemap         = L.tileLayer("https://basemap.nationalmap.gov/ArcGIS/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}", {maxZoom: 20,attribution: '<a href="https://www.doi.gov">U.S. Department of the Interior</a> | <a href="https://www.usgs.gov">U.S. Geological Survey</a> | <a href="https://www.usgs.gov/laws/policies_notices.html">Policies</a>'});
 var ESRItopoBasemap    = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}", {attribution: 'MRLC, State of Oregon, State of Oregon DOT, State of Oregon GEO, Esri, DeLorme, HERE, TomTom, USGS, NGA, EPA, NPS, U.S. Forest Service'});
+var USGSTopoBasemap    = L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}", { attribution: 'MRLC, State of Oregon, State of Oregon DOT, State of Oregon GEO, DeLorme, HERE, TomTom, USGS, NGA, EPA, NPS, U.S. Forest Service' });
+var USGSImageryTopo    = L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}", { attribution: 'MRLC, State of Oregon, State of Oregon DOT, State of Oregon GEO, DeLorme, HERE, TomTom, USGS, NGA, EPA, NPS, U.S. Forest Service' });
+var USGSHydroCached    = L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/{z}/{y}/{x}", { attribution: 'MRLC, State of Oregon, State of Oregon DOT, State of Oregon GEO, DeLorme, HERE, TomTom, USGS, NGA, EPA, NPS, U.S. Forest Service' });
 //var RiverMilesBasemap  = L.tileLayer.wms("https://raster.nationalmap.gov/arcgis/services/Scanned_Maps/USGS_EROS_DRG_SCALE/ImageServer/WMSServer",{ layers: "USGS_EROS_DRG_SCALE" });
 
 // Add items to basemap dropdown
 //
 jQuery.each(basemapNameArray, function(i, v) 
    {
-     var basemap = '<li class="base_maps noJump" id="' + v[0] + '" >';
+     var basemap = '<li class="base_maps" id="' + v[0] + '" >';
      basemap    += '<a class="dropdown-item" href="#">';
      basemap    += v[1] + '</a></li>';
      jQuery("#basemapMenu").append(basemap);
 });
  
-var basemapObj         = {
-                          "ESRIgrayBasemap":        ESRIgrayBasemap,
-                          "ESRIstreetsBasemap":     ESRIstreetsBasemap,
-                          "ESRIimageryBasemap":     ESRIimageryBasemap,
-                          "ESRIusaTopoBasemap":     ESRIusaTopoBasemap,
-                          "ESRInatGeoBasemap":      ESRInatGeoBasemap,
-                          "tnmBasemap":             tnmBasemap,
-                          "ESRItopoBasemap":        ESRItopoBasemap
-                          //"River Miles": RiverMilesBasemap
-                         };
+var basemapObj = {
+    //"ESRIgrayBasemap":        ESRIgrayBasemap,
+    //"ESRIstreetsBasemap":     ESRIstreetsBasemap,
+    //"ESRIimageryBasemap":     ESRIimageryBasemap,
+    //"ESRIusaTopoBasemap":     ESRIusaTopoBasemap,
+    //"ESRInatGeoBasemap":      ESRInatGeoBasemap,
+    //"ESRItopoBasemap":        ESRItopoBasemap,
+    "USGSTopoBasemap":        USGSTopoBasemap,
+    "USGSImageryTopo":        USGSImageryTopo
+    //"River Miles": RiverMilesBasemap
+};
 
 // Set up minimap layers
 //
 var MinimapNameArray   = [
-                          ["ESRIgrayMinimap",   "ESRI Gray"],
-                          ["ESRIstreetsMinimap","ESRI Streets"],
-                          ["ESRIimageryMinimap","ESRI Imagery"],
-                          ["ESRIusaTopoMinimap","ESRI USA Topo"],
-                          ["ESRInatGeoMinimap", "ESRI Nat Geo"],
-                          ["tnmMinimap",        "National Map"],
-                          ["ESRItopoMinimap",   "Topo"]
-                          //["USGS Topo <br />with river miles", "RiverMiles"]
-                         ];
+    //["ESRIgrayMinimap",   "ESRI Gray"],
+    //["ESRIstreetsMinimap","ESRI Streets"],
+    //["ESRIimageryMinimap","ESRI Imagery"],
+    //["ESRIusaTopoMinimap","ESRI USA Topo"],
+    //["ESRInatGeoMinimap", "ESRI Nat Geo"],
+    //["ESRItopoMinimap",   "Topo"],
+    ["USGSTopoMinimap", "USGS Topo"],
+    ["USGSImageryTopoMinimap", "USGS Imagery"]
+    //["USGS Topo <br />with river miles", "RiverMiles"]
+];
 
 var ESRIgrayMinimap    = L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {attribution: 'Copyright: &copy; 2013 Esri, DeLorme, NAVTEQ'});
 var ESRIstreetsMinimap = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {attribution: 'Sources: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2013'});
 var ESRIimageryMinimap = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {attribution: 'Source: Esri, DigitalGlobe, GeoEye, i-cubed, USDA, USGS, AEX, Getmapping, Aerogrid, IGN, IGP, swisstopo, and the GIS User Community'});
 var ESRIusaTopoMinimap = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer/tile/{z}/{y}/{x}", {opacity: 0.7,attribution: 'Copyright:&copy; 2013 National Geographic Society, i-cubed'});
 var ESRInatGeoMinimap  = L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}", {attribution: 'National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC>'});
-var tnmMinimap         = L.tileLayer('https://navigator.er.usgs.gov/tiles/tcr.cgi/{z}/{x}/{y}.png', {maxZoom: 20,attribution: '<a href="https://www.doi.gov">U.S. Department of the Interior</a> | <a href="https://www.usgs.gov">U.S. Geological Survey</a> | <a href="https://www.usgs.gov/laws/policies_notices.html">Policies</a>'});
 var ESRItopoMinimap    = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}", {attribution: 'MRLC, State of Oregon, State of Oregon DOT, State of Oregon GEO, Esri, DeLorme, HERE, TomTom, USGS, NGA, EPA, NPS, U.S. Forest Service'});
+var USGSTopoMinimap = L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}", { attribution: 'MRLC, State of Oregon, State of Oregon DOT, State of Oregon GEO, DeLorme, HERE, TomTom, USGS, NGA, EPA, NPS, U.S. Forest Service' });
+var USGSImageryTopoMinimap = L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}", { attribution: 'MRLC, State of Oregon, State of Oregon DOT, State of Oregon GEO, DeLorme, HERE, TomTom, USGS, NGA, EPA, NPS, U.S. Forest Service' });
+var USGSHydroCachedMinimap = L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/{z}/{y}/{x}", { attribution: 'MRLC, State of Oregon, State of Oregon DOT, State of Oregon GEO, DeLorme, HERE, TomTom, USGS, NGA, EPA, NPS, U.S. Forest Service' });
 //var RiverMilesMinimap  = L.tileLayer.wms("https://raster.nationalmap.gov/arcgis/services/Scanned_Maps/USGS_EROS_DRG_SCALE/ImageServer/WMSServer",{ layers: "USGS_EROS_DRG_SCALE" });
 
 var minimapObj = {
-                          "ESRIgrayBasemap":     ESRIgrayMinimap,
-                          "ESRIstreetsBasemap":  ESRIstreetsMinimap,
-                          "ESRIimageryBasemap":  ESRIimageryMinimap,
-                          "ESRIusaTopoBasemap":  ESRIusaTopoMinimap,
-                          "ESRInatGeoBasemap":   ESRInatGeoMinimap,
-                          "tnmBasemap":          tnmMinimap,
-                          "ESRItopoBasemap":     ESRItopoMinimap
-                          //"River Miles": RiverMilesMinimap
-                  };
+    //"ESRIgrayBasemap":     ESRIgrayMinimap,
+    //"ESRIstreetsBasemap":  ESRIstreetsMinimap,
+    //"ESRIimageryBasemap":  ESRIimageryMinimap,
+    //"ESRIusaTopoBasemap":  ESRIusaTopoMinimap,
+    //"ESRInatGeoBasemap":   ESRInatGeoMinimap,
+    //"ESRItopoBasemap":     ESRItopoMinimap,
+    "USGSTopoBasemap":          USGSTopoMinimap,
+    "USGSImageryTopo":          USGSImageryTopoMinimap
+    //"River Miles": RiverMilesMinimap
+};
 
 // Control for basemap dropdown
 //
@@ -135,6 +143,9 @@ jQuery('#basemapMenu li').click(function(e) {
     // Remove active class
     //
     $(".base_maps a").removeClass("active");
+    map.eachLayer(function (layer) {
+        if (layer instanceof L.TileLayer) map.removeLayer(layer);
+    });
     
     // Add active class
     //
