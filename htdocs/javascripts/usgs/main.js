@@ -4,9 +4,9 @@
  * Main is a JavaScript library to provide a set of functions to manage
  *  the web requests.
  *
- $Id: /var/www/html/klamath_wells/javascripts/usgs/main.js, v 3.22 2026/01/27 20:02:09 llorzol Exp $
- $Revision: 3.22 $
- $Date: 2026/01/27 20:02:09 $
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/main.js, v 3.23 2026/03/05 15:25:01 llorzol Exp $
+ $Revision: 3.23 $
+ $Date: 2026/03/05 15:25:01 $
  $Author: llorzol $
  *
 */
@@ -34,6 +34,11 @@
 # DEALINGS IN THE SOFTWARE.
 ###############################################################################
 */
+// Prevent jumping to top of page when clicking a href
+//
+jQuery('.noJump a').click(function(event){
+   event.preventDefault();
+});
 
 // Global variables for icon symbols
 //
@@ -52,8 +57,8 @@ var imageSrc             = "images/";
 var projectName          = "klamath_wells";
 
 var gwLink               = '/gw_hydrograph/index.html?';
-//var gwLink               = "https://or.water.usgs.gov/projs_dir/discrete_gw/index.html?" + projectName + "&";
-//var gwLink               = "https://staging-or.water.usgs.gov/discrete_gw/index.html?" + projectName + "&";
+//var gwLink               = "https://or.water.usgs.gov/projs_dir/gw_hydrograph/index.html?" + projectName + "&";
+//var gwLink               = "https://staging-or.water.usgs.gov/gw_hydrograph/index.html?" + projectName + "&";
 
 var nwisLink             = "https://waterdata.usgs.gov/nwis/";
 
