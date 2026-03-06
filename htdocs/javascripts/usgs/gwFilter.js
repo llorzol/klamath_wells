@@ -4,9 +4,9 @@
  * parameterData is a JavaScript library to provide a set of functions to manage
  *  the data exploration tool.
  *
- $Id: /var/www/html/klamath_wells/javascripts/usgs/gwFilter.js, v 3.36 2026/01/27 20:01:59 llorzol Exp $
- $Revision: 3.36 $
- $Date: 2026/01/27 20:01:59 $
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/gwFilter.js, v 3.37 2026/03/06 08:53:30 llorzol Exp $
+ $Revision: 3.37 $
+ $Date: 2026/03/06 08:53:30 $
  $Author: llorzol $
  *
 */
@@ -38,6 +38,7 @@
 // Set groundwater change data
 //-----------------------------------------------
 var gwChangeSites = {};
+var gwChangeUrl   = '/cgi-bin/klamath_wells/requestGwChange.py'
 
 // Set starting year
 //-----------------------------------------------
@@ -438,7 +439,7 @@ function requestGwChange(startingSeason, startingYear, endingSeason, endingYear)
     // Request for groundwater level changes
     //
       $.ajax({
-          url: '/cgi-bin/klamath_wells/requestGwChange.py',
+          url: gwChangeUrl,
           method: 'GET',
           dataType: 'json',
           data: {
