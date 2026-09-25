@@ -4,9 +4,9 @@
  * Map is a JavaScript library to set of functions to build
  *  a map.
  *
- $Id: /var/www/html/klamath_wells/javascripts/usgs/map.js, v 3.38 2026/03/05 13:49:37 llorzol Exp $
- $Revision: 3.38 $
- $Date: 2026/03/05 13:49:37 $
+ $Id: /var/www/html/klamath_wells/javascripts/usgs/map.js, v 3.39 2026/09/24 10:53:49 llorzol Exp $
+ $Revision: 3.39 $
+ $Date: 2026/09/24 10:53:49 $
  $Author: llorzol $
  *
 */
@@ -51,6 +51,7 @@ var geojsonSites        = {};
 //
 var maximumZoom         = 15;
 var minimumZoom         =  7;
+var mapPadding          = 0.15
 
 // Set basemap
 //
@@ -66,188 +67,193 @@ $(".gwLevelContent").html('');
 
 // Build the map and initialize map features
 //
-function buildMap(mySites, myGwData, BasinBoundary) 
-  {
-   // Message
-   //
-   message = "Building map";
-   openModal(message);
-   fadeModal(3000);
-   console.log(message);
-   console.log(mySites);
-      
-   // Create map and add controls
-   //  disable scrollwheel
-   //
-   map = new L.map('map', { scrollWheelZoom: false, zoomControl: false, maxZoom: maximumZoom, minZoom: minimumZoom });
-   //map.maxZoom = maximumZoom;
+function buildMap(mySites, myGwData, BasinBoundary) {
+    // Message
+    //
+    message = "Building map";
+    openModal(message);
+    fadeModal(3000);
+    console.log(message);
+    console.log(mySites);
 
-   // Create map pane formap title caption
-   //
-   //exportPane = map.createPane('exportImage');
-   //map.getPane('exportImage').style.zIndex = 625;
-   //map.getPane('exportImage').style.pointerEvents = 'none';
+    // Create map and add controls
+    //  disable scrollwheel
+    //
+    map = new L.map('map', { scrollWheelZoom: false, zoomControl: false, maxZoom: maximumZoom, minZoom: minimumZoom });
 
-   // Create map pane for higlighted/unlighted site
-   //
-   customPane = map.createPane('customPane');
-   map.getPane('customPane').style.zIndex = 620;
+    // Create map pane formap title caption
+    //
+    //exportPane = map.createPane('exportImage');
+    //map.getPane('exportImage').style.zIndex = 625;
+    //map.getPane('exportImage').style.pointerEvents = 'none';
 
-   // Create map pane for selected set using the left panel
-   //
-   customPane = map.createPane('customSites');
-   map.getPane('customSites').style.pointerEvents = 'auto';
-   map.getPane('customSites').style.zIndex = 615;
+    // Create map pane for higlighted/unlighted site
+    //
+    customPane = map.createPane('customPane');
+    map.getPane('customPane').style.zIndex = 620;
 
-   // Create map pane for groundwater level circles
-   //
-   customPane = map.createPane('gwChangePane');
-   map.getPane('gwChangePane').style.zIndex = 610;
+    // Create map pane for selected set using the left panel
+    //
+    customPane = map.createPane('customSites');
+    map.getPane('customSites').style.pointerEvents = 'auto';
+    map.getPane('customSites').style.zIndex = 615;
 
-   // Create map pane for all sites
-   //
-   dummyPane = map.createPane('allSites');
-   map.getPane('allSites').style.pointerEvents = 'none';
-   map.getPane('allSites').style.zIndex = 600;
+    // Create map pane for groundwater level circles
+    //
+    customPane = map.createPane('gwChangePane');
+    map.getPane('gwChangePane').style.zIndex = 610;
 
-   // Set site objects
-   //
-   siteCount = 0;
-   allSites  = L.geoJson(mySites, {
-       pointToLayer: function (feature, latlng) {
- 
-           var site_id      = feature.properties.site_id;
-           var gw_agency_cd = feature.properties.gw_agency_cd;
-           var gw_status    = feature.properties.gw_status;
+    // Create map pane for all sites
+    //
+    dummyPane = map.createPane('allSites');
+    map.getPane('allSites').style.pointerEvents = 'none';
+    map.getPane('allSites').style.zIndex = 600;
 
-           siteCount++;
+    // Set site objects
+    //
+    siteCount = 0;
+    allSites  = L.geoJson(mySites, {
+        pointToLayer: function (feature, latlng) {
 
-           // Set hash of for site information
-           //
-           if(typeof mySiteInfo[site_id] === "undefined")
-           {
-               mySiteInfo[site_id] = {};
-           }
+            var site_id      = feature.properties.site_id;
+            var gw_agency_cd = feature.properties.gw_agency_cd;
+            var gw_status    = feature.properties.gw_status;
 
-           // Build hash of site information
-           //
-           var ColumnsL = Object.keys(feature.properties);
-           
-           for (myColumn of ColumnsL)
-           {
+            siteCount++;
 
-               mySiteInfo[site_id][myColumn] = feature.properties[myColumn]
-           }
-           
-           // Set site type
-           //
-           var site_tp_cd   = 'GW';
-           mySiteInfo[site_id].site_tp_cd = site_tp_cd;
+            // Set hash of for site information
+            //
+            if(!mySiteInfo[site_id]) {
+                mySiteInfo[site_id] = {};
+            }
 
-           // Icon
-           //
-           myIcon                        = setIcon(site_id, site_tp_cd, gw_status);
-           feature.properties.icon       = myIcon;
-           mySiteInfo[site_id].icon      = myIcon;
-           feature.properties.site_tp_cd = site_tp_cd;
-                         
-           // Build marker title
-           //
-           var myTitle      = [];
-           var site_no      = mySiteInfo[site_id].site_no;
-           var coop_site_no = mySiteInfo[site_id].coop_site_no;
-           var cdwr_id      = mySiteInfo[site_id].cdwr_id;
-           if(site_no)      { myTitle.push("USGS " + site_no); }
-           if(coop_site_no) { myTitle.push("OWRD " + coop_site_no); }
-           if(cdwr_id)      { myTitle.push("CDWR " + cdwr_id); }
+            // Build hash of site information
+            //
+            var ColumnsL = Object.keys(feature.properties);
 
-           return L.marker(latlng, { pane: 'allSites', icon: myIcon, title: myTitle.join(" "), siteID: site_id } );
-          },
+            for (myColumn of ColumnsL) {
+                mySiteInfo[site_id][myColumn] = feature.properties[myColumn]
+            }
 
-       onEachFeature: function (feature, layer) {
-         
-                        // Set
-                        //
-                        layer.setOpacity(0.1);
-         
-                        // Highlight site in list of left panel
-                        //
-                        //layer.on({
-                        //          mouseover: highlightList,
-                        //          mouseout:  unhighlightList
-                        //});
-       }
-   });
+            // Set site type
+            //
+            var site_tp_cd   = 'GW';
+            mySiteInfo[site_id].site_tp_cd = site_tp_cd;
 
-   // Set the bounds 
-   //
-   map.fitBounds(allSites.getBounds());
+            // Icon
+            //
+            myIcon                        = setIcon(site_id, site_tp_cd, gw_status);
+            feature.properties.icon       = myIcon;
+            mySiteInfo[site_id].icon      = myIcon;
+            feature.properties.site_tp_cd = site_tp_cd;
 
-   //map.setMaxBounds(allSites.getBounds());
+            // Build marker title
+            //
+            var myTitle      = [];
+            var site_no      = mySiteInfo[site_id].site_no;
+            var coop_site_no = mySiteInfo[site_id].coop_site_no;
+            var cdwr_id      = mySiteInfo[site_id].cdwr_id;
+            if(site_no)      { myTitle.push("USGS " + site_no); }
+            if(coop_site_no) { myTitle.push("OWRD " + coop_site_no); }
+            if(cdwr_id)      { myTitle.push("CDWR " + cdwr_id); }
 
-   // Show on map
-   //
-   allSites.addTo(map);
-	  
-   // Add base map
-   //
-   map.addLayer(USGSTopoBasemap);
-   $("#USGSTopoBasemap a").addClass('active');
-      
-   // Create the miniMap
-   //
-   miniMap = new L.Control.MiniMap(USGSTopoMinimap, { toggleDisplay: true }).addTo(map);
+            return L.marker(latlng, { pane: 'allSites', icon: myIcon, title: myTitle.join(" "), siteID: site_id } );
+        },
 
-   // Add basin boundary
-   //
-   if(BasinBoundary)
-     {
-      console.log("Adding BasinBoundary ");
-         
-      // Set basin boundary
-      //	
-      var  basinBoundary = L.geoJson(BasinBoundary, {
-         style: function (feature) {
-         return {color: "red"};
-      }});
-         
-      map.addLayer(basinBoundary);
-     }
+        onEachFeature: function (feature, layer) {
+
+            // Set
+            //
+            layer.setOpacity(0.1);
+
+            // Highlight site in list of left panel
+            //
+            //layer.on({
+            //          mouseover: highlightList,
+            //          mouseout:  unhighlightList
+            //});
+        }
+    });
+
+    // Set the bounds
+    //
+    map.fitBounds(allSites.getBounds());
+
+    // Map bounds for zoom to location and geocoding tools
+    //
+    const bounds = map.getBounds();
+
+    // Increase the bounds by 10% (0.10) padding
+    //
+    let paddedBounds = bounds.pad(mapPadding);
+
+    // Apply the new expanded bounds to the map
+    //
+    map.setMaxBounds(paddedBounds);
+
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+
+    //map.setMaxBounds(allSites.getBounds());
+
+    // Show on map
+    //
+    allSites.addTo(map);
+
+    // Add base map
+    //
+    map.addLayer(USGSTopoBasemap);
+    $("#USGSTopoBasemap a").addClass('active');
+
+    // Create the miniMap
+    //
+    miniMap = new L.Control.MiniMap(USGSTopoMinimap, { toggleDisplay: true }).addTo(map);
+
+    // Add basin boundary
+    //
+    if(BasinBoundary) {
+        console.log("Adding BasinBoundary ");
+
+        // Set basin boundary
+        //
+        var  basinBoundary = L.geoJson(BasinBoundary, {
+            style: function (feature) {
+                return {color: "red"};
+            }});
+
+        map.addLayer(basinBoundary);
+    }
 
     // Add home button
     //
-    var zoom_bar = new L.Control.ZoomBar({position: 'topleft'}).addTo(map);
+    let zoom_bar = new L.Control.ZoomBar({position: 'topleft'}).addTo(map);
 
-   // Add zoom to your location
-   //
-   var myLocate = L.control.locate({
-       drawCircle: false,
-       drawMarker: false,
-       returnToPrevBounds: true,
-       clickBehavior: { outOfView: 'stop' },
-       onLocationOutsideMapBounds: function(context) { // called when outside map boundaries
-           message = context.options.strings.outsideMapBoundsMsg;
-           openModal(message);
-           console.log(message);
-       },
-       strings: {
-           title: "Move and zoom to your location",
-           outsideMapBoundsMsg: "You seem located outside the boundaries of the map" 
-       }
-   }).addTo(map);
- 
-   // Add custom print option
-   //
-   customPrint(map)
-       
-   // Map bounds for geocoding tool
-   //
-   const bounds = map.getBounds();
+    // Add zoom to your location
+    //
+    let myLocate = L.control.locate({
+        drawCircle: false,
+        drawMarker: false,
+        returnToPrevBounds: true,
+        clickBehavior: { outOfView: 'stop' },
+        onLocationOutsideMapBounds: function(context) { // called when outside map boundaries
+            message = context.options.strings.outsideMapBoundsMsg;
+            openModal(message);
+            console.log(message);
+        },
+        strings: {
+            title: "Move and zoom to your location",
+            outsideMapBoundsMsg: "You seem located outside the boundaries of the map"
+        }
+    }).addTo(map);
 
-  // Create the geocoding control and add it to the map
-  //
-    var searchControl = new GeoSearch.GeoSearchControl({
-      provider: new GeoSearch.OpenStreetMapProvider(),
+    // Add custom print option
+    //
+    customPrint(map)
+
+    // Create the geocoding control and add it to the map
+    //
+    let searchControl = new GeoSearch.GeoSearchControl({
+        provider: new GeoSearch.OpenStreetMapProvider({params: {viewbox: `${sw.lng},${sw.lat},${ne.lng},${ne.lat}`, bounded: 1},}),
       showMarker: false,
       autoClose: true, 
       searchLabel: "Enter address or latitude/longitude"
@@ -261,61 +267,59 @@ function buildMap(mySites, myGwData, BasinBoundary)
     //$(".leaflet-control-geosearch a").html('<i class="fa-solid fa-magnifying-glass"></i>')
     $(".leaflet-control-geosearch a").css('font-size', '2.5rem');
 
-   
-                
-  map.on('geosearch/showlocation', function(data) {
-      console.log("geocoding results ",data);
-  			
-      if('location' in data)
+
+    map.on('geosearch/showlocation', function(data) {
+        console.log("geocoding results ",data);
+
+        if('location' in data)
         {
-          var myAddress = { latlng: { lng: data.location.x,  lat: data.location.y } };
+            var myAddress = { latlng: { lng: data.location.x,  lat: data.location.y } };
         }
-  });
- 
-   // Refresh sites on extent change
-   //
-   map.on('zoomend dragend', function(evt) {
+    });
 
-       map.closePopup();
- 
-      // Check what FeatureGroup is displayed
-      //
-      if(!map.hasLayer(customLevels))
-       {
-           // Build tables
-           //
-           var mySiteSet =  buildSiteList();
-           leftPanel(mySiteSet);
-           var siteTable = createTable(mySiteSet);
-           $('#siteTable').html("");
-           $('#siteTable').html(siteTable);
-           $(".siteCount").text(mySiteSet.length);
+    // Refresh sites on extent change
+    //
+    map.on('moveend', function(evt) {
 
-           // Add table sorting
-           //
-           var myTitle = $('caption#stationsCaption').text();
-           DataTables ("#stationsTable");
+        map.closePopup();
 
-           $("#siteTable thead").addClass("border");
-       }
- 
-   });
+        // Check what FeatureGroup is displayed
+        //
+        if(!map.hasLayer(customLevels)) {
+            // Build tables
+            //
+            var mySiteSet =  buildSiteList();
+            leftPanel(mySiteSet);
+            var siteTable = createTable(mySiteSet);
+            $('#siteTable').html("");
+            $('#siteTable').html(siteTable);
+            $(".siteCount").text(mySiteSet.length);
 
-  // Build tables
-  //
-  var mySiteSet =  buildSiteList();
-  leftPanel (mySiteSet);
-  var siteTable = createTable (mySiteSet);
-  $('#siteTable').html("");
-  $('#siteTable').html(siteTable);
+            // Add table sorting
+            //
+            var myTitle = $('caption#stationsCaption').text();
+            DataTables ("#stationsTable");
 
-  // Add table sorting
-  //
-  var myTable = DataTables ("#stationsTable");
+            $("#siteTable thead").addClass("border");
+        }
 
-   // Close
-   //
-   closeModal();
+    });
+
+    // Build tables
+    //
+    let mySiteSet =  buildSiteList();
+    leftPanel (mySiteSet);
+    let siteTable = createTable (mySiteSet);
+    $('#siteTable').html("");
+    $('#siteTable').html(siteTable);
+
+    // Add table sorting
+    //
+    let myTable = DataTables ("#stationsTable");
+
+    // Close
+    //
+    closeModal();
 	
 } //End of buildMap
 
