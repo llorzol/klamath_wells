@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 #
 ###############################################################################
-# $Id: /var/www/cgi-bin/klamath_wells/buildWaterlevelFile.py, v 2.44 2026/02/27 10:29:05 llorzol Exp $
-# $Revision: 2.44 $
-# $Date: 2026/02/27 10:29:05 $
-# $Author: llorzol $
-# $Revision: 4.02 $
-# $Date: 2025/10/07 19:09:09 $
+# $Id: /var/www/cgi-bin/klamath_wells/buildWaterlevelFile.py, v 2.46 2026/10/05 10:55:19 llorzol Exp $
+# $Revision: 2.46 $
+# $Date: 2026/10/05 10:55:19 $
 # $Author: llorzol $
 #
 # Project:  buildWaterlevelFile.py
@@ -81,8 +78,8 @@ from WebRequest_mod import webRequest
 from WebRequest_mod import buildURL
 
 program         = "USGS OWRD CDWR Waterlevel Measurement Script"
-version         = "2.44"
-version_date    = "February 27, 2026"
+version         = "2.46"
+version_date    = "October 05, 2026"
 usage_message   = """
 Usage: buildWaterlevelFile.py
                 [--help]
@@ -488,8 +485,12 @@ def ogcapiUSGS (siteInfoD, mySiteFields, myGwFields):
                         lev_status_cd = '2'
                     elif 'Pumping' in myRecord['properties']['qualifier']:
                         lev_status_cd = 'P'
+                    elif 'GWSWAffected' in myRecord['properties']['qualifier']:
+                        lev_status_cd = 'X'
                     else:
-                        screen_logger.info("\tSite %s missing qualifier %s date %s" % (site_no, str(myRecord['properties']['qualifier']), lev_dt))
+                        screen_logger.info("\n\tSite %s missing qualifier %s date %s" % (site_no, str(myRecord['properties']['qualifier']), lev_dt))
+                        file_logger.info("\n\tSite %s missing qualifier %s date %s" % (site_no, str(myRecord['properties']['qualifier']), lev_dt))
+                        sys.exit()
 
                     myColumn   = 'lev_status_cd'
                     if myColumn not in gwCodesD:
@@ -1284,13 +1285,11 @@ def processOWRD (siteInfoD, mySiteFields, myGwFields, owrd_gw_file, owrd_rc_file
                 lev_meth_cd = "T"
             elif lev_meth_cd == "ETAPE CALIBRATED":
                 lev_meth_cd = "V"
+            elif lev_meth_cd == "ETAPE GRADUATED":
+                lev_meth_cd = "V"
             elif lev_meth_cd in ["UNKNOWN", "OTHER"]:
                 lev_meth_cd = "Z"
-
-            #
-            # Skip record no measurement taken
-            #
-            elif lev_meth_cd == "NOT MEASURED":
+            elif lev_meth_cd == "NOT MEASURED": # Skip record no measurement taken
                 continue
             elif lev_meth_cd is None:
                 lev_meth_cd = "Z"
@@ -1631,12 +1630,11 @@ def processOWRD (siteInfoD, mySiteFields, myGwFields, owrd_gw_file, owrd_rc_file
                     lev_meth_cd = "T"
                 elif lev_meth_cd == "ETAPE CALIBRATED":
                     lev_meth_cd = "V"
+                elif lev_meth_cd == "ETAPE GRADUATED":
+                    lev_meth_cd = "V"
                 elif lev_meth_cd in ["UNKNOWN", "OTHER"]:
                     lev_meth_cd = "Z"
-                #
-                # Skip record no measurement taken
-                #
-                elif lev_meth_cd == "NOT MEASURED":
+                elif lev_meth_cd == "NOT MEASURED": # Skip record no measurement taken
                     continue
                 elif lev_meth_cd is None:
                     lev_meth_cd = "Z"
